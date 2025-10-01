@@ -6,10 +6,10 @@ using Three_Musketeers.Grammar;
 
 namespace Three_Musketeers.Visitors{
     public class SemanticAnalyzer : ExprBaseVisitor<object?>{
+        
         private SymbolTable symbolTable =  new SymbolTable();
         public bool hasErrors {get; private set;} = false;
 
-        //visit all
         public override object? VisitStart([NotNull] ExprParser.StartContext context){
             return base.VisitStart(context);
         }
@@ -41,35 +41,154 @@ namespace Three_Musketeers.Visitors{
             string formatString = context.STRING_LITERAL().GetText();
             formatString = formatString.Substring(1, formatString.Length - 2); // remove quotes
 
-            int expectedArgs = CountFormatSpecifiers(formatString);
+            //int expectedArgs = CountFormatSpecifiers(formatString);
+            var specifiers = ParseFormatSpecifiers(formatString);
             int providedArgs = context.expr()?.Length ?? 0;
 
-            if(expectedArgs != providedArgs){
-                ReportError(context.Start.Line, 
-                $"printf expects {expectedArgs} argument(s) for '{formatString}', but recieved {providedArgs}");
+            if (specifiers.Count != providedArgs) {
+                ReportError(context.Start.Line,
+                $"printf expects {specifiers.Count} argument(s) for '{formatString}', but recieved {providedArgs}");
+                return null;
             }
 
             if(context.expr() != null){
-                foreach(var expr in context.expr()){
+                for (int i = 0; i < context.expr().Length; i++)
+                {
+                    var expr = context.expr()[i];
                     Visit(expr);
+
+                    string exprType = GetExpressionType(expr);
+                    char specifier = specifiers[i].type;
+
+                    if (!TypesAreCompatible(exprType, specifier))
+                    {
+                        bool canConvert = (exprType == "int" && "f".Contains(specifier)) ||
+                        (exprType == "double" && "di".Contains(specifier));
+
+                        if (canConvert && exprType == "double" && "di".Contains(specifier))
+                        {
+                            ReportWarning(context.Start.Line,
+                            $"Argument {i + 1}: implicit conversion from '{exprType}' to 'int' for '%%{specifier}' may lose precision");
+                        }
+                        else if (!canConvert)
+                        {
+                            ReportError(context.Start.Line,
+                            $"Argument {i + 1}: format specifier '%%{specifier}' expects compatible type, but got '{exprType}'");
+                        }
+                    }
                 }
             }
             return null;
         }
+        
+        private List<FormatSpecifier> ParseFormatSpecifiers(string formatString)
+        {
+            var specifiers = new List<FormatSpecifier>();
+            
+            for (int i = 0; i < formatString.Length; i++)
+            {
+                if (formatString[i] == '%')
+                {
+                    if (i + 1 >= formatString.Length)
+                        break;
+                        
+                    if (formatString[i + 1] == '%')
+                    {
+                        i++;
+                        continue;
+                    }
+                    
+                    i++;
+                    
+                    while (i < formatString.Length && "+-0 #".Contains(formatString[i]))
+                        i++;
+                    while (i < formatString.Length && char.IsDigit(formatString[i]))
+                        i++;
+                    
+                    int? precision = null;
+                    if (i < formatString.Length && formatString[i] == '.')
+                    {
+                        i++;
+                        int precisionValue = 0;
+                        while (i < formatString.Length && char.IsDigit(formatString[i]))
+                        {
+                            precisionValue = precisionValue * 10 + (formatString[i] - '0');
+                            i++;
+                        }
+                        precision = precisionValue;
+                    }
+                    
+                    while (i < formatString.Length && "hlLzjt".Contains(formatString[i]))
+                        i++;
+                    
+                    if (i < formatString.Length)
+                    {
+                        char type = formatString[i];
+                        specifiers.Add(new FormatSpecifier(type, precision));
+                    }
+                }
+            }
+            
+            return specifiers;
+        }
 
-        public override object? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context){
+        private string GetExpressionType(ExprParser.ExprContext expr)
+        {
+            if (expr is ExprParser.IntLiteralContext)
+            {
+                return "int";
+            }
+            else if (expr is ExprParser.DoubleLiteralContext)
+            {
+                return "double";
+            }
+            else if (expr is ExprParser.VarContext varCtx)
+            {
+                string varName = varCtx.ID().GetText();
+                var symbol = symbolTable.GetSymbol(varName);
+                return symbol?.type ?? "int";
+            }
+            else if (expr is ExprParser.AddSubContext || expr is ExprParser.MulDivContext)
+            {
+                return "int";
+            }
+            else if (expr is ExprParser.StringLiteralContext)
+            {
+                return "string";
+            }
+            
+            return "int";
+        }
+
+        private bool TypesAreCompatible(string exprType, char specifier)
+        {
+            return specifier switch
+            {
+                'd' or 'i'  => exprType == "int",
+                'f'  => exprType == "double" || exprType == "float",
+                'c' => exprType == "int" || exprType == "char",
+                's' => exprType == "string",
+                _ => false
+            };
+        }
+
+        public override object? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
+        {
             string formatString = context.STRING_LITERAL().GetText();
             formatString = formatString.Substring(1, formatString.Length - 2); // remove quotes
 
             int expectedArgs = CountFormatSpecifiers(formatString);
             int providedArgs = context.expr()?.Length ?? 0;
 
-            if(expectedArgs != providedArgs){
+            if (expectedArgs != providedArgs)
+            {
                 ReportError(context.Start.Line, $"scanf expects {expectedArgs} argument(s), but recieved {providedArgs}");
             }
 
-            if(context.expr() != null){
-                foreach(var expr in context.expr()){
+            if (context.expr() != null)
+            {
+                foreach (var expr in context.expr())
+                {
                     Visit(expr);
                 }
             }
