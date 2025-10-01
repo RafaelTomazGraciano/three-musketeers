@@ -19,6 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
+namespace Three_Musketeers.Grammar {
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -62,6 +63,18 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitFunc_body([NotNull] ExprParser.Func_bodyContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.printfStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.scanfStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.att"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -79,6 +92,13 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitArgs([NotNull] ExprParser.ArgsContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>StringLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -128,3 +148,4 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitType([NotNull] ExprParser.TypeContext context);
 }
+} // namespace Three_Musketeers.Grammar

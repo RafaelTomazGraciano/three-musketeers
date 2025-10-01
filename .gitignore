@@ -1,14 +1,82 @@
+# ============================================
 # Build results
+# ============================================
 [Dd]ebug/
+[Dd]ebugPublic/
 [Rr]elease/
+[Rr]eleases/
 x64/
+x86/
+[Ww]in32/
+[Aa]rm/
+[Aa]rm64/
 [Bb]in/
 [Oo]bj/
+[Ll]og/
+[Ll]ogs/
+bld/
+[Bb]uild/
 
-#ANTLR
+# ============================================
+# ANTLR Generated Files (IMPORTANTE!)
+# ============================================
+Grammar/                    # Arquivos gerados pelo ANTLR
 .antlr/
+*.interp                    # Arquivos de análise do ANTLR
+*.tokens                    # Definições de tokens
 
-# Visual Studio files
+# ============================================
+# .NET Core
+# ============================================
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/Properties/launchSettings.json
+
+# Arquivos de build .NET
+*.dll
+*.exe
+*.pdb
+*.cache
+*.ilk
+*.log
+*.tlog
+*.manifest
+*.res
+*.obj
+*.iobj
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# ============================================
+# NuGet
+# ============================================
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+.nuget/
+
+# ============================================
+# Visual Studio
+# ============================================
 .vs/
 *.user
 *.userosscache
@@ -19,24 +87,175 @@ x64/
 *.jfm
 *.pfx
 *.publishsettings
+*.pubxml
+*.azurePubxml
 
+# Visual Studio cache/options
+.vscode/
+*.code-workspace
+*.swp
+*.*~
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ============================================
 # ReSharper
+# ============================================
 _ReSharper*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
+_ReSharper.Caches/
 
-# .NET Core
-project.lock.json
-project.fragment.lock.json
-artifacts/
+# ============================================
+# Rider
+# ============================================
+.idea/
+*.sln.iml
+*.rider
 
-# Visual Studio Code
-.vscode/
+# ============================================
+# Compiled Output (seu compilador)
+# ============================================
+*.ll                        # Arquivos LLVM IR gerados
+*.bc                        # LLVM bitcode
+*.s                         # Assembly gerado
+*.o                         # Object files
+*.out                       # Executáveis compilados
+
+# ============================================
+# Test Results
+# ============================================
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.coverage
+*.coveragexml
+TestResults/
+*.testlog
+*.VisualState.xml
+
+# ============================================
+# Benchmark Results
+# ============================================
+BenchmarkDotNet.Artifacts/
+
+# ============================================
+# Windows
+# ============================================
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# ============================================
+# macOS
+# ============================================
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ============================================
+# Linux
+# ============================================
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~.nib
+local.properties
+*.launch
+.settings/
+.loadpath
+.recommenders
+.externalToolBuilders/
+*.launch
+
+# ============================================
+# Development Tools
+# ============================================
+.history/
 *.code-workspace
 
-# Windows
-Thumbs.db
-Desktop.ini
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
 
-# macOS
-.DS_Store
+# ============================================
+# Documentation
+# ============================================
+docs/_build/
+site/
+
+# ============================================
+# Environment & Secrets
+# ============================================
+.env
+.env.local
+.env.*.local
+*.env
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# ============================================
+# Database
+# ============================================
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
+log.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Custom (adicione suas próprias exclusões)
+# ============================================
+# Examples/output/          # Se você gerar arquivos de teste aqui
+# Tests/temp/               # Arquivos temporários de testes

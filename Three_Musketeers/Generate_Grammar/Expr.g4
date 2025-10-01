@@ -13,6 +13,8 @@ prog
 stm
     : expr EOL
     | att  EOL
+    |printfStatement
+    |scanfStatement
     | RETURN expr? EOL
     ;
 
@@ -22,6 +24,14 @@ function
 
 func_body
     : stm*
+    ;
+
+printfStatement
+    : 'printf' '(' STRING_LITERAL (',' expr)* ')' EOL
+    ;
+
+scanfStatement
+    : 'scanf' '(' STRING_LITERAL (',' expr)* ')' EOL
     ;
 
 att
@@ -43,6 +53,7 @@ expr
     | ID                       # Var
     | INT                      # IntLiteral
     | DOUBLE                   # DoubleLiteral
+    |STRING_LITERAL            # StringLiteral
     ;
 
 type
@@ -71,3 +82,4 @@ EOL           : ';';
 WS            : [ \t\r\n]+ -> skip;
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
+STRING_LITERAL : '"' (~["\\\r\n] | '\\' .)* '"';

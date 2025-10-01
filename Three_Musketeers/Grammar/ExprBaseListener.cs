@@ -19,6 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
+namespace Three_Musketeers.Grammar {
 
 using Antlr4.Runtime.Misc;
 using IErrorNode = Antlr4.Runtime.Tree.IErrorNode;
@@ -96,6 +97,30 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitFunc_body([NotNull] ExprParser.Func_bodyContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.printfStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPrintfStatement([NotNull] ExprParser.PrintfStatementContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.printfStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.scanfStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterScanfStatement([NotNull] ExprParser.ScanfStatementContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.scanfStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitScanfStatement([NotNull] ExprParser.ScanfStatementContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.att"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -131,6 +156,20 @@ public partial class ExprBaseListener : IExprListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitArgs([NotNull] ExprParser.ArgsContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>StringLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterStringLiteral([NotNull] ExprParser.StringLiteralContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>StringLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitStringLiteral([NotNull] ExprParser.StringLiteralContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -241,3 +280,4 @@ public partial class ExprBaseListener : IExprListener {
 	/// <remarks>The default implementation does nothing.</remarks>
 	public virtual void VisitErrorNode([NotNull] IErrorNode node) { }
 }
+} // namespace Three_Musketeers.Grammar
