@@ -8,13 +8,25 @@ namespace Three_Musketeers.Visitors
     {
         private readonly VariableAssignmentCodeGenerator variableAssignmentCodeGenerator;
         private readonly PrintfCodeGenerator printfCodeGenerator;
+        private readonly ScanfCodeGenerator scanfCodeGenerator;
+        private readonly StringCodeGenerator stringCodeGenerator;
+        private readonly GetsCodeGenerator getsCodeGenerator;
 
         public CodeGenerator()
         {
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
-                mainBody, variables, registerTypes, NextRegister, GetLLVMType, Visit);
+                mainBody, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit);
+
             printfCodeGenerator = new PrintfCodeGenerator(
                 globalStrings, mainBody, registerTypes, NextRegister, NextStringLabel, Visit);
+
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, mainBody, variables,
+                registerTypes, NextRegister, NextStringLabel, GetLLVMType);
+
+            stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
+            
+            getsCodeGenerator = new GetsCodeGenerator(declarations, mainBody, variables, NextRegister);
+
         }
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -41,10 +53,26 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitVar(context);
         }
 
+        public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
+        {
+            return stringCodeGenerator.VisitStringLiteral(context);
+        }
+
         public override string? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
         {
             return printfCodeGenerator.VisitPrintfStatement(context);
         }
+
+        public override string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
+        {
+            return scanfCodeGenerator.VisitScanfStatement(context);
+        }
+        
+        public override string? VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
+        {
+            return getsCodeGenerator.VisitGetsStatement(context);
+        }
+
     }
 }
 

@@ -73,6 +73,18 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitStm([NotNull] ExprParser.StmContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.declaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterDeclaration([NotNull] ExprParser.DeclarationContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.declaration"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitDeclaration([NotNull] ExprParser.DeclarationContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.function"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -120,6 +132,18 @@ public partial class ExprBaseListener : IExprListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitScanfStatement([NotNull] ExprParser.ScanfStatementContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.getsStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterGetsStatement([NotNull] ExprParser.GetsStatementContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.getsStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitGetsStatement([NotNull] ExprParser.GetsStatementContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.att"/>.
 	/// <para>The default implementation does nothing.</para>

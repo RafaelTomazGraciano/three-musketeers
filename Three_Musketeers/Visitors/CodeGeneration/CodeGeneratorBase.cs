@@ -32,9 +32,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         public override string VisitStart(ExprParser.StartContext context)
         {
-            // declare printf
+
             declarations.AppendLine("declare i32 @printf(i8*, ...)");
-            declarations.AppendLine();
+            declarations.AppendLine("declare i32 @scanf(i8*, ...)");
+            declarations.AppendLine("declare i8* @strcpy(i8*, i8*)");
 
             base.VisitStart(context);
 

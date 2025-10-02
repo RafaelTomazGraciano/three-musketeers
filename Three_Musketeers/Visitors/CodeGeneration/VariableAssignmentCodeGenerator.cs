@@ -9,6 +9,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
     public class VariableAssignmentCodeGenerator
     {
         private readonly StringBuilder mainBody;
+        private readonly StringBuilder declarations;
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
@@ -17,6 +18,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         public VariableAssignmentCodeGenerator(
             StringBuilder mainBody,
+            StringBuilder declarations,
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
@@ -24,6 +26,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             Func<ExprParser.ExprContext, string> visitExpression)
         {
             this.mainBody = mainBody;
+            this.declarations = declarations;
             this.variables = variables;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
@@ -33,19 +36,52 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         public string? VisitAtt([NotNull] ExprParser.AttContext context)
         {
-            string type = context.type().GetText();
+            string varType = context.type().GetText();
             string varName = context.ID().GetText();
-            string llvmType = getLLVMType(type);
+            string llvmType = getLLVMType(varType);
+            string register = nextRegister();
 
-            string allocReg = $"%{varName}";
-            mainBody.AppendLine($"  {allocReg} = alloca {llvmType}");
+            if (varType == "string")
+            {
+                mainBody.AppendLine($"  {register} = alloca [256 x i8], align 1");
 
-            var variable = new Variable(varName, type, llvmType, allocReg);
-            variables[varName] = variable;
+                variables[varName] = new Variable(varName, varType, "[256 x i8]", register);
 
-            string value = visitExpression(context.expr());
+                if (context.expr() != null)
+                {
+                    string exprResult = visitExpression(context.expr());
+                    
+                    if (registerTypes.ContainsKey(exprResult) && registerTypes[exprResult] == "i8*")
+                    {
+                        if (!declarations.ToString().Contains("declare i8* @strcpy"))
+                        {
+                            declarations.AppendLine("declare i8* @strcpy(i8*, i8*)");
+                        }
 
-            mainBody.AppendLine($"  store {llvmType} {value}, {llvmType}* {allocReg}");
+                        string destPtr = nextRegister();
+                        mainBody.AppendLine($"  {destPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {register}, i32 0, i32 0");
+                        
+                        string srcPtr = nextRegister();
+
+                        mainBody.AppendLine($"  {srcPtr} = bitcast i8* getelementptr inbounds ([256 x i8], [256 x i8]* {exprResult}, i32 0, i32 0) to i8*");
+
+                        string copyResult = nextRegister();
+                        mainBody.AppendLine($"  {copyResult} = call i8* @strcpy(i8* {destPtr}, i8* {srcPtr})");
+                    }
+                }
+            }
+            else
+            {
+                mainBody.AppendLine($"  {register} = alloca {llvmType}, align 4");
+
+                variables[varName] = new Variable(varName, varType, llvmType, register);
+
+                if (context.expr() != null)
+                {
+                    string value = visitExpression(context.expr());
+                    mainBody.AppendLine($"  store {llvmType} {value}, {llvmType}* {register}, align 4");
+                }
+            }
 
             return null;
         }
@@ -53,7 +89,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         public string VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
-
+            
             if (!variables.ContainsKey(varName))
             {
                 throw new Exception($"Variable '{varName}' not found");
@@ -61,12 +97,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
             Variable variable = variables[varName];
 
-            string loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}");
+            if (variable.type == "string")
+            {
+                string ptrReg = nextRegister();
+                mainBody.AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
+                registerTypes[ptrReg] = "i8*";
+                return ptrReg;
+            }
 
+            string loadReg = nextRegister();
+            mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align 4");
             registerTypes[loadReg] = variable.LLVMType;
             return loadReg;
         }
     }
 }
-

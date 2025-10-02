@@ -1,4 +1,11 @@
-int x = 42;
-double y = 3.14;
-printf("Hello, World!\n");
-printf("\tInt: %d, Double: %.4f\n", x, y);
+string nome = "";
+int quantity = 0;
+double value = 0.0;
+printf("Enter the name of the book: ");
+gets(nome);
+printf("Enter the quantity of books: ");
+scanf(quantity);
+printf("Enter the value of the book: ");
+scanf(value);
+printf("   --- Book Data ---\n");
+printf("Name: %s | Quantity: %d | Value: %.2f\n", nome, quantity, value);

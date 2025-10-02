@@ -62,6 +62,16 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitStm([NotNull] ExprParser.StmContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.declaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterDeclaration([NotNull] ExprParser.DeclarationContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.declaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitDeclaration([NotNull] ExprParser.DeclarationContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.function"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -101,6 +111,16 @@ public interface IExprListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitScanfStatement([NotNull] ExprParser.ScanfStatementContext context);
+	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.getsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterGetsStatement([NotNull] ExprParser.GetsStatementContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.getsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitGetsStatement([NotNull] ExprParser.GetsStatementContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.att"/>.
 	/// </summary>

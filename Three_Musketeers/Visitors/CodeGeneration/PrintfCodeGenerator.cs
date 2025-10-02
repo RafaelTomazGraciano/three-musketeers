@@ -1,8 +1,6 @@
 using Antlr4.Runtime.Misc;
-using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
-using Three_Musketeers.Models;
 using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration

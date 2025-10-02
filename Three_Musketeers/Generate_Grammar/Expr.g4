@@ -12,10 +12,16 @@ prog
 
 stm
     : expr EOL
+    | declaration EOL
     | att  EOL
-    |printfStatement
-    |scanfStatement
+    | printfStatement
+    | scanfStatement
+    | getsStatement
     | RETURN expr? EOL
+    ;
+
+    declaration
+    : type ID
     ;
 
 function
@@ -31,7 +37,11 @@ printfStatement
     ;
 
 scanfStatement
-    : 'scanf' '(' STRING_LITERAL (',' expr)* ')' EOL
+    : 'scanf' '(' ID (',' ID)* ')' EOL
+    ;
+
+getsStatement
+    : 'gets' '(' ID ')' EOL
     ;
 
 att

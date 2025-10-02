@@ -12,35 +12,46 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     {
 
         private readonly Action<int, string> reportError;
-        private readonly Func<ExprParser.ExprContext, object?> visitExpression;
+        private readonly SymbolTable symbolTable;
 
         public ScanfSemanticAnalyzer(
             Action<int, string> reportError,
-            Func<ExprParser.ExprContext, object?> visitExpression)
+            SymbolTable symbolTable)
         {
             this.reportError = reportError;
-            this.visitExpression = visitExpression;
+            this.symbolTable = symbolTable;
         }
 
         public object? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
         {
-            string formatString = context.STRING_LITERAL().GetText();
-            formatString = formatString.Substring(1, formatString.Length - 2); // remove quotes
+            var ids = context.ID();
 
-            int expectedArgs = CountFormatSpecifier.Count(formatString);
-            int providedArgs = context.expr()?.Length ?? 0;
-
-            if (expectedArgs != providedArgs)
+            if (ids.Length == 0)
             {
-                reportError(context.Start.Line, $"scanf expects {expectedArgs} argument(s), but received {providedArgs}");
+                reportError(context.Start.Line, "scanf requires at least one variable");
+                return null;
             }
 
-            if (context.expr() != null)
+            foreach (var idToken in context.ID())
             {
-                foreach (var expr in context.expr())
+                string varName = idToken.GetText();
+                Symbol? symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol == null)
                 {
-                    visitExpression(expr);
+                    reportError(context.Start.Line,
+                    $"Variable '{varName}' not declared before use in scanf");
+                    continue;
                 }
+
+                if (symbol.type == "string")
+                {
+                    reportError(context.Start.Line,
+                        $"scanf() cannot be used with string variables. Use gets() for '{varName}' instead");
+                    continue;
+                }
+
+                symbolTable.MarkInitializated(varName);
             }
             return null;
         }

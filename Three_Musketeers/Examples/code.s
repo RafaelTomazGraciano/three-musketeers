@@ -1,25 +1,49 @@
 	.text
 	.file	"code.ll"
-	.section	.rodata.cst8,"aM",@progbits,8
-	.p2align	3, 0x0                          # -- Begin function main
-.LCPI0_0:
-	.quad	0x40091eb851eb851f              # double 3.1400000000000001
-	.text
-	.globl	main
+	.globl	main                            # -- Begin function main
 	.p2align	4, 0x90
 	.type	main,@function
 main:                                   # @main
 # %bb.0:                                # %entry
-	pushq	%rax
+	pushq	%rbx
+	subq	$272, %rsp                      # imm = 0x110
+	movb	$0, 16(%rsp)
+	movl	$0, 4(%rsp)
+	movq	$0, 8(%rsp)
+	movl	$.L.str.1, %edi
+	xorl	%eax, %eax
+	callq	printf@PLT
+	movq	stdin@GOTPCREL(%rip), %rax
+	movq	(%rax), %rdx
+	leaq	16(%rsp), %rbx
+	movq	%rbx, %rdi
+	movl	$256, %esi                      # imm = 0x100
+	callq	fgets@PLT
+	movl	$.L.str.2, %edi
+	xorl	%eax, %eax
+	callq	printf@PLT
+	leaq	4(%rsp), %rsi
+	movl	$.L.str.3, %edi
+	xorl	%eax, %eax
+	callq	scanf@PLT
+	movl	$.L.str.4, %edi
+	xorl	%eax, %eax
+	callq	printf@PLT
+	leaq	8(%rsp), %rsi
+	movl	$.L.str.5, %edi
+	xorl	%eax, %eax
+	callq	scanf@PLT
 	movl	$.Lstr, %edi
 	callq	puts@PLT
-	movsd	.LCPI0_0(%rip), %xmm0           # xmm0 = [3.1400000000000001E+0,0.0E+0]
-	movl	$.L.str.1, %edi
-	movl	$42, %esi
+	movl	4(%rsp), %edx
+	movsd	8(%rsp), %xmm0                  # xmm0 = mem[0],zero
+	movl	$.L.str.7, %edi
+	movq	%rbx, %rsi
 	movb	$1, %al
 	callq	printf@PLT
 	xorl	%eax, %eax
-	popq	%rcx
+	addq	$272, %rsp                      # imm = 0x110
+	popq	%rbx
 	retq
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
@@ -28,13 +52,45 @@ main:                                   # @main
 	.section	.rodata.str1.16,"aMS",@progbits,1
 	.p2align	4, 0x0
 .L.str.1:
-	.asciz	"\tInt: %d, Double: %.4f\n"
-	.size	.L.str.1, 24
+	.asciz	"Enter the name of the book: "
+	.size	.L.str.1, 29
+
+	.type	.L.str.2,@object                # @.str.2
+	.p2align	4, 0x0
+.L.str.2:
+	.asciz	"Enter the quantity of books: "
+	.size	.L.str.2, 30
+
+	.type	.L.str.3,@object                # @.str.3
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.L.str.3:
+	.asciz	"%d"
+	.size	.L.str.3, 3
+
+	.type	.L.str.4,@object                # @.str.4
+	.section	.rodata.str1.16,"aMS",@progbits,1
+	.p2align	4, 0x0
+.L.str.4:
+	.asciz	"Enter the value of the book: "
+	.size	.L.str.4, 30
+
+	.type	.L.str.5,@object                # @.str.5
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.L.str.5:
+	.asciz	"%lf"
+	.size	.L.str.5, 4
+
+	.type	.L.str.7,@object                # @.str.7
+	.section	.rodata.str1.16,"aMS",@progbits,1
+	.p2align	4, 0x0
+.L.str.7:
+	.asciz	"Name: %s | Quantity: %d | Value: %.2f\n"
+	.size	.L.str.7, 39
 
 	.type	.Lstr,@object                   # @str
 	.section	.rodata.str1.1,"aMS",@progbits,1
 .Lstr:
-	.asciz	"Hello, World!"
-	.size	.Lstr, 14
+	.asciz	"   --- Book Data ---"
+	.size	.Lstr, 21
 
 	.section	".note.GNU-stack","",@progbits

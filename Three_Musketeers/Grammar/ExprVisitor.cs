@@ -51,6 +51,12 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitStm([NotNull] ExprParser.StmContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.declaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDeclaration([NotNull] ExprParser.DeclarationContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.function"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -74,6 +80,12 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.getsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.att"/>.
 	/// </summary>

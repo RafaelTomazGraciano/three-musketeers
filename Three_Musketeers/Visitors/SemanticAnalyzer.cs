@@ -10,13 +10,15 @@ namespace Three_Musketeers.Visitors
         private readonly VariableAssignmentSemanticAnalyzer variableAssignmentSemanticAnalyzer;
         private readonly PrintfSemanticAnalyzer printfSemanticAnalyzer;
         private readonly ScanfSemanticAnalyzer scanfSemanticAnalyzer;
+        private readonly GetsSemanticAnalyzer getsSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
-            variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer( symbolTable,
+            variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
                 ReportError, ReportWarning, Visit);
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
-            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, Visit);
+            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable);
+            getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable);
         }
 
         public override object? VisitStart([NotNull] ExprParser.StartContext context)
@@ -34,6 +36,16 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentSemanticAnalyzer.VisitAtt(context);
         }
 
+        public override object? VisitVar([NotNull] ExprParser.VarContext context)
+        {
+            return variableAssignmentSemanticAnalyzer.VisitVar(context);
+        }
+
+        public override object VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
+        {
+            return "string";
+        }
+
         public override object? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
         {
             return printfSemanticAnalyzer.VisitPrintfStatement(context);
@@ -44,9 +56,9 @@ namespace Three_Musketeers.Visitors
             return scanfSemanticAnalyzer.VisitScanfStatement(context);
         }
 
-        public override object? VisitVar([NotNull] ExprParser.VarContext context)
+        public override object VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
         {
-            return variableAssignmentSemanticAnalyzer.VisitVar(context);
+            return getsSemanticAnalyzer.VisitGetsStatement(context);
         }
     }
 }
