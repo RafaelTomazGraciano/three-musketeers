@@ -17,6 +17,7 @@ stm
     | printfStatement
     | scanfStatement
     | getsStatement
+    | putsStatement
     | RETURN expr? EOL
     ;
 
@@ -42,6 +43,10 @@ scanfStatement
 
 getsStatement
     : 'gets' '(' ID ')' EOL
+    ;
+
+putsStatement
+    : 'puts' '(' (ID | STRING_LITERAL) ')' EOL
     ;
 
 att

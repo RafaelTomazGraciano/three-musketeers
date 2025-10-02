@@ -6,7 +6,7 @@ using Three_Musketeers.Grammar;
 namespace Three_Musketeers{
     public class Program
     {
-        public static void Main()
+        public static int Main()
         {
             string filePath = "Examples/code.m3";
 
@@ -30,7 +30,7 @@ namespace Three_Musketeers{
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Compilation failed due to syntax errors");
                     Console.ResetColor();
-                    return;
+                    return 1;
                 }
 
                 //Semantic Analysis
@@ -42,7 +42,7 @@ namespace Three_Musketeers{
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Compilation failed due to semantic errors");
                     Console.ResetColor();
-                    return;
+                    return 1;
                 }
 
                 //Intermediate Code generation
@@ -51,7 +51,7 @@ namespace Three_Musketeers{
 
                 string outputPath = Path.ChangeExtension(filePath, ".ll");
                 File.WriteAllText(outputPath, llvmCode);
-
+                return 0;
             }
             catch (Exception ex)
             {
@@ -60,6 +60,7 @@ namespace Three_Musketeers{
                 Console.WriteLine($"   {ex.Message}");
                 Console.WriteLine(ex.StackTrace);
                 Console.ResetColor();
+                return 1;
             }
         }
     }

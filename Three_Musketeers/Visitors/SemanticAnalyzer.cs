@@ -11,6 +11,7 @@ namespace Three_Musketeers.Visitors
         private readonly PrintfSemanticAnalyzer printfSemanticAnalyzer;
         private readonly ScanfSemanticAnalyzer scanfSemanticAnalyzer;
         private readonly GetsSemanticAnalyzer getsSemanticAnalyzer;
+        private readonly PutsSemanticAnalyzer putsSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
@@ -19,6 +20,7 @@ namespace Three_Musketeers.Visitors
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
             scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable);
             getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable);
+            putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable);
         }
 
         public override object? VisitStart([NotNull] ExprParser.StartContext context)
@@ -56,9 +58,14 @@ namespace Three_Musketeers.Visitors
             return scanfSemanticAnalyzer.VisitScanfStatement(context);
         }
 
-        public override object VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
+        public override object? VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
         {
             return getsSemanticAnalyzer.VisitGetsStatement(context);
+        }
+
+        public override object? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
+        {
+            return putsSemanticAnalyzer.VisitPutsStatement(context);
         }
     }
 }

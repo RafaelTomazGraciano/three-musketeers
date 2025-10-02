@@ -87,6 +87,12 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.putsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.att"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

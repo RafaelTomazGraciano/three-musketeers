@@ -122,6 +122,16 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitGetsStatement([NotNull] ExprParser.GetsStatementContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.putsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterPutsStatement([NotNull] ExprParser.PutsStatementContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.putsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitPutsStatement([NotNull] ExprParser.PutsStatementContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.att"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>

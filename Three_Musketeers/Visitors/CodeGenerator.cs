@@ -11,6 +11,7 @@ namespace Three_Musketeers.Visitors
         private readonly ScanfCodeGenerator scanfCodeGenerator;
         private readonly StringCodeGenerator stringCodeGenerator;
         private readonly GetsCodeGenerator getsCodeGenerator;
+        private readonly PutsCodeGenerator putsCodeGenerator;
 
         public CodeGenerator()
         {
@@ -24,9 +25,9 @@ namespace Three_Musketeers.Visitors
                 registerTypes, NextRegister, NextStringLabel, GetLLVMType);
 
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
-            
-            getsCodeGenerator = new GetsCodeGenerator(declarations, mainBody, variables, NextRegister);
 
+            getsCodeGenerator = new GetsCodeGenerator(declarations, mainBody, variables, NextRegister);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, mainBody, variables, NextRegister);
         }
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -67,10 +68,15 @@ namespace Three_Musketeers.Visitors
         {
             return scanfCodeGenerator.VisitScanfStatement(context);
         }
-        
+
         public override string? VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
         {
             return getsCodeGenerator.VisitGetsStatement(context);
+        }
+        
+        public override string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
+        {
+            return putsCodeGenerator.VisitPutsStatement(context);
         }
 
     }

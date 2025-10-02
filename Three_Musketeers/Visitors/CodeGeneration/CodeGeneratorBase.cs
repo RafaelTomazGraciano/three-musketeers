@@ -4,7 +4,7 @@ using Three_Musketeers.Models;
 
 namespace Three_Musketeers.Visitors.CodeGeneration
 {
-    public abstract class CodeGeneratorBase : ExprBaseVisitor<string>
+    public abstract class CodeGeneratorBase : ExprBaseVisitor<string?>
     {
         protected StringBuilder globalStrings = new StringBuilder();
         protected StringBuilder declarations = new StringBuilder();

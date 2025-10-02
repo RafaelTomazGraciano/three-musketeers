@@ -145,6 +145,18 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitGetsStatement([NotNull] ExprParser.GetsStatementContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.putsStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterPutsStatement([NotNull] ExprParser.PutsStatementContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.putsStatement"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitPutsStatement([NotNull] ExprParser.PutsStatementContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.att"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
