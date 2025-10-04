@@ -33,6 +33,11 @@ namespace Three_Musketeers.Visitors
             return base.VisitProg(context);
         }
 
+        public override object? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        {
+            return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
+        }
+
         public override object? VisitAtt([NotNull] ExprParser.AttContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitAtt(context);

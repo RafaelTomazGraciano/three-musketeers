@@ -23,8 +23,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             {
                 "int" => "i32",
                 "double" => "double",
-                "float" => "float",
                 "bool" => "i1",
+                "char" => "i8",
                 "string" => "i8*",
                 _ => "i32"
             };
@@ -46,15 +46,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
             if (globalStrings.Length > 0)
             {
-                finalCode.Append(globalStrings.ToString());
+                finalCode.Append(globalStrings);
                 finalCode.AppendLine();
             }
 
-            finalCode.Append(declarations.ToString());
+            finalCode.Append(declarations);
 
             finalCode.AppendLine("define i32 @main() {");
             finalCode.AppendLine("entry:");
-            finalCode.Append(mainBody.ToString());
+            finalCode.Append(mainBody);
             finalCode.AppendLine("  ret i32 0");
             finalCode.AppendLine("}");
 

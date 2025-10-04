@@ -14,6 +14,7 @@ stm
     : expr EOL
     | declaration EOL
     | att  EOL
+    | att_var EOL
     | printfStatement
     | scanfStatement
     | getsStatement
@@ -22,7 +23,7 @@ stm
     ;
 
     declaration
-    : type ID
+    : type ID index*
     ;
 
 function
@@ -50,7 +51,12 @@ putsStatement
     ;
 
 att
-    : type ID '=' expr
+    : type? ID '=' expr
+    ;
+
+att_var 
+    : ID index+ '=' expr                          #SingleAtt
+//  | type ID index+ '=' '{' expr (',' expr)* '}' #MultipleAtt
     ;
 
 new_type
@@ -61,14 +67,22 @@ args
     : type ID (',' type ID)*
     ;
 
+index
+    : '[' INT ']'
+    ;
+
 expr
     : expr ('*'|'/') expr      # MulDiv
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
     | ID                       # Var
+    | ID index+                # VarArray
     | INT                      # IntLiteral
     | DOUBLE                   # DoubleLiteral
-    |STRING_LITERAL            # StringLiteral
+    | STRING_LITERAL           # StringLiteral
+    | CHAR_LITERAL             # CharLiteral
+    | TRUE                     # TrueLiteral
+    | FALSE                    # FalseLiteral
     ;
 
 type
@@ -97,4 +111,5 @@ EOL           : ';';
 WS            : [ \t\r\n]+ -> skip;
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
-STRING_LITERAL : '"' (~["\\\r\n] | '\\' .)* '"';
+STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
+CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';

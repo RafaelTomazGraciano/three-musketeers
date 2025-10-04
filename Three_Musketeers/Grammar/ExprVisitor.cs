@@ -99,6 +99,13 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitAtt([NotNull] ExprParser.AttContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>SingleAtt</c>
+	/// labeled alternative in <see cref="ExprParser.att_var"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSingleAtt([NotNull] ExprParser.SingleAttContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.new_type"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -111,12 +118,39 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitArgs([NotNull] ExprParser.ArgsContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.index"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIndex([NotNull] ExprParser.IndexContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>VarArray</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitVarArray([NotNull] ExprParser.VarArrayContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>StringLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>CharLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitCharLiteral([NotNull] ExprParser.CharLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -159,6 +193,13 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.type"/>.
 	/// </summary>

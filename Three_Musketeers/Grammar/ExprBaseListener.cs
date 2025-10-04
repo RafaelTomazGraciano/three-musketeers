@@ -169,6 +169,20 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitAtt([NotNull] ExprParser.AttContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>SingleAtt</c>
+	/// labeled alternative in <see cref="ExprParser.att_var"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterSingleAtt([NotNull] ExprParser.SingleAttContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>SingleAtt</c>
+	/// labeled alternative in <see cref="ExprParser.att_var"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitSingleAtt([NotNull] ExprParser.SingleAttContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.new_type"/>.
 	/// <para>The default implementation does nothing.</para>
 	/// </summary>
@@ -193,6 +207,32 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitArgs([NotNull] ExprParser.ArgsContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.index"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterIndex([NotNull] ExprParser.IndexContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.index"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitIndex([NotNull] ExprParser.IndexContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>VarArray</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterVarArray([NotNull] ExprParser.VarArrayContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>VarArray</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitVarArray([NotNull] ExprParser.VarArrayContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by the <c>StringLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -206,6 +246,34 @@ public partial class ExprBaseListener : IExprListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitStringLiteral([NotNull] ExprParser.StringLiteralContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>CharLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterCharLiteral([NotNull] ExprParser.CharLiteralContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>CharLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitCharLiteral([NotNull] ExprParser.CharLiteralContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterTrueLiteral([NotNull] ExprParser.TrueLiteralContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -290,6 +358,20 @@ public partial class ExprBaseListener : IExprListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterFalseLiteral([NotNull] ExprParser.FalseLiteralContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.type"/>.
 	/// <para>The default implementation does nothing.</para>

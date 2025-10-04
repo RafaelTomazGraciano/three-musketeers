@@ -10,6 +10,7 @@ namespace Three_Musketeers.Visitors
         private readonly PrintfCodeGenerator printfCodeGenerator;
         private readonly ScanfCodeGenerator scanfCodeGenerator;
         private readonly StringCodeGenerator stringCodeGenerator;
+        private readonly CharCodeGenerator charCodeGenerator;
         private readonly GetsCodeGenerator getsCodeGenerator;
         private readonly PutsCodeGenerator putsCodeGenerator;
 
@@ -25,7 +26,7 @@ namespace Three_Musketeers.Visitors
                 registerTypes, NextRegister, NextStringLabel, GetLLVMType);
 
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
-
+            charCodeGenerator = new CharCodeGenerator(registerTypes);
             getsCodeGenerator = new GetsCodeGenerator(declarations, mainBody, variables, NextRegister);
             putsCodeGenerator = new PutsCodeGenerator(declarations, mainBody, variables, NextRegister);
         }
@@ -33,6 +34,11 @@ namespace Three_Musketeers.Visitors
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
         {
             return variableAssignmentCodeGenerator.VisitAtt(context);
+        }
+
+        public override string VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
+        {
+            return variableAssignmentCodeGenerator.VisitSingleAtt(context);
         }
 
         public override string VisitIntLiteral([NotNull] ExprParser.IntLiteralContext context)
@@ -49,9 +55,36 @@ namespace Three_Musketeers.Visitors
             return value;
         }
 
+        public override string VisitCharLiteral([NotNull] ExprParser.CharLiteralContext context)
+        {
+            return charCodeGenerator.VisitCharLiteral(context);
+        }
+
+        public override string VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context)
+        {
+            registerTypes["true"] = "i1";
+            return "1";
+        }
+
+        public override string VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context)
+        {
+            registerTypes["false"] = "i1";
+            return "0";
+        }
+
         public override string VisitVar([NotNull] ExprParser.VarContext context)
         {
             return variableAssignmentCodeGenerator.VisitVar(context);
+        }
+
+        public override string VisitVarArray([NotNull] ExprParser.VarArrayContext context)
+        {
+            return variableAssignmentCodeGenerator.VisitVarArray(context);
+        }
+
+        public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        {
+            return variableAssignmentCodeGenerator.VisitDec(context);
         }
 
         public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
@@ -73,12 +106,11 @@ namespace Three_Musketeers.Visitors
         {
             return getsCodeGenerator.VisitGetsStatement(context);
         }
-        
+
         public override string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
         {
             return putsCodeGenerator.VisitPutsStatement(context);
         }
-
     }
 }
 

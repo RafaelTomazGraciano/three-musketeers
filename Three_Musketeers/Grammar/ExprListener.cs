@@ -142,6 +142,18 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitAtt([NotNull] ExprParser.AttContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>SingleAtt</c>
+	/// labeled alternative in <see cref="ExprParser.att_var"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterSingleAtt([NotNull] ExprParser.SingleAttContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>SingleAtt</c>
+	/// labeled alternative in <see cref="ExprParser.att_var"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitSingleAtt([NotNull] ExprParser.SingleAttContext context);
+	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.new_type"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -162,6 +174,28 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitArgs([NotNull] ExprParser.ArgsContext context);
 	/// <summary>
+	/// Enter a parse tree produced by <see cref="ExprParser.index"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterIndex([NotNull] ExprParser.IndexContext context);
+	/// <summary>
+	/// Exit a parse tree produced by <see cref="ExprParser.index"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitIndex([NotNull] ExprParser.IndexContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>VarArray</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterVarArray([NotNull] ExprParser.VarArrayContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>VarArray</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitVarArray([NotNull] ExprParser.VarArrayContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>StringLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -173,6 +207,30 @@ public interface IExprListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>CharLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterCharLiteral([NotNull] ExprParser.CharLiteralContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>CharLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitCharLiteral([NotNull] ExprParser.CharLiteralContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -245,6 +303,18 @@ public interface IExprListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.type"/>.
 	/// </summary>

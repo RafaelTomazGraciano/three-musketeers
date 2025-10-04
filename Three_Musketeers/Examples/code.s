@@ -1,26 +1,19 @@
-	.text
 	.file	"code.ll"
-	.globl	main                            # -- Begin function main
-	.p2align	4, 0x90
+	.section	.rodata.cst8,"aM",@progbits,8
+	.p2align	3, 0x0                          # -- Begin function main
+.LCPI0_0:
+	.quad	0x4014000000000000              # double 5
+	.text
+	.globl	main
+	.p2align	4
 	.type	main,@function
 main:                                   # @main
 # %bb.0:                                # %entry
 	pushq	%rbx
-	subq	$528, %rsp                      # imm = 0x210
-	movabsq	$32495402141115755, %rax        # imm = 0x7372656574656B
-	movq	%rax, 40(%rsp)
-	movabsq	$8319640688172298856, %rax      # imm = 0x73754D2065657268
-	movq	%rax, 32(%rsp)
-	movabsq	$6061956597739974516, %rax      # imm = 0x5420656874206F74
-	movq	%rax, 24(%rsp)
-	movabsq	$2334392307038315863, %rax      # imm = 0x20656D6F636C6557
-	movq	%rax, 16(%rsp)
-	movb	$0, 272(%rsp)
-	movl	$0, 4(%rsp)
-	movq	$0, 8(%rsp)
-	leaq	16(%rsp), %rdi
+	subq	$32, %rsp
+	leaq	24(%rsp), %rdi
 	callq	puts@PLT
-	movl	$.L.str.puts.dc8be8f7, %edi
+	movl	$.L.str.puts.bd829a2e, %edi
 	callq	puts@PLT
 	movl	$.Lstr, %edi
 	callq	puts@PLT
@@ -29,7 +22,7 @@ main:                                   # @main
 	callq	printf@PLT
 	movq	stdin@GOTPCREL(%rip), %rax
 	movq	(%rax), %rdx
-	leaq	272(%rsp), %rbx
+	leaq	16(%rsp), %rbx
 	movq	%rbx, %rdi
 	movl	$256, %esi                      # imm = 0x100
 	callq	fgets@PLT
@@ -47,7 +40,7 @@ main:                                   # @main
 	movl	$.L.str.7, %edi
 	xorl	%eax, %eax
 	callq	scanf@PLT
-	movl	$.L.str.puts.9639a40c, %edi
+	movl	$.L.str.puts.618f3237, %edi
 	callq	puts@PLT
 	movl	4(%rsp), %edx
 	movsd	8(%rsp), %xmm0                  # xmm0 = mem[0],zero
@@ -55,19 +48,27 @@ main:                                   # @main
 	movq	%rbx, %rsi
 	movb	$1, %al
 	callq	printf@PLT
+	movl	$.L.str.9, %edi
+	xorl	%esi, %esi
 	xorl	%eax, %eax
-	addq	$528, %rsp                      # imm = 0x210
+	callq	printf@PLT
+	movabsq	$4617315517961601024, %rax      # imm = 0x4014000000000000
+	movq	%rax, 8(%rsp)
+	movsd	.LCPI0_0(%rip), %xmm0           # xmm0 = [5.0E+0,0.0E+0]
+	movl	$.L.str.10, %edi
+	movb	$1, %al
+	callq	printf@PLT
+	movl	$.L.str.11, %edi
+	movl	$97, %esi
+	xorl	%eax, %eax
+	callq	printf@PLT
+	xorl	%eax, %eax
+	addq	$32, %rsp
 	popq	%rbx
 	retq
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
                                         # -- End function
-	.type	.L.str.0,@object                # @.str.0
-	.section	.rodata.str1.1,"aMS",@progbits,1
-.L.str.0:
-	.asciz	"Welcome to the Three Musketeers"
-	.size	.L.str.0, 32
-
 	.type	.L.str.3,@object                # @.str.3
 	.section	.rodata.str1.16,"aMS",@progbits,1
 	.p2align	4, 0x0
@@ -107,17 +108,37 @@ main:                                   # @main
 	.asciz	"Name: %s | Quantity: %d | Value: %.2f\n"
 	.size	.L.str.8, 39
 
-	.type	.L.str.puts.dc8be8f7,@object    # @.str.puts.dc8be8f7
-	.p2align	4, 0x0
-.L.str.puts.dc8be8f7:
-	.asciz	"Please enter the details of the book"
-	.size	.L.str.puts.dc8be8f7, 37
+	.type	.L.str.9,@object                # @.str.9
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.L.str.9:
+	.asciz	"temp[1]: %d\n"
+	.size	.L.str.9, 13
 
-	.type	.L.str.puts.9639a40c,@object    # @.str.puts.9639a40c
+	.type	.L.str.10,@object               # @.str.10
+	.section	.rodata.str1.16,"aMS",@progbits,1
 	.p2align	4, 0x0
-.L.str.puts.9639a40c:
+.L.str.10:
+	.asciz	"New value: %.2f\n"
+	.size	.L.str.10, 17
+
+	.type	.L.str.11,@object               # @.str.11
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.L.str.11:
+	.asciz	"Character %c!\n"
+	.size	.L.str.11, 15
+
+	.type	.L.str.puts.bd829a2e,@object    # @.str.puts.bd829a2e
+	.section	.rodata.str1.16,"aMS",@progbits,1
+	.p2align	4, 0x0
+.L.str.puts.bd829a2e:
+	.asciz	"Please enter the details of the book"
+	.size	.L.str.puts.bd829a2e, 37
+
+	.type	.L.str.puts.618f3237,@object    # @.str.puts.618f3237
+	.p2align	4, 0x0
+.L.str.puts.618f3237:
 	.asciz	"   --- Book Data ---"
-	.size	.L.str.puts.9639a40c, 21
+	.size	.L.str.puts.618f3237, 21
 
 	.type	.Lstr,@object                   # @str
 	.section	.rodata.str1.1,"aMS",@progbits,1

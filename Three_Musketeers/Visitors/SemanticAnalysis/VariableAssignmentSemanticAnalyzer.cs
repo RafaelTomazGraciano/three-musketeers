@@ -26,6 +26,39 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
         public object? VisitAtt([NotNull] ExprParser.AttContext context)
         {
+            var typeToken = context.type();
+            string varName = context.ID().GetText();
+            int line = context.Start.Line;
+            if (typeToken == null)
+            {
+                if (!symbolTable.Contains(varName))
+                {
+
+                    reportError(context.Start.Line, $"Variable {varName} does not have a type");
+                    return null;
+                }
+                symbolTable.MarkInitializated(varName);
+                return null;
+            }
+
+            string type = typeToken.GetText();
+
+            if (symbolTable.Contains(varName))
+            {
+                reportError(line, $"Variable '{varName}' has already been declared");
+                return null;
+            }
+
+            var symbol = new Symbol(varName, type, line);
+            symbolTable.AddSymbol(symbol);
+            symbolTable.MarkInitializated(varName);
+            visitExpression(context.expr());
+
+            return null;
+        }
+
+        public object? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        {
             string type = context.type().GetText();
             string varName = context.ID().GetText();
             int line = context.Start.Line;
@@ -38,9 +71,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
             var symbol = new Symbol(varName, type, line);
             symbolTable.AddSymbol(symbol);
-            symbolTable.MarkInitializated(varName);
-
-            visitExpression(context.expr());
 
             return null;
         }
