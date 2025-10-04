@@ -32,7 +32,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             
             globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{content}\\00\", align 1");
             
-            registerTypes[strLabel] = $"[{strLen} x i8]*";;
+            registerTypes[strLabel] = "i8*";
             
             return strLabel;
         }

@@ -17,7 +17,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             this.symbolTable = symbolTable;
         }
 
-        public object? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
+        public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
         {
             if (context.ID() != null)
             {
@@ -43,8 +43,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                     reportError(context.Start.Line,
                     $"Variable '{varName}' may not have been  initializated before use in puts()");
                 }
+                return null;
             }
-            else if (context.STRING_LITERAL() != null) {
+
+            if (context.STRING_LITERAL() != null)
+            {
                 //for string is always valid
             }
             return null;

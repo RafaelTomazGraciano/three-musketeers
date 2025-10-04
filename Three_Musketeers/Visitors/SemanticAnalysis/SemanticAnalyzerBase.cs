@@ -5,7 +5,7 @@ using Three_Musketeers.Models;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
 {
-    public abstract class SemanticAnalyzerBase : ExprBaseVisitor<object?>
+    public abstract class SemanticAnalyzerBase : ExprBaseVisitor<string>
     {
         protected SymbolTable symbolTable = new SymbolTable();
         public bool hasErrors { get; protected set; } = false;
@@ -33,26 +33,30 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 return "int";
             }
-            else if (expr is ExprParser.DoubleLiteralContext)
+
+            if (expr is ExprParser.DoubleLiteralContext)
             {
                 return "double";
             }
-            else if (expr is ExprParser.VarContext varCtx)
+
+            if (expr is ExprParser.StringLiteralContext)
+            {
+                return "string";
+            }
+
+            if (expr is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
                 var symbol = symbolTable.GetSymbol(varName);
                 return symbol?.type ?? "int";
             }
-            else if (expr is ExprParser.AddSubContext || expr is ExprParser.MulDivContext)
+
+            if (expr is ExprParser.AddSubContext || expr is ExprParser.MulDivContext)
             {
                 return "int";
             }
-            else if (expr is ExprParser.StringLiteralContext)
-            {
-                return "string";
-            }
             
-            return "int";
+            return "char";
         }
     }
 }

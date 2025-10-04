@@ -20,4 +20,5 @@ printf("temp[1]: %d\n", temp[1]);
 value = 5.0;
 printf("New value: %.2f\n", value);
 char caractere = 'a';
-printf("Character %c!\n", caractere);
+printf("Character %c! Digite outro:", caractere);
+scanf(caractere);

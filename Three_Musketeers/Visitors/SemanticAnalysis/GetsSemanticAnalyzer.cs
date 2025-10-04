@@ -17,7 +17,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             this.symbolTable = symbolTable;
         }
 
-        public object? VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
+        public string? VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
         {
             string varName = context.ID().GetText();
 

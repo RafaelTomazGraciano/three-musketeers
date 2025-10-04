@@ -22,7 +22,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             this.symbolTable = symbolTable;
         }
 
-        public object? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
+        public string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
         {
             var ids = context.ID();
 

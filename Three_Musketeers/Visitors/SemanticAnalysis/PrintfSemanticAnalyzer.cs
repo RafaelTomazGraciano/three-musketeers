@@ -13,13 +13,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         private readonly Action<int, string> reportError;
         private readonly Action<int, string> reportWarning;
         private readonly Func<ExprParser.ExprContext, string> getExpressionType;
-        private readonly Func<ExprParser.ExprContext, object?> visitExpression;
+        private readonly Func<ExprParser.ExprContext, string?> visitExpression;
 
         public PrintfSemanticAnalyzer(
             Action<int, string> reportError,
             Action<int, string> reportWarning,
             Func<ExprParser.ExprContext, string> getExpressionType,
-            Func<ExprParser.ExprContext, object?> visitExpression)
+            Func<ExprParser.ExprContext, string?> visitExpression)
         {
             this.reportError = reportError;
             this.reportWarning = reportWarning;
@@ -27,7 +27,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             this.visitExpression = visitExpression;
         }
 
-        public object? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
+        public string? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
         {
             string formatString = context.STRING_LITERAL().GetText();
             formatString = formatString.Substring(1, formatString.Length - 2); // remove quotes
@@ -77,8 +77,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         {
             return specifier switch
             {
-                'd' or 'i' => exprType == "int",
-                'f' => exprType == "double" || exprType == "float",
+                'd' or 'i' => exprType == "int" || exprType == "char",
+                'f' => exprType == "double",
                 'c' => exprType == "int" || exprType == "char",
                 's' => exprType == "string",
                 _ => false

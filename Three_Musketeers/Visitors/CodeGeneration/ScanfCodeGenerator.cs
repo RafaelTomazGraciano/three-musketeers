@@ -46,10 +46,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             var formatSpecifiers = new List<string>();
             var variablePointers = new List<string>();
 
-            foreach (var idToken in ids) {
+            foreach (var idToken in ids)
+            {
                 string varName = idToken.GetText();
 
                 var variable = variables[varName];
+                Console.WriteLine(variable.type);
                 string llvmType = getLLVMType(variable.type);
 
                 string formatSpec = GetFormatSpecifier(variable.type);
@@ -87,7 +89,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             {
                 "int" => "%d",
                 "double" => "%lf",
-                "float" => "%f",
                 "char" => "%c",
                 "bool" => "%d",
                 _ => "%d"
