@@ -88,8 +88,8 @@ expr
 type
     : 'int'
     | 'double'
-    | 'float'
     | 'bool'
+    | 'char'
     | 'string'
     | ID
     ;
