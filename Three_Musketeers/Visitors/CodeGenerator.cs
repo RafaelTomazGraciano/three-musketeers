@@ -156,9 +156,9 @@ namespace Three_Musketeers.Visitors
             return arithmeticCodeGenerator.VisitAddSub(context);
         }
 
-        public override string VisitMulDiv([NotNull] ExprParser.MulDivContext context)
+        public override string VisitMulDivMod([NotNull] ExprParser.MulDivModContext context)
         {
-            return arithmeticCodeGenerator.VisitMulDiv(context);
+            return arithmeticCodeGenerator.VisitMulDivMod(context);
         }
 
         public override string VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)

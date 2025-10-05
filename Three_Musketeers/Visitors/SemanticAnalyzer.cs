@@ -137,9 +137,9 @@ namespace Three_Musketeers.Visitors
             return arithmeticSemanticAnalyzer.VisitAddSub(context) ?? "int";
         }
 
-        public override string VisitMulDiv([NotNull] ExprParser.MulDivContext context)
+        public override string VisitMulDivMod([NotNull] ExprParser.MulDivModContext context)
         {
-            return arithmeticSemanticAnalyzer.VisitMulDiv(context) ?? "int";
+            return arithmeticSemanticAnalyzer.VisitMulDivMod(context) ?? "int";
         }
 
         public override string VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)

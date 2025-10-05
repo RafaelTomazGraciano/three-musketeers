@@ -68,10 +68,17 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return PromoteTypes(leftType, rightType);
             }
 
-            if (expr is ExprParser.MulDivContext mulDivCtx)
+            if (expr is ExprParser.MulDivModContext mulDivModCtx)
             {
-                var leftType = GetExpressionType(mulDivCtx.expr(0));
-                var rightType = GetExpressionType(mulDivCtx.expr(1));
+                // Check if it's modulo operation
+                string op = mulDivModCtx.GetChild(1).GetText();
+                if (op == "%")
+                {
+                    return "int"; // Modulo always returns int
+                }
+                
+                var leftType = GetExpressionType(mulDivModCtx.expr(0));
+                var rightType = GetExpressionType(mulDivModCtx.expr(1));
                 return PromoteTypes(leftType, rightType);
             }
             

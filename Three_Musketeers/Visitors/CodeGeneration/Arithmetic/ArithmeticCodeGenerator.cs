@@ -76,7 +76,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
             }
         }
 
-        public string VisitMulDiv([NotNull] ExprParser.MulDivContext context)
+        public string VisitMulDivMod([NotNull] ExprParser.MulDivModContext context)
         {
             string leftValue = visitExpression(context.expr(0));
             string rightValue = visitExpression(context.expr(1));
@@ -87,7 +87,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
             // Get the operation symbol
             string op = context.GetChild(1).GetText();
             
-            // Handle type promotion
+            if (op == "%")
+            {
+                // Modulo operation - only works with integers
+                string leftInt = ConvertToInt(leftValue, leftType);
+                string rightInt = ConvertToInt(rightValue, rightType);
+                
+                string resultReg = nextRegister();
+                mainBody.AppendLine($"  {resultReg} = srem i32 {leftInt}, {rightInt}");
+                registerTypes[resultReg] = "i32";
+                return resultReg;
+            }
+            
+            // Handle multiplication and division (same as before)
             string resultType = PromoteTypes(leftType, rightType);
             
             if (resultType == "double")
