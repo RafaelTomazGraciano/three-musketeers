@@ -19,6 +19,7 @@
 // Ambiguous reference in cref attribute
 #pragma warning disable 419
 
+namespace Three_Musketeers.Grammar {
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using IToken = Antlr4.Runtime.IToken;
@@ -50,6 +51,12 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitStm([NotNull] ExprParser.StmContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.declaration"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDeclaration([NotNull] ExprParser.DeclarationContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.function"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
@@ -62,11 +69,42 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitFunc_body([NotNull] ExprParser.Func_bodyContext context);
 	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.printfStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.scanfStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.getsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.putsStatement"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.att"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitAtt([NotNull] ExprParser.AttContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>SingleAtt</c>
+	/// labeled alternative in <see cref="ExprParser.att_var"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitSingleAtt([NotNull] ExprParser.SingleAttContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.new_type"/>.
 	/// </summary>
@@ -79,6 +117,26 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitArgs([NotNull] ExprParser.ArgsContext context);
+	/// <summary>
+	/// Visit a parse tree produced by <see cref="ExprParser.index"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitIndex([NotNull] ExprParser.IndexContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>VarArray</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitVarArray([NotNull] ExprParser.VarArrayContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>CharLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitCharLiteral([NotNull] ExprParser.CharLiteralContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -108,6 +166,48 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitVar([NotNull] ExprParser.VarContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>DtoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>ItoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>StringLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>AtodConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitAtodConversion([NotNull] ExprParser.AtodConversionContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>IntLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -122,9 +222,17 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>AtoiConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context);
+	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.type"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitType([NotNull] ExprParser.TypeContext context);
 }
+} // namespace Three_Musketeers.Grammar

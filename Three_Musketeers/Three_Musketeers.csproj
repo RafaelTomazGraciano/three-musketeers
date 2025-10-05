@@ -5,17 +5,13 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <NoWarn>CS3021; CS8621</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-    <PackageReference Include="Antlr4BuildTasks" Version="12.10.0" />
-    <PackageReference Include="libLLVM.runtime.win-x64" Version="20.1.2" />
     <PackageReference Include="LLVMSharp" Version="20.1.2" />
+    <PackageReference Include="LLVMSharp.Interop" Version="20.1.2" />
   </ItemGroup>
-
-  <ItemGroup>
-  <Antlr4 Include="Expr.g4" Listener="true" Visitor="true" />
-</ItemGroup>
 
 </Project>

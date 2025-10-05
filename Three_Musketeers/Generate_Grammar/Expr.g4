@@ -12,8 +12,18 @@ prog
 
 stm
     : expr EOL
+    | declaration EOL
     | att  EOL
+    | att_var EOL
+    | printfStatement
+    | scanfStatement
+    | getsStatement
+    | putsStatement
     | RETURN expr? EOL
+    ;
+
+    declaration
+    : type ID index*
     ;
 
 function
@@ -24,8 +34,29 @@ func_body
     : stm*
     ;
 
+printfStatement
+    : 'printf' '(' STRING_LITERAL (',' expr)* ')' EOL
+    ;
+
+scanfStatement
+    : 'scanf' '(' ID (',' ID)* ')' EOL
+    ;
+
+getsStatement
+    : 'gets' '(' ID ')' EOL
+    ;
+
+putsStatement
+    : 'puts' '(' (ID | STRING_LITERAL) ')' EOL
+    ;
+
 att
-    : type ID '=' expr
+    : type? ID '=' expr
+    ;
+
+att_var 
+    : ID index+ '=' expr                          #SingleAtt
+//  | type ID index+ '=' '{' expr (',' expr)* '}' #MultipleAtt
     ;
 
 new_type
@@ -36,20 +67,33 @@ args
     : type ID (',' type ID)*
     ;
 
+index
+    : '[' INT ']'
+    ;
+
 expr
     : expr ('*'|'/') expr      # MulDiv
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
+    | 'atoi' '(' expr ')'           # AtoiConversion
+    | 'atod' '(' expr ')'           # AtodConversion
+    | 'itoa' '(' expr ')'           # ItoaConversion
+    | 'dtoa' '(' expr ')'           # DtoaConversion
     | ID                       # Var
+    | ID index+                # VarArray
     | INT                      # IntLiteral
     | DOUBLE                   # DoubleLiteral
+    | STRING_LITERAL           # StringLiteral
+    | CHAR_LITERAL             # CharLiteral
+    | TRUE                     # TrueLiteral
+    | FALSE                    # FalseLiteral
     ;
 
 type
     : 'int'
     | 'double'
-    | 'float'
     | 'bool'
+    | 'char'
     | 'string'
     | ID
     ;
@@ -71,3 +115,5 @@ EOL           : ';';
 WS            : [ \t\r\n]+ -> skip;
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
+STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
+CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';
