@@ -5,6 +5,7 @@ using Three_Musketeers.Visitors.SemanticAnalysis;
 using Three_Musketeers.Visitors.SemanticAnalysis.Variables;
 using Three_Musketeers.Visitors.SemanticAnalysis.InputOutput;
 using Three_Musketeers.Visitors.SemanticAnalysis.StringConversion;
+using Three_Musketeers.Visitors.SemanticAnalysis.Arithmetic;
 
 namespace Three_Musketeers.Visitors
 {
@@ -19,6 +20,7 @@ namespace Three_Musketeers.Visitors
         private readonly AtodSemanticAnalyzer atodSemanticAnalyzer;
         private readonly ItoaSemanticAnalyzer itoaSemanticAnalyzer;
         private readonly DtoaSemanticAnalyzer dtoaSemanticAnalyzer;
+        private readonly ArithmeticSemanticAnalyzer arithmeticSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
@@ -35,6 +37,9 @@ namespace Three_Musketeers.Visitors
             atodSemanticAnalyzer = new AtodSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
             itoaSemanticAnalyzer = new ItoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
             dtoaSemanticAnalyzer = new DtoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
+            // arithmetic
+            arithmeticSemanticAnalyzer = new ArithmeticSemanticAnalyzer(ReportError, GetExpressionType, Visit);
+
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -125,6 +130,16 @@ namespace Three_Musketeers.Visitors
         public override string VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context)
         {
             return dtoaSemanticAnalyzer.VisitDtoaConversion(context);
+        }
+
+        public override string VisitAddSub([NotNull] ExprParser.AddSubContext context)
+        {
+            return arithmeticSemanticAnalyzer.VisitAddSub(context);
+        }
+
+        public override string VisitMulDiv([NotNull] ExprParser.MulDivContext context)
+        {
+            return arithmeticSemanticAnalyzer.VisitMulDiv(context);
         }
 
     }
