@@ -5,6 +5,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Variables;
 using Three_Musketeers.Visitors.CodeGeneration.InputOutput;
 using Three_Musketeers.Visitors.CodeGeneration.StringConversion;
 using Three_Musketeers.Visitors.CodeGeneration.Arithmetic;
+using Three_Musketeers.Visitors.CodeGeneration.Logical;
 
 namespace Three_Musketeers.Visitors
 {
@@ -22,6 +23,7 @@ namespace Three_Musketeers.Visitors
         private readonly ItoaCodeGenerator itoaCodeGenerator;
         private readonly DtoaCodeGenerator dtoaCodeGenerator;
         private readonly ArithmeticCodeGenerator arithmeticCodeGenerator;
+        private readonly LogicalCodeGenerator logicalCodeGenerator;
 
         public CodeGenerator()
         {
@@ -47,6 +49,9 @@ namespace Three_Musketeers.Visitors
 
             //arithmetic
             arithmeticCodeGenerator = new ArithmeticCodeGenerator(
+                mainBody, registerTypes, NextRegister, Visit);
+            //logical
+            logicalCodeGenerator = new LogicalCodeGenerator(
                 mainBody, registerTypes, NextRegister, Visit);
         }
 
@@ -178,6 +183,22 @@ namespace Three_Musketeers.Visitors
             
             registerTypes[resultReg] = exprType;
             return resultReg;
+        }
+
+        public override string VisitLogicalAndOr([NotNull] ExprParser.LogicalAndOrContext context)
+        {
+            return logicalCodeGenerator.VisitLogicalAndOr(context);
+        }
+
+        public override string VisitLogicalNot([NotNull] ExprParser.LogicalNotContext context)
+        {
+            return logicalCodeGenerator.VisitLogicalNot(context);
+        }
+
+        public override string VisitParens([NotNull] ExprParser.ParensContext context)
+        {
+            // For parentheses, just visit the inner expression
+            return Visit(context.expr());
         }
     }
 }
