@@ -2,9 +2,9 @@
 O objetivo deste diretório é servir como documentação para pessoas que tenham a curiosidade de aprender sobre a linguagem Three Musketeers
 
 ## Filosofia
-A ideia desta linguagem é servir como um subconjunto da linguagem C com alguns atributos adicionais como o tipo String.
+A ideia desta linguagem é servir como um subconjunto da linguagem C com alguns atributos adicionais como o tipo string e booleano nativo.
 
 ## Tabela de Conteudo
 1. [Variaveis](VARIABLES.md)
 2. [Entrada e saida](INPUT_OUTPUT.md)
-3. [Conversores de tipos]()
+3. [Conversores de tipos](CONVERSORS.md)

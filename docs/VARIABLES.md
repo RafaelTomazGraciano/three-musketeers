@@ -3,7 +3,9 @@ Esta seção trata os tipos de variáveis e operações permitidas
 
 ## Tipagem e Tipos
 A linguagem Three Musketeers é uma linguagem fortemente tipada e de conversão implícita. O que isso implica?
+
 Isso implica que todas as variáveis devem ser atribuidas com um tipo e o próprio compilador realiza as conversos entre os tipos, sem a necessidade do programador escrever que deseja a conversão.
+
 A linguagem Three Musketeers possui cinco tipos de variáveis sendo estas, (do tipo genérico até os inflexíveis):
 1. double — Usado para representar números flutuantes
 2. int — Usado para representar números inteiros com sinal 
