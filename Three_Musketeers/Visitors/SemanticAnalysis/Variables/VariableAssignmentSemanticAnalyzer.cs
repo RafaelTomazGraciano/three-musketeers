@@ -3,7 +3,7 @@ using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 
-namespace Three_Musketeers.Visitors.SemanticAnalysis
+namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 {
     public class VariableAssignmentSemanticAnalyzer
     {
@@ -30,7 +30,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             string varName = context.ID().GetText();
             int line = context.Start.Line;
 
-            string evalluatedType = visitExpression(context.expr());
+            string? evalluatedType = visitExpression(context.expr());
 
             if (typeToken == null)
             {

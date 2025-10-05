@@ -5,7 +5,7 @@ using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Utils;
 
-namespace Three_Musketeers.Visitors.CodeGeneration
+namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 {
     public class ScanfCodeGenerator
     {
@@ -51,7 +51,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                 string varName = idToken.GetText();
 
                 var variable = variables[varName];
-                Console.WriteLine(variable.type);
                 string llvmType = getLLVMType(variable.type);
 
                 string formatSpec = GetFormatSpecifier(variable.type);

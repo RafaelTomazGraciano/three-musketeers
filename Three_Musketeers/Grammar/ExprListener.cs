@@ -196,18 +196,6 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitVarArray([NotNull] ExprParser.VarArrayContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>StringLiteral</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void EnterStringLiteral([NotNull] ExprParser.StringLiteralContext context);
-	/// <summary>
-	/// Exit a parse tree produced by the <c>StringLiteral</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void ExitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
-	/// <summary>
 	/// Enter a parse tree produced by the <c>CharLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -219,18 +207,6 @@ public interface IExprListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitCharLiteral([NotNull] ExprParser.CharLiteralContext context);
-	/// <summary>
-	/// Enter a parse tree produced by the <c>TrueLiteral</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void EnterTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
-	/// <summary>
-	/// Exit a parse tree produced by the <c>TrueLiteral</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void ExitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -280,6 +256,78 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitVar([NotNull] ExprParser.VarContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>DtoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterDtoaConversion([NotNull] ExprParser.DtoaConversionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>DtoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>ItoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterItoaConversion([NotNull] ExprParser.ItoaConversionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>ItoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitItoaConversion([NotNull] ExprParser.ItoaConversionContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>StringLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterStringLiteral([NotNull] ExprParser.StringLiteralContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>StringLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>AtodConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterAtodConversion([NotNull] ExprParser.AtodConversionContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>AtodConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitAtodConversion([NotNull] ExprParser.AtodConversionContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>IntLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -304,17 +352,17 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>FalseLiteral</c>
+	/// Enter a parse tree produced by the <c>AtoiConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void EnterFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	void EnterAtoiConversion([NotNull] ExprParser.AtoiConversionContext context);
 	/// <summary>
-	/// Exit a parse tree produced by the <c>FalseLiteral</c>
+	/// Exit a parse tree produced by the <c>AtoiConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
-	void ExitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	void ExitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context);
 	/// <summary>
 	/// Enter a parse tree produced by <see cref="ExprParser.type"/>.
 	/// </summary>

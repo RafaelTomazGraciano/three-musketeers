@@ -1,6 +1,9 @@
 using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Visitors.CodeGeneration;
+using Three_Musketeers.Visitors.CodeGeneration.Variables;
+using Three_Musketeers.Visitors.CodeGeneration.InputOutput;
+using Three_Musketeers.Visitors.CodeGeneration.StringConversion;
 
 namespace Three_Musketeers.Visitors
 {
@@ -13,22 +16,32 @@ namespace Three_Musketeers.Visitors
         private readonly CharCodeGenerator charCodeGenerator;
         private readonly GetsCodeGenerator getsCodeGenerator;
         private readonly PutsCodeGenerator putsCodeGenerator;
+        private readonly AtoiCodeGenerator atoiCodeGenerator;
+        private readonly AtodCodeGenerator atodCodeGenerator;
+        private readonly ItoaCodeGenerator itoaCodeGenerator;
+        private readonly DtoaCodeGenerator dtoaCodeGenerator;
 
         public CodeGenerator()
         {
+            //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
                 mainBody, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit);
-
-            printfCodeGenerator = new PrintfCodeGenerator(
-                globalStrings, mainBody, registerTypes, NextRegister, NextStringLabel, Visit);
-
-            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, mainBody, variables,
-                registerTypes, NextRegister, NextStringLabel, GetLLVMType);
-
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
+
+            //input-output
+            printfCodeGenerator = new PrintfCodeGenerator(
+                globalStrings, mainBody, registerTypes, NextRegister, NextStringLabel, Visit);
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, mainBody, variables,
+                registerTypes, NextRegister, NextStringLabel, GetLLVMType);
             getsCodeGenerator = new GetsCodeGenerator(declarations, mainBody, variables, NextRegister);
             putsCodeGenerator = new PutsCodeGenerator(declarations, mainBody, variables, NextRegister);
+
+            //string conversion
+            atoiCodeGenerator = new AtoiCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
+            atodCodeGenerator = new AtodCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
+            itoaCodeGenerator = new ItoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
+            dtoaCodeGenerator = new DtoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
         }
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -36,7 +49,7 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitAtt(context);
         }
 
-        public override string VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
+        public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
         {
             return variableAssignmentCodeGenerator.VisitSingleAtt(context);
         }
@@ -111,6 +124,27 @@ namespace Three_Musketeers.Visitors
         {
             return putsCodeGenerator.VisitPutsStatement(context);
         }
+
+        public override string VisitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context)
+        {
+            return atoiCodeGenerator.VisitAtoiConversion(context);
+        }
+
+        public override string VisitAtodConversion([NotNull] ExprParser.AtodConversionContext context)
+        {
+            return atodCodeGenerator.VisitAtodConversion(context);
+        }
+
+        public override string VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context)
+        {
+            return itoaCodeGenerator.VisitItoaConversion(context);
+        }
+
+        public override string VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context)
+        {
+            return dtoaCodeGenerator.VisitDtoaConversion(context);
+        }
+
     }
 }
 

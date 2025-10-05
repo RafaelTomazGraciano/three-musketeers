@@ -5,7 +5,7 @@ using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 
-namespace Three_Musketeers.Visitors.CodeGeneration
+namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 {
     public class VariableAssignmentCodeGenerator
     {
@@ -83,10 +83,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             string destPtr = nextRegister();
             mainBody.AppendLine($"  {destPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {register}, i32 0, i32 {pos}");
             string srcPtr = nextRegister();
-            mainBody.AppendLine($"  {srcPtr} = bitcast i8* getelementptr inbounds ([256 x i8], [256 x i8]* {exprResult}, i32 0, i32 0) to i8*");
+            mainBody.AppendLine($"  {srcPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {exprResult}, i32 0, i32 0");
+
             string copyResult = nextRegister();
             mainBody.AppendLine($"  {copyResult} = call i8* @strcpy(i8* {destPtr}, i8* {srcPtr})");
         }
+
         public string VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
@@ -169,7 +171,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
             string llvmType = arrayVar.type == "string" ? "i8" : arrayVar.innerType;
 
-            mainBody.AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {(arrayVar.type != "string" ? i : i * 256)}");
+            mainBody.AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {pos}");
 
             if (arrayVar.type == "string")
             {
@@ -183,7 +185,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             return loadReg;
         }
 
-        public string VisitSingleAtt(ExprParser.SingleAttContext context)
+        public string? VisitSingleAtt(ExprParser.SingleAttContext context)
         {
             string varName = context.ID().GetText();
             string expression = visitExpression(context.expr());

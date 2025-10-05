@@ -75,6 +75,10 @@ expr
     : expr ('*'|'/') expr      # MulDiv
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
+    | 'atoi' '(' expr ')'           # AtoiConversion
+    | 'atod' '(' expr ')'           # AtodConversion
+    | 'itoa' '(' expr ')'           # ItoaConversion
+    | 'dtoa' '(' expr ')'           # DtoaConversion
     | ID                       # Var
     | ID index+                # VarArray
     | INT                      # IntLiteral

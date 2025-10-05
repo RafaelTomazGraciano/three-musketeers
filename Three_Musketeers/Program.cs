@@ -8,7 +8,7 @@ namespace Three_Musketeers{
     {
         public static int Main()
         {
-            string filePath = "Examples/code.m3";
+            string filePath = "Examples/code.3m";
 
             try
             {
