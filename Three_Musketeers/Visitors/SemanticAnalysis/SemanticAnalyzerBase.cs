@@ -5,7 +5,7 @@ using Three_Musketeers.Models;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
 {
-    public abstract class SemanticAnalyzerBase : ExprBaseVisitor<string>
+    public abstract class SemanticAnalyzerBase : ExprBaseVisitor<string?>
     {
         protected SymbolTable symbolTable = new SymbolTable();
         public bool hasErrors { get; protected set; } = false;

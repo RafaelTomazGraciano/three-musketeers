@@ -30,8 +30,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             string varName = context.ID().GetText();
             int line = context.Start.Line;
 
-            string evalluatedType = visitExpression(context.expr());
-
             if (typeToken == null)
             {
                 var existingSymbol = symbolTable.GetSymbol(varName);
@@ -63,12 +61,35 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         {
             string type = context.type().GetText();
             string varName = context.ID().GetText();
+            var indexes = context.index();
             int line = context.Start.Line;
 
             if (symbolTable.Contains(varName))
             {
                 reportError(line, $"Variable '{varName}' has already been declared");
                 return null;
+            }
+
+            if (indexes.Length > 0)
+            {
+                List<int> dimension = new ArrayList<int>();
+                bool hasErrors = false;
+                foreach (var index in indexes)
+                {
+                    int dim = int.Parse(index.INT().GetText());
+                    if (dim < 1)
+                    {
+                        reportError(index.Start.Line, "Array dimension must be greater than 0");
+                        hasErrors = true;
+                        continue;
+                    }
+                    dimension.Add(dim);
+                }
+
+                if (hasErrors) return null;
+
+                symbolTable.AddSymbol(new ArraySymbol(varName, type, line, dimension));
+                return "array";
             }
 
             var symbol = new Symbol(varName, type, line);
@@ -92,26 +113,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             if (!symbol.isInitializated)
             {
                 reportError(line, $"Variable '{varName}' is empty");
+                return null;
             }
 
             return symbol.type;
         }
-        private static bool TwoTypesArePermitedToCast(string type1, string type2) {
-            bool anyIsDouble = type1 == "double" || type2 == "double";
-            bool anyIsChar = type1 == "char" || type2 == "char";
-            bool anyIsInt = type1 == "int" || type2 == "int";
-            bool anyIsBool = type1 == "bool" || type2 == "bool";
-            bool anyIsString = type1 == "string" || type2 == "string";
-            if (type1 == type2) return true;
-
-            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
-
-            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
-
-            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
-
-            return false;
-        }
+        
     }
 }
 
