@@ -101,6 +101,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 return "bool";
             }
+
+            if (expr is ExprParser.ComparisonContext comparisonCtx)
+            {
+                return "bool";
+            }
             
             return "int";
         }

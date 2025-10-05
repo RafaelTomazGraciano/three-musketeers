@@ -8,6 +8,7 @@ using Three_Musketeers.Visitors.SemanticAnalysis.StringConversion;
 using Three_Musketeers.Visitors.SemanticAnalysis.Arithmetic;
 using Three_Musketeers.Visitors.SemanticAnalysis.Logical;
 using Three_Musketeers.Visitors.SemanticAnalysis.Equality;
+using Three_Musketeers.Visitors.SemanticAnalysis.Comparison;
 
 namespace Three_Musketeers.Visitors
 {
@@ -25,6 +26,7 @@ namespace Three_Musketeers.Visitors
         private readonly ArithmeticSemanticAnalyzer arithmeticSemanticAnalyzer;
         private readonly LogicalSemanticAnalyzer logicalSemanticAnalyzer;
         private readonly EqualitySemanticAnalyzer equalitySemanticAnalyzer;
+        private readonly ComparisonSemanticAnalyzer comparisonSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
@@ -47,6 +49,8 @@ namespace Three_Musketeers.Visitors
             logicalSemanticAnalyzer = new LogicalSemanticAnalyzer(ReportError, GetExpressionType, Visit);
             // equality
             equalitySemanticAnalyzer = new EqualitySemanticAnalyzer(ReportError, GetExpressionType, Visit);
+            // comparison
+            comparisonSemanticAnalyzer = new ComparisonSemanticAnalyzer(ReportError, GetExpressionType, Visit);
 
         }
 
@@ -170,6 +174,11 @@ namespace Three_Musketeers.Visitors
         public override string VisitEquality([NotNull] ExprParser.EqualityContext context)
         {
             return equalitySemanticAnalyzer.VisitEquality(context);
+        }
+
+        public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
+        {
+            return comparisonSemanticAnalyzer.VisitComparison(context);
         }
     }
 }
