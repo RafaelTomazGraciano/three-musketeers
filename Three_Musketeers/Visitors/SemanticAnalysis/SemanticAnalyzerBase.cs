@@ -44,6 +44,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return "string";
             }
 
+            if (expr is ExprParser.CharLiteralContext)
+            {
+                return "char";
+            }
+
+            if (expr is ExprParser.TrueLiteralContext || expr is ExprParser.FalseLiteralContext)
+            {
+                return "bool";
+            }
+
             if (expr is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
@@ -51,12 +61,63 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return symbol?.type ?? "int";
             }
 
-            if (expr is ExprParser.AddSubContext || expr is ExprParser.MulDivContext)
+            if (expr is ExprParser.AddSubContext addSubCtx)
             {
-                return "int";
+                var leftType = GetExpressionType(addSubCtx.expr(0));
+                var rightType = GetExpressionType(addSubCtx.expr(1));
+                return PromoteTypes(leftType, rightType);
+            }
+
+            if (expr is ExprParser.MulDivModContext mulDivModCtx)
+            {
+                // Check if it's modulo operation
+                string op = mulDivModCtx.GetChild(1).GetText();
+                if (op == "%")
+                {
+                    return "int"; // Modulo always returns int
+                }
+                
+                var leftType = GetExpressionType(mulDivModCtx.expr(0));
+                var rightType = GetExpressionType(mulDivModCtx.expr(1));
+                return PromoteTypes(leftType, rightType);
             }
             
-            return "char";
+            if (expr is ExprParser.UnaryMinusContext unaryMinusCtx)
+            {
+                return GetExpressionType(unaryMinusCtx.expr());
+            }
+
+            if (expr is ExprParser.LogicalAndOrContext logicalAndOrCtx)
+            {
+                return "bool";
+            }
+
+            if (expr is ExprParser.LogicalNotContext logicalNotCtx)
+            {
+                return "bool";
+            }
+
+            if (expr is ExprParser.EqualityContext equalityCtx)
+            {
+                return "bool";
+            }
+
+            if (expr is ExprParser.ComparisonContext comparisonCtx)
+            {
+                return "bool";
+            }
+            
+            return "int";
+        }
+
+        private string PromoteTypes(string type1, string type2)
+        {
+            // If either is double, result is double
+            if (type1 == "double" || type2 == "double")
+                return "double";
+            
+            // Otherwise, result is int
+            return "int";
         }
     }
 }

@@ -5,6 +5,10 @@ using Three_Musketeers.Visitors.SemanticAnalysis;
 using Three_Musketeers.Visitors.SemanticAnalysis.Variables;
 using Three_Musketeers.Visitors.SemanticAnalysis.InputOutput;
 using Three_Musketeers.Visitors.SemanticAnalysis.StringConversion;
+using Three_Musketeers.Visitors.SemanticAnalysis.Arithmetic;
+using Three_Musketeers.Visitors.SemanticAnalysis.Logical;
+using Three_Musketeers.Visitors.SemanticAnalysis.Equality;
+using Three_Musketeers.Visitors.SemanticAnalysis.Comparison;
 
 namespace Three_Musketeers.Visitors
 {
@@ -19,6 +23,10 @@ namespace Three_Musketeers.Visitors
         private readonly AtodSemanticAnalyzer atodSemanticAnalyzer;
         private readonly ItoaSemanticAnalyzer itoaSemanticAnalyzer;
         private readonly DtoaSemanticAnalyzer dtoaSemanticAnalyzer;
+        private readonly ArithmeticSemanticAnalyzer arithmeticSemanticAnalyzer;
+        private readonly LogicalSemanticAnalyzer logicalSemanticAnalyzer;
+        private readonly EqualitySemanticAnalyzer equalitySemanticAnalyzer;
+        private readonly ComparisonSemanticAnalyzer comparisonSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
@@ -35,6 +43,15 @@ namespace Three_Musketeers.Visitors
             atodSemanticAnalyzer = new AtodSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
             itoaSemanticAnalyzer = new ItoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
             dtoaSemanticAnalyzer = new DtoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
+            // arithmetic
+            arithmeticSemanticAnalyzer = new ArithmeticSemanticAnalyzer(ReportError, GetExpressionType, Visit);
+            // logical
+            logicalSemanticAnalyzer = new LogicalSemanticAnalyzer(ReportError, GetExpressionType, Visit);
+            // equality
+            equalitySemanticAnalyzer = new EqualitySemanticAnalyzer(ReportError, GetExpressionType, Visit);
+            // comparison
+            comparisonSemanticAnalyzer = new ComparisonSemanticAnalyzer(ReportError, GetExpressionType, Visit);
+
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -127,6 +144,42 @@ namespace Three_Musketeers.Visitors
             return dtoaSemanticAnalyzer.VisitDtoaConversion(context);
         }
 
+        public override string VisitAddSub([NotNull] ExprParser.AddSubContext context)
+        {
+            return arithmeticSemanticAnalyzer.VisitAddSub(context) ?? "int";
+        }
+
+        public override string VisitMulDivMod([NotNull] ExprParser.MulDivModContext context)
+        {
+            return arithmeticSemanticAnalyzer.VisitMulDivMod(context) ?? "int";
+        }
+
+        public override string VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)
+        {
+            string exprType = GetExpressionType(context.expr());
+            Visit(context.expr());
+            return exprType; // Unary minus preserves the type
+        }
+
+        public override string VisitLogicalAndOr([NotNull] ExprParser.LogicalAndOrContext context)
+        {
+            return logicalSemanticAnalyzer.VisitLogicalAndOr(context);
+        }
+
+        public override string VisitLogicalNot([NotNull] ExprParser.LogicalNotContext context)
+        {
+            return logicalSemanticAnalyzer.VisitLogicalNot(context);
+        }
+
+        public override string VisitEquality([NotNull] ExprParser.EqualityContext context)
+        {
+            return equalitySemanticAnalyzer.VisitEquality(context);
+        }
+
+        public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
+        {
+            return comparisonSemanticAnalyzer.VisitComparison(context);
+        }
     }
 }
 

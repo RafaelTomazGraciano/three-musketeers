@@ -72,9 +72,14 @@ index
     ;
 
 expr
-    : expr ('*'|'/') expr      # MulDiv
+    : expr ('&&'|'||') expr        # LogicalAndOr
+    | expr ('=='|'!=') expr        # Equality
+    | expr ('>'|'<'|'>='|'<=') expr # Comparison
+    | expr ('*'|'/'|'%') expr  # MulDivMod
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
+    | '!' expr                 # LogicalNot
+    | '-' expr                 # UnaryMinus
     | 'atoi' '(' expr ')'           # AtoiConversion
     | 'atod' '(' expr ')'           # AtodConversion
     | 'itoa' '(' expr ')'           # ItoaConversion
@@ -106,6 +111,11 @@ GR            : '>';
 GRT           : '>=';
 LE            : '<';
 LET           : '<=';
+AND           : '&&';
+OR            : '||';
+NOT           : '!';
+EQ            : '==';
+NE            : '!=';
 TRUE          : 'true';
 FALSE         : 'false';
 ID            : [a-zA-Z_][a-zA-Z0-9_]*;

@@ -4,6 +4,10 @@ using Three_Musketeers.Visitors.CodeGeneration;
 using Three_Musketeers.Visitors.CodeGeneration.Variables;
 using Three_Musketeers.Visitors.CodeGeneration.InputOutput;
 using Three_Musketeers.Visitors.CodeGeneration.StringConversion;
+using Three_Musketeers.Visitors.CodeGeneration.Arithmetic;
+using Three_Musketeers.Visitors.CodeGeneration.Logical;
+using Three_Musketeers.Visitors.CodeGeneration.Equality;
+using Three_Musketeers.Visitors.CodeGeneration.Comparison;
 
 namespace Three_Musketeers.Visitors
 {
@@ -20,6 +24,10 @@ namespace Three_Musketeers.Visitors
         private readonly AtodCodeGenerator atodCodeGenerator;
         private readonly ItoaCodeGenerator itoaCodeGenerator;
         private readonly DtoaCodeGenerator dtoaCodeGenerator;
+        private readonly ArithmeticCodeGenerator arithmeticCodeGenerator;
+        private readonly LogicalCodeGenerator logicalCodeGenerator;
+        private readonly EqualityCodeGenerator equalityCodeGenerator;
+        private readonly ComparisonCodeGenerator comparisonCodeGenerator;
 
         public CodeGenerator()
         {
@@ -42,6 +50,19 @@ namespace Three_Musketeers.Visitors
             atodCodeGenerator = new AtodCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
             itoaCodeGenerator = new ItoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
             dtoaCodeGenerator = new DtoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
+
+            //arithmetic
+            arithmeticCodeGenerator = new ArithmeticCodeGenerator(
+                mainBody, registerTypes, NextRegister, Visit);
+            //logical
+            logicalCodeGenerator = new LogicalCodeGenerator(
+                mainBody, registerTypes, NextRegister, Visit);
+            //equality
+            equalityCodeGenerator = new EqualityCodeGenerator(
+                mainBody, registerTypes, NextRegister, Visit);
+            //comparison
+            comparisonCodeGenerator = new ComparisonCodeGenerator(
+                mainBody, registerTypes, NextRegister, Visit);
         }
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -145,6 +166,60 @@ namespace Three_Musketeers.Visitors
             return dtoaCodeGenerator.VisitDtoaConversion(context);
         }
 
+        public override string VisitAddSub([NotNull] ExprParser.AddSubContext context)
+        {
+            return arithmeticCodeGenerator.VisitAddSub(context);
+        }
+
+        public override string VisitMulDivMod([NotNull] ExprParser.MulDivModContext context)
+        {
+            return arithmeticCodeGenerator.VisitMulDivMod(context);
+        }
+
+        public override string VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)
+        {
+            string exprValue = Visit(context.expr());
+            string exprType = registerTypes[exprValue];
+            string resultReg = NextRegister();
+            
+            if (exprType == "double")
+            {
+                mainBody.AppendLine($"  {resultReg} = fneg double {exprValue}");
+            }
+            else
+            {
+                mainBody.AppendLine($"  {resultReg} = sub i32 0, {exprValue}");
+            }
+            
+            registerTypes[resultReg] = exprType;
+            return resultReg;
+        }
+
+        public override string VisitLogicalAndOr([NotNull] ExprParser.LogicalAndOrContext context)
+        {
+            return logicalCodeGenerator.VisitLogicalAndOr(context);
+        }
+
+        public override string VisitLogicalNot([NotNull] ExprParser.LogicalNotContext context)
+        {
+            return logicalCodeGenerator.VisitLogicalNot(context);
+        }
+
+        public override string VisitParens([NotNull] ExprParser.ParensContext context)
+        {
+            // For parentheses, just visit the inner expression
+            return Visit(context.expr());
+        }
+
+        public override string VisitEquality([NotNull] ExprParser.EqualityContext context)
+        {
+            return equalityCodeGenerator.VisitEquality(context);
+        }
+
+        public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
+        {
+            return comparisonCodeGenerator.VisitComparison(context);
+        }
     }
 }
 
