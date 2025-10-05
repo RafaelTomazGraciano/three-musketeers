@@ -75,6 +75,10 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return PromoteTypes(leftType, rightType);
             }
             
+            if (expr is ExprParser.UnaryMinusContext unaryMinusCtx)
+            {
+                return GetExpressionType(unaryMinusCtx.expr());
+            }
             return "int";
         }
 

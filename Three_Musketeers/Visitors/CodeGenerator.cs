@@ -161,6 +161,24 @@ namespace Three_Musketeers.Visitors
             return arithmeticCodeGenerator.VisitMulDiv(context);
         }
 
+        public override string VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)
+        {
+            string exprValue = Visit(context.expr());
+            string exprType = registerTypes[exprValue];
+            string resultReg = NextRegister();
+            
+            if (exprType == "double")
+            {
+                mainBody.AppendLine($"  {resultReg} = fneg double {exprValue}");
+            }
+            else
+            {
+                mainBody.AppendLine($"  {resultReg} = sub i32 0, {exprValue}");
+            }
+            
+            registerTypes[resultReg] = exprType;
+            return resultReg;
+        }
     }
 }
 

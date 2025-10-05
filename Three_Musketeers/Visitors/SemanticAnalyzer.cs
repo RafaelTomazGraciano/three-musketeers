@@ -142,6 +142,12 @@ namespace Three_Musketeers.Visitors
             return arithmeticSemanticAnalyzer.VisitMulDiv(context) ?? "int";
         }
 
+        public override string VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)
+        {
+            string exprType = GetExpressionType(context.expr());
+            Visit(context.expr());
+            return exprType; // Unary minus preserves the type
+        }
     }
 }
 
