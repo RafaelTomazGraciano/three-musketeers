@@ -75,6 +75,7 @@ expr
     : expr ('*'|'/') expr      # MulDiv
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
+    | '-' expr                 # UnaryMinus
     | 'atoi' '(' expr ')'           # AtoiConversion
     | 'atod' '(' expr ')'           # AtodConversion
     | 'itoa' '(' expr ')'           # ItoaConversion
