@@ -37,11 +37,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
             
             // Handle type promotion
             string resultType = PromoteTypes(leftType, rightType);
-            string resultReg = nextRegister();
             
             if (resultType == "double")
             {
-                // Convert to double if needed
+                // Convert to double if needed - generate conversion instructions first
                 string leftDouble = ConvertToDouble(leftValue, leftType);
                 string rightDouble = ConvertToDouble(rightValue, rightType);
                 
@@ -52,7 +51,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                     _ => "fadd"
                 };
                 
+                string resultReg = nextRegister();
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} double {leftDouble}, {rightDouble}");
+                registerTypes[resultReg] = resultType;
+                return resultReg;
             }
             else
             {
@@ -67,11 +69,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                     _ => "add"
                 };
                 
+                string resultReg = nextRegister();
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {leftInt}, {rightInt}");
+                registerTypes[resultReg] = resultType;
+                return resultReg;
             }
-            
-            registerTypes[resultReg] = resultType;
-            return resultReg;
         }
 
         public string VisitMulDiv([NotNull] ExprParser.MulDivContext context)
@@ -87,11 +89,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
             
             // Handle type promotion
             string resultType = PromoteTypes(leftType, rightType);
-            string resultReg = nextRegister();
             
             if (resultType == "double")
             {
-                // Convert to double if needed
+                // Convert to double if needed - generate conversion instructions first
                 string leftDouble = ConvertToDouble(leftValue, leftType);
                 string rightDouble = ConvertToDouble(rightValue, rightType);
                 
@@ -102,7 +103,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                     _ => "fmul"
                 };
                 
+                string resultReg = nextRegister();
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} double {leftDouble}, {rightDouble}");
+                registerTypes[resultReg] = resultType;
+                return resultReg;
             }
             else
             {
@@ -117,11 +121,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                     _ => "mul"
                 };
                 
+                string resultReg = nextRegister();
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {leftInt}, {rightInt}");
+                registerTypes[resultReg] = resultType;
+                return resultReg;
             }
-            
-            registerTypes[resultReg] = resultType;
-            return resultReg;
         }
 
         private string PromoteTypes(string type1, string type2)
@@ -142,12 +146,28 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
             string convReg = nextRegister();
             if (currentType == "i32")
             {
-                mainBody.AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                // Check if it's a literal value or a register
+                if (value.StartsWith("%"))
+                {
+                    mainBody.AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                }
+                else
+                {
+                    // It's a literal value, convert it directly
+                    mainBody.AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                }
             }
             else if (currentType == "i8" || currentType == "i1")
             {
                 string intReg = nextRegister();
-                mainBody.AppendLine($"  {intReg} = zext {currentType} {value} to i32");
+                if (value.StartsWith("%"))
+                {
+                    mainBody.AppendLine($"  {intReg} = zext {currentType} {value} to i32");
+                }
+                else
+                {
+                    mainBody.AppendLine($"  {intReg} = zext {currentType} {value} to i32");
+                }
                 mainBody.AppendLine($"  {convReg} = sitofp i32 {intReg} to double");
             }
             else
