@@ -388,6 +388,18 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>Equality</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterEquality([NotNull] ExprParser.EqualityContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Equality</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitEquality([NotNull] ExprParser.EqualityContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>AtoiConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>

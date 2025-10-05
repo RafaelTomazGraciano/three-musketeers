@@ -243,6 +243,13 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>Equality</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitEquality([NotNull] ExprParser.EqualityContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>AtoiConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>

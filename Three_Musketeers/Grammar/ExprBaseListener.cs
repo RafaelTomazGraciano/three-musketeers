@@ -457,6 +457,20 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>Equality</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterEquality([NotNull] ExprParser.EqualityContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Equality</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitEquality([NotNull] ExprParser.EqualityContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by the <c>AtoiConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
