@@ -3,7 +3,7 @@ using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Utils;
 
-namespace Three_Musketeers.Visitors.CodeGeneration
+namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 {
     public class PrintfCodeGenerator
     {

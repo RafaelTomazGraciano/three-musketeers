@@ -2,7 +2,7 @@ using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 
-namespace Three_Musketeers.Visitors.SemanticAnalysis
+namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 {
     public class PutsSemanticAnalyzer
     {

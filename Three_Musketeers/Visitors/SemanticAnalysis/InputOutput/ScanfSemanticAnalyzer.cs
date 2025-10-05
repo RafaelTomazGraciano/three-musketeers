@@ -6,7 +6,7 @@ using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Utils;
 
-namespace Three_Musketeers.Visitors.SemanticAnalysis
+namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 {
     public class ScanfSemanticAnalyzer
     {

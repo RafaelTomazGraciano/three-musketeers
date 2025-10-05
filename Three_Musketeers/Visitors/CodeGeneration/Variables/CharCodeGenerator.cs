@@ -1,7 +1,7 @@
 using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 
-namespace Three_Musketeers.Visitors.CodeGeneration
+namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 {
     public class CharCodeGenerator
     {
@@ -20,6 +20,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             {
                 return ProcessEscapeSequences(value);
             }
+
             return ((int)value[0]).ToString();
         }
         

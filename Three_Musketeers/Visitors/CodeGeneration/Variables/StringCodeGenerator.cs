@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
 
-namespace Three_Musketeers.Visitors.CodeGeneration
+namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 {
     public class StringCodeGenerator
     {

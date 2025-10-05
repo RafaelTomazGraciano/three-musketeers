@@ -131,26 +131,12 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitVarArray([NotNull] ExprParser.VarArrayContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>StringLiteral</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
-	/// <summary>
 	/// Visit a parse tree produced by the <c>CharLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitCharLiteral([NotNull] ExprParser.CharLiteralContext context);
-	/// <summary>
-	/// Visit a parse tree produced by the <c>TrueLiteral</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>MulDiv</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
@@ -180,6 +166,48 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitVar([NotNull] ExprParser.VarContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>DtoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>FalseLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>ItoaConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>StringLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>TrueLiteral</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>AtodConversion</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitAtodConversion([NotNull] ExprParser.AtodConversionContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>IntLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -194,12 +222,12 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitDoubleLiteral([NotNull] ExprParser.DoubleLiteralContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>FalseLiteral</c>
+	/// Visit a parse tree produced by the <c>AtoiConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
-	Result VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	Result VisitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context);
 	/// <summary>
 	/// Visit a parse tree produced by <see cref="ExprParser.type"/>.
 	/// </summary>

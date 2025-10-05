@@ -2,6 +2,9 @@ using System.Diagnostics;
 using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Visitors.SemanticAnalysis;
+using Three_Musketeers.Visitors.SemanticAnalysis.Variables;
+using Three_Musketeers.Visitors.SemanticAnalysis.InputOutput;
+using Three_Musketeers.Visitors.SemanticAnalysis.StringConversion;
 
 namespace Three_Musketeers.Visitors
 {
@@ -12,15 +15,26 @@ namespace Three_Musketeers.Visitors
         private readonly ScanfSemanticAnalyzer scanfSemanticAnalyzer;
         private readonly GetsSemanticAnalyzer getsSemanticAnalyzer;
         private readonly PutsSemanticAnalyzer putsSemanticAnalyzer;
+        private readonly AtoiSemanticAnalyzer atoiSemanticAnalyzer;
+        private readonly AtodSemanticAnalyzer atodSemanticAnalyzer;
+        private readonly ItoaSemanticAnalyzer itoaSemanticAnalyzer;
+        private readonly DtoaSemanticAnalyzer dtoaSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
+            //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
                 ReportError, ReportWarning, Visit);
+            // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
             scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable);
             getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable);
             putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable);
+            // string conversion
+            atoiSemanticAnalyzer = new AtoiSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
+            atodSemanticAnalyzer = new AtodSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
+            itoaSemanticAnalyzer = new ItoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
+            dtoaSemanticAnalyzer = new DtoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -68,7 +82,7 @@ namespace Three_Musketeers.Visitors
             return "char";
         }
 
-        public override string VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context)
+        public override string? VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context)
         {
             return "bool";
         }
@@ -175,7 +189,6 @@ namespace Three_Musketeers.Visitors
         {
             return putsSemanticAnalyzer.VisitPutsStatement(context);
         }
-
         private static bool TwoTypesArePermitedToCast(string type1, string type2)
         {
             bool anyIsDouble = type1 == "double" || type2 == "double";
@@ -188,6 +201,26 @@ namespace Three_Musketeers.Visitors
             if (anyIsInt && (anyIsChar || anyIsBool)) return true;
             if (anyIsChar && (anyIsBool || !anyIsString)) return true;
             return false;
+        }
+
+        public override string VisitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context)
+        {
+            return atoiSemanticAnalyzer.VisitAtoiConversion(context);
+        }
+
+        public override string VisitAtodConversion([NotNull] ExprParser.AtodConversionContext context)
+        {
+            return atodSemanticAnalyzer.VisitAtodConversion(context);
+        }
+
+        public override string VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context)
+        {
+            return itoaSemanticAnalyzer.VisitItoaConversion(context);
+        }
+
+        public override string VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context)
+        {
+            return dtoaSemanticAnalyzer.VisitDtoaConversion(context);
         }
     }
 }
