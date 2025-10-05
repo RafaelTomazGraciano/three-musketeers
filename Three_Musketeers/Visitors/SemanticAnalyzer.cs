@@ -24,7 +24,7 @@ namespace Three_Musketeers.Visitors
         {
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
-                ReportError, ReportWarning, Visit);
+                ReportError, ReportWarning);
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
             scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable);
@@ -54,12 +54,39 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
         {
-            return variableAssignmentSemanticAnalyzer.VisitAtt(context);
+            string? type = variableAssignmentSemanticAnalyzer.VisitAtt(context);
+            string? exprType = Visit(context.expr());
+            if (type == null || exprType == null) return null;
+
+            if (!TwoTypesArePermitedToCast(type, exprType))
+            {
+                ReportError(context.Start.Line,
+                    $"Cannot assign value of type '{exprType}' to variable of type '{type}'");
+                return null;
+            }
+
+            return type;
         }
 
         public override string? VisitVar([NotNull] ExprParser.VarContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitVar(context);
+        }
+
+        public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
+        {
+            string? arrayType = variableAssignmentSemanticAnalyzer.VisitSingleAtt(context);
+            string? exprType = Visit(context.expr());
+            if (arrayType == null || exprType == null) return null;
+
+            if (!TwoTypesArePermitedToCast(arrayType, exprType))
+            {
+                ReportError(context.Start.Line,
+                    $"Cannot assign value of type '{exprType}' to array element of type '{arrayType}'");
+                return null;
+            }
+
+            return arrayType;
         }
 
         public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
@@ -89,14 +116,17 @@ namespace Three_Musketeers.Visitors
 
         public override string VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context)
         {
-            return "false";
+            return "bool";
         }
 
         public override string? VisitAddSub([NotNull] ExprParser.AddSubContext context)
         {
             string leftType = Visit(context.expr(0)) ?? "?";
             string rightType = Visit(context.expr(1)) ?? "?";
+            bool bothArentSameType = leftType != rightType;
             bool isMinus = context.GetText().Contains('-');
+
+            if (leftType == "?" || rightType == "?") return null;
 
             if (leftType == "string" || rightType == "string")
             {
@@ -105,7 +135,13 @@ namespace Three_Musketeers.Visitors
                     ReportError(context.Start.Line, "Cannot perform '-' with strings");
                     return null;
                 }
-                return "string";
+
+                if (!bothArentSameType) return "string";
+
+                ReportError(context.Start.Line,
+                    $"Cannot perform '+' between '{leftType}' and '{rightType}'");
+
+                return null;
             }
 
             if (!TwoTypesArePermitedToCast(leftType, rightType))
@@ -117,16 +153,24 @@ namespace Three_Musketeers.Visitors
 
             if (leftType == "double" || rightType == "double")
             {
+                if(bothArentSameType) ReportWarning(context.Start.Line, 
+                    $"Implicit conversion to 'double'");
+
                 return "double";
             }
 
             if (leftType == "int" || rightType == "int")
             {
+                if(bothArentSameType) ReportWarning(context.Start.Line, 
+                    $"Implicit conversion to 'int'");
+
                 return "int";
             }
 
             if (leftType == "char" || rightType == "char")
             {
+                if(bothArentSameType) ReportWarning(context.Start.Line, 
+                    $"Implicit conversion to 'char'");
                 return "char";
             }
 
@@ -137,7 +181,10 @@ namespace Three_Musketeers.Visitors
         {
             string leftType = Visit(context.expr(0)) ?? "?";
             string rightType = Visit(context.expr(1)) ?? "?";
+            bool bothArentSameType = leftType != rightType;
             bool isDiv = context.GetText().Contains('/');
+
+            if (leftType == "?" || rightType == "?") return null;
 
             if (leftType == "string" || rightType == "string")
             {
@@ -189,19 +236,6 @@ namespace Three_Musketeers.Visitors
         {
             return putsSemanticAnalyzer.VisitPutsStatement(context);
         }
-        private static bool TwoTypesArePermitedToCast(string type1, string type2)
-        {
-            bool anyIsDouble = type1 == "double" || type2 == "double";
-            bool anyIsChar = type1 == "char" || type2 == "char";
-            bool anyIsInt = type1 == "int" || type2 == "int";
-            bool anyIsBool = type1 == "bool" || type2 == "bool";
-            bool anyIsString = type1 == "string" || type2 == "string";
-            if (type1 == type2) return true;
-            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
-            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
-            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
-            return false;
-        }
 
         public override string VisitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context)
         {
@@ -221,6 +255,20 @@ namespace Three_Musketeers.Visitors
         public override string VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context)
         {
             return dtoaSemanticAnalyzer.VisitDtoaConversion(context);
+        }
+        
+        private static bool TwoTypesArePermitedToCast(string type1, string type2)
+        {
+            bool anyIsDouble = type1 == "double" || type2 == "double";
+            bool anyIsChar = type1 == "char" || type2 == "char";
+            bool anyIsInt = type1 == "int" || type2 == "int";
+            bool anyIsBool = type1 == "bool" || type2 == "bool";
+            bool anyIsString = type1 == "string" || type2 == "string";
+            if (type1 == type2) return true;
+            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
+            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
+            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
+            return false;
         }
     }
 }

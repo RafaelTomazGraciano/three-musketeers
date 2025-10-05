@@ -16,15 +16,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         {
             string value = context.CHAR_LITERAL().GetText().Replace("'", "");
             registerTypes[value] = "i8";
-            if (value.Contains('\\'))
-            {
-                return ProcessEscapeSequences(value);
-            }
-
+            if (value.Contains('\\')) return ProcessEscapeSequences(value);
             return ((int)value[0]).ToString();
         }
         
-        private string ProcessEscapeSequences(string str)
+        private static string ProcessEscapeSequences(string str)
         {
             return str switch
             {
@@ -32,7 +28,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 "\\n" => "10",
                 "\\r" => "13",
                 "\\\'" => "39",
-                _ => "92" 
+                "\\\\" => "92",
+                _ => ((int)str[0]).ToString() 
             };
         }
     }

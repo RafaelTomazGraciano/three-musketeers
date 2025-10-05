@@ -10,18 +10,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
         private readonly SymbolTable symbolTable;
         private readonly Action<int, string> reportError;
         private readonly Action<int, string> reportWarning;
-        private readonly Func<ExprParser.ExprContext, string?> visitExpression;
 
         public VariableAssignmentSemanticAnalyzer(
             SymbolTable symbolTable,
             Action<int, string> reportError,
-            Action<int, string> reportWarning,
-            Func<ExprParser.ExprContext, string?> visitExpression)
+            Action<int, string> reportWarning
+            )
         {
             this.symbolTable = symbolTable;
             this.reportError = reportError;
             this.reportWarning = reportWarning;
-            this.visitExpression = visitExpression;
         }
 
         public string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -29,7 +27,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             var typeToken = context.type();
             string varName = context.ID().GetText();
             int line = context.Start.Line;
-            string? evalluatedType = visitExpression(context.expr());
 
             if (typeToken == null)
             {
@@ -119,7 +116,46 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             return symbol.type;
         }
-        
+
+        public string? VisitSingleAtt(ExprParser.SingleAttContext context)
+        {
+            string varName = context.ID().GetText();
+            int line = context.Start.Line;
+
+            var symbol = symbolTable.GetSymbol(varName);
+            if (symbol == null)
+            {
+                reportError(line, $"Variable '{varName}' was not declared");
+                return null;
+            }
+
+            if (symbol is not ArraySymbol arraySymbol)
+            {
+                reportError(line, $"Variable '{varName}' is not an array");
+                return null;
+            }
+
+            var indices = context.index();
+            if (indices.Length != arraySymbol.dimensions.Count)
+            {
+                reportError(line, $"Array '{varName}' expects {arraySymbol.dimensions.Count} indices, but got {indices.Length}");
+                return null;
+            }
+
+            for (int i = 0; i < indices.Length; i++)
+            {
+                var indexCtx = indices[i];
+                int indexValue = int.Parse(indexCtx.INT().GetText());
+                if (indexValue < 0 || indexValue >= arraySymbol.dimensions[i])
+                {
+                    reportError(indexCtx.Start.Line,
+                        $"Index {i} of array '{varName}' is out of bounds. Expected 0 to {arraySymbol.dimensions[i] - 1}, but got {indexValue}");
+                    return null;
+                }
+            }
+
+            return arraySymbol.innerType;
+        }
     }
 }
 

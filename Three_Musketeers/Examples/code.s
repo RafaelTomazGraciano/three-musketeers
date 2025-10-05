@@ -1,4 +1,3 @@
-	.text
 	.file	"code.ll"
 	.section	.rodata.cst8,"aM",@progbits,8
 	.p2align	3, 0x0                          # -- Begin function main
@@ -8,7 +7,7 @@
 	.quad	0x400921f9f01b866e              # double 3.1415899999999999
 	.text
 	.globl	main
-	.p2align	4, 0x90
+	.p2align	4
 	.type	main,@function
 main:                                   # @main
 # %bb.0:                                # %entry
@@ -137,7 +136,7 @@ main:                                   # @main
 	callq	printf@PLT
 	movl	$.Lstr.6, %edi
 	callq	puts@PLT
-	movl	$.L.str.puts.bc2e12a3, %edi
+	movl	$.L.str.puts.96baa9d9, %edi
 	callq	puts@PLT
 	xorl	%eax, %eax
 	addq	$360, %rsp                      # imm = 0x168
@@ -270,12 +269,12 @@ main:                                   # @main
 	.asciz	"%lf"
 	.size	.L.fmt.lf, 4
 
-	.type	.L.str.puts.bc2e12a3,@object    # @.str.puts.bc2e12a3
+	.type	.L.str.puts.96baa9d9,@object    # @.str.puts.96baa9d9
 	.section	.rodata.str1.16,"aMS",@progbits,1
 	.p2align	4, 0x0
-.L.str.puts.bc2e12a3:
+.L.str.puts.96baa9d9:
 	.asciz	"Three Musketeers compiler is working!"
-	.size	.L.str.puts.bc2e12a3, 38
+	.size	.L.str.puts.96baa9d9, 38
 
 	.type	.Lstr,@object                   # @str
 	.section	.rodata.str1.1,"aMS",@progbits,1
