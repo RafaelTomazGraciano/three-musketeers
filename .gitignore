@@ -259,3 +259,4 @@ yarn-error.log*
 # ============================================
 # Examples/output/          # Se você gerar arquivos de teste aqui
 # Tests/temp/               # Arquivos temporários de testes
+Three_Musketeers/Examples/*
