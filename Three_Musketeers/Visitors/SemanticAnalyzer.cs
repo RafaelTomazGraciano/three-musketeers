@@ -70,7 +70,90 @@ namespace Three_Musketeers.Visitors
 
         public override string VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context)
         {
-            return base.VisitTrueLiteral(context);
+            return "bool";
+        }
+
+        public override string VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context)
+        {
+            return "false";
+        }
+
+        public override string? VisitAddSub([NotNull] ExprParser.AddSubContext context)
+        {
+            string leftType = Visit(context.expr(0)) ?? "?";
+            string rightType = Visit(context.expr(1)) ?? "?";
+            bool isMinus = context.GetText().Contains('-');
+
+            if (leftType == "string" || rightType == "string")
+            {
+                if (isMinus)
+                {
+                    ReportError(context.Start.Line, "Cannot perform '-' with strings");
+                    return null;
+                }
+                return "string";
+            }
+
+            if (!TwoTypesArePermitedToCast(leftType, rightType))
+            {
+                ReportError(context.Start.Line,
+                    $"Cannot perform '{(isMinus ? '-' : '+')}' between '{leftType}' and '{rightType}'");
+                return null;
+            }
+
+            if (leftType == "double" || rightType == "double")
+            {
+                return "double";
+            }
+
+            if (leftType == "int" || rightType == "int")
+            {
+                return "int";
+            }
+
+            if (leftType == "char" || rightType == "char")
+            {
+                return "char";
+            }
+
+            return "bool";
+        }
+
+        public override string? VisitMulDiv([NotNull] ExprParser.MulDivContext context)
+        {
+            string leftType = Visit(context.expr(0)) ?? "?";
+            string rightType = Visit(context.expr(1)) ?? "?";
+            bool isDiv = context.GetText().Contains('/');
+
+            if (leftType == "string" || rightType == "string")
+            {
+                ReportError(context.Start.Line, $"Cannot perform '{(isDiv ? '/' : '*')}' with strings");
+                return null;
+            }
+
+            if (!TwoTypesArePermitedToCast(leftType, rightType))
+            {
+                ReportError(context.Start.Line,
+                    $"Cannot perform '{(isDiv ? '/' : '*')}' between '{leftType}' and '{rightType}'");
+                return null;
+            }
+
+            if (leftType == "double" || rightType == "double")
+            {
+                return "double";
+            }
+
+            if (leftType == "int" || rightType == "int")
+            {
+                return "int";
+            }
+
+            if (leftType == "char" || rightType == "char")
+            {
+                return "char";
+            }
+
+            return "bool";
         }
 
         public override string? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
@@ -93,6 +176,19 @@ namespace Three_Musketeers.Visitors
             return putsSemanticAnalyzer.VisitPutsStatement(context);
         }
 
+        private static bool TwoTypesArePermitedToCast(string type1, string type2)
+        {
+            bool anyIsDouble = type1 == "double" || type2 == "double";
+            bool anyIsChar = type1 == "char" || type2 == "char";
+            bool anyIsInt = type1 == "int" || type2 == "int";
+            bool anyIsBool = type1 == "bool" || type2 == "bool";
+            bool anyIsString = type1 == "string" || type2 == "string";
+            if (type1 == type2) return true;
+            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
+            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
+            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
+            return false;
+        }
     }
 }
 

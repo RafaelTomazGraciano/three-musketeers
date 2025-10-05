@@ -20,8 +20,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             {
                 return ProcessEscapeSequences(value);
             }
-
-            Console.WriteLine($"{(int)value[0]} {value[0]}");
             return ((int)value[0]).ToString();
         }
         
