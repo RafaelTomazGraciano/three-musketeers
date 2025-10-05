@@ -86,6 +86,22 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 return GetExpressionType(unaryMinusCtx.expr());
             }
+
+            if (expr is ExprParser.LogicalAndOrContext logicalAndOrCtx)
+            {
+                return "bool";
+            }
+
+            if (expr is ExprParser.LogicalNotContext logicalNotCtx)
+            {
+                return "bool";
+            }
+
+            if (expr is ExprParser.EqualityContext equalityCtx)
+            {
+                return "bool";
+            }
+            
             return "int";
         }
 

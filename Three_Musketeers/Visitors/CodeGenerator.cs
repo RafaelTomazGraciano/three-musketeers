@@ -6,6 +6,7 @@ using Three_Musketeers.Visitors.CodeGeneration.InputOutput;
 using Three_Musketeers.Visitors.CodeGeneration.StringConversion;
 using Three_Musketeers.Visitors.CodeGeneration.Arithmetic;
 using Three_Musketeers.Visitors.CodeGeneration.Logical;
+using Three_Musketeers.Visitors.CodeGeneration.Equality;
 
 namespace Three_Musketeers.Visitors
 {
@@ -24,6 +25,7 @@ namespace Three_Musketeers.Visitors
         private readonly DtoaCodeGenerator dtoaCodeGenerator;
         private readonly ArithmeticCodeGenerator arithmeticCodeGenerator;
         private readonly LogicalCodeGenerator logicalCodeGenerator;
+        private readonly EqualityCodeGenerator equalityCodeGenerator;
 
         public CodeGenerator()
         {
@@ -52,6 +54,9 @@ namespace Three_Musketeers.Visitors
                 mainBody, registerTypes, NextRegister, Visit);
             //logical
             logicalCodeGenerator = new LogicalCodeGenerator(
+                mainBody, registerTypes, NextRegister, Visit);
+            //equality
+            equalityCodeGenerator = new EqualityCodeGenerator(
                 mainBody, registerTypes, NextRegister, Visit);
         }
 
@@ -199,6 +204,11 @@ namespace Three_Musketeers.Visitors
         {
             // For parentheses, just visit the inner expression
             return Visit(context.expr());
+        }
+
+        public override string VisitEquality([NotNull] ExprParser.EqualityContext context)
+        {
+            return equalityCodeGenerator.VisitEquality(context);
         }
     }
 }
