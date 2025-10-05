@@ -4,6 +4,7 @@ using Three_Musketeers.Visitors.CodeGeneration;
 using Three_Musketeers.Visitors.CodeGeneration.Variables;
 using Three_Musketeers.Visitors.CodeGeneration.InputOutput;
 using Three_Musketeers.Visitors.CodeGeneration.StringConversion;
+using Three_Musketeers.Visitors.CodeGeneration.Arithmetic;
 
 namespace Three_Musketeers.Visitors
 {
@@ -20,6 +21,7 @@ namespace Three_Musketeers.Visitors
         private readonly AtodCodeGenerator atodCodeGenerator;
         private readonly ItoaCodeGenerator itoaCodeGenerator;
         private readonly DtoaCodeGenerator dtoaCodeGenerator;
+        private readonly ArithmeticCodeGenerator arithmeticCodeGenerator;
 
         public CodeGenerator()
         {
@@ -42,6 +44,10 @@ namespace Three_Musketeers.Visitors
             atodCodeGenerator = new AtodCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
             itoaCodeGenerator = new ItoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
             dtoaCodeGenerator = new DtoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
+
+            //arithmetic
+            arithmeticCodeGenerator = new ArithmeticCodeGenerator(
+                mainBody, registerTypes, NextRegister, Visit);
         }
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -143,6 +149,16 @@ namespace Three_Musketeers.Visitors
         public override string VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context)
         {
             return dtoaCodeGenerator.VisitDtoaConversion(context);
+        }
+
+        public override string VisitAddSub([NotNull] ExprParser.AddSubContext context)
+        {
+            return arithmeticCodeGenerator.VisitAddSub(context);
+        }
+
+        public override string VisitMulDiv([NotNull] ExprParser.MulDivContext context)
+        {
+            return arithmeticCodeGenerator.VisitMulDiv(context);
         }
 
     }

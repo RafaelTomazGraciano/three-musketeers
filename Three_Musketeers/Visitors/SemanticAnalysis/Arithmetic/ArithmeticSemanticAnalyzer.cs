@@ -20,7 +20,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Arithmetic
             this.visitExpression = visitExpression;
         }
 
-        public string? VisitAddSub([NotNull] ExprParser.AddSubContext context)
+        public string VisitAddSub([NotNull] ExprParser.AddSubContext context)
         {
             var leftType = getExpressionType(context.expr(0));
             var rightType = getExpressionType(context.expr(1));
@@ -34,14 +34,14 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Arithmetic
             {
                 reportError(context.Start.Line, 
                     $"Arithmetic operations require numeric types, got '{leftType}' and '{rightType}'");
-                return null;
+                return "int"; // Return default type instead of null
             }
             
             // Return the promoted type (double if either operand is double, otherwise int)
             return PromoteTypes(leftType, rightType);
         }
 
-        public string? VisitMulDiv([NotNull] ExprParser.MulDivContext context)
+        public string VisitMulDiv([NotNull] ExprParser.MulDivContext context)
         {
             var leftType = getExpressionType(context.expr(0));
             var rightType = getExpressionType(context.expr(1));
@@ -55,7 +55,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Arithmetic
             {
                 reportError(context.Start.Line, 
                     $"Arithmetic operations require numeric types, got '{leftType}' and '{rightType}'");
-                return null;
+                return "int"; // Return default type instead of null
             }
             
             // Return the promoted type (double if either operand is double, otherwise int)
