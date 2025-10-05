@@ -401,6 +401,20 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context) { }
 	/// <summary>
+	/// Enter a parse tree produced by the <c>Comparison</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterComparison([NotNull] ExprParser.ComparisonContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Comparison</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitComparison([NotNull] ExprParser.ComparisonContext context) { }
+	/// <summary>
 	/// Enter a parse tree produced by the <c>AtodConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>

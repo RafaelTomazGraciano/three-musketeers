@@ -215,6 +215,13 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
 	/// <summary>
+	/// Visit a parse tree produced by the <c>Comparison</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitComparison([NotNull] ExprParser.ComparisonContext context);
+	/// <summary>
 	/// Visit a parse tree produced by the <c>AtodConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>

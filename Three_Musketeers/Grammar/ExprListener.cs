@@ -340,6 +340,18 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>Comparison</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterComparison([NotNull] ExprParser.ComparisonContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>Comparison</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitComparison([NotNull] ExprParser.ComparisonContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>AtodConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>

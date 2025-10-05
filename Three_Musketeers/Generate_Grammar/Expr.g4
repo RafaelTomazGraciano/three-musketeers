@@ -74,6 +74,7 @@ index
 expr
     : expr ('&&'|'||') expr        # LogicalAndOr
     | expr ('=='|'!=') expr        # Equality
+    | expr ('>'|'<'|'>='|'<=') expr # Comparison
     | expr ('*'|'/'|'%') expr  # MulDivMod
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
