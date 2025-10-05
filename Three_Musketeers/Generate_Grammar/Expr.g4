@@ -72,9 +72,11 @@ index
     ;
 
 expr
-    : expr ('*'|'/'|'%') expr  # MulDivMod
+    : expr ('&&'|'||') expr        # LogicalAndOr
+    | expr ('*'|'/'|'%') expr  # MulDivMod
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
+    | '!' expr                 # LogicalNot
     | '-' expr                 # UnaryMinus
     | 'atoi' '(' expr ')'           # AtoiConversion
     | 'atod' '(' expr ')'           # AtodConversion
@@ -107,6 +109,9 @@ GR            : '>';
 GRT           : '>=';
 LE            : '<';
 LET           : '<=';
+AND           : '&&';
+OR            : '||';
+NOT           : '!';
 TRUE          : 'true';
 FALSE         : 'false';
 ID            : [a-zA-Z_][a-zA-Z0-9_]*;

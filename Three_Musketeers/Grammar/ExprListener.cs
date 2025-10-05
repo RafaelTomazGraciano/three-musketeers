@@ -280,6 +280,18 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
 	/// <summary>
+	/// Enter a parse tree produced by the <c>LogicalNot</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterLogicalNot([NotNull] ExprParser.LogicalNotContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>LogicalNot</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitLogicalNot([NotNull] ExprParser.LogicalNotContext context);
+	/// <summary>
 	/// Enter a parse tree produced by the <c>MulDivMod</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -339,6 +351,18 @@ public interface IExprListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitAtodConversion([NotNull] ExprParser.AtodConversionContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>LogicalAndOr</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterLogicalAndOr([NotNull] ExprParser.LogicalAndOrContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>LogicalAndOr</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitLogicalAndOr([NotNull] ExprParser.LogicalAndOrContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>IntLiteral</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
