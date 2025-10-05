@@ -72,7 +72,7 @@ index
     ;
 
 expr
-    : expr ('*'|'/') expr      # MulDiv
+    : expr ('*'|'/'|'%') expr  # MulDivMod
     | expr ('+'|'-') expr      # AddSub
     | '(' expr ')'             # Parens
     | '-' expr                 # UnaryMinus

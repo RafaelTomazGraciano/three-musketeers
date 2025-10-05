@@ -208,18 +208,6 @@ public interface IExprListener : IParseTreeListener {
 	/// <param name="context">The parse tree.</param>
 	void ExitCharLiteral([NotNull] ExprParser.CharLiteralContext context);
 	/// <summary>
-	/// Enter a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void EnterMulDiv([NotNull] ExprParser.MulDivContext context);
-	/// <summary>
-	/// Exit a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	void ExitMulDiv([NotNull] ExprParser.MulDivContext context);
-	/// <summary>
 	/// Enter a parse tree produced by the <c>AddSub</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -291,6 +279,18 @@ public interface IExprListener : IParseTreeListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	void ExitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	/// <summary>
+	/// Enter a parse tree produced by the <c>MulDivMod</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void EnterMulDivMod([NotNull] ExprParser.MulDivModContext context);
+	/// <summary>
+	/// Exit a parse tree produced by the <c>MulDivMod</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	void ExitMulDivMod([NotNull] ExprParser.MulDivModContext context);
 	/// <summary>
 	/// Enter a parse tree produced by the <c>ItoaConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.

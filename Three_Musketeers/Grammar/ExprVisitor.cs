@@ -138,13 +138,6 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <return>The visitor result.</return>
 	Result VisitCharLiteral([NotNull] ExprParser.CharLiteralContext context);
 	/// <summary>
-	/// Visit a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	/// <return>The visitor result.</return>
-	Result VisitMulDiv([NotNull] ExprParser.MulDivContext context);
-	/// <summary>
 	/// Visit a parse tree produced by the <c>AddSub</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// </summary>
@@ -186,6 +179,13 @@ public interface IExprVisitor<Result> : IParseTreeVisitor<Result> {
 	/// <param name="context">The parse tree.</param>
 	/// <return>The visitor result.</return>
 	Result VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context);
+	/// <summary>
+	/// Visit a parse tree produced by the <c>MulDivMod</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	/// <return>The visitor result.</return>
+	Result VisitMulDivMod([NotNull] ExprParser.MulDivModContext context);
 	/// <summary>
 	/// Visit a parse tree produced by the <c>ItoaConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.

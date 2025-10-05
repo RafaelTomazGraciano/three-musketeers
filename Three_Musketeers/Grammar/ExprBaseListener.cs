@@ -247,20 +247,6 @@ public partial class ExprBaseListener : IExprListener {
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitCharLiteral([NotNull] ExprParser.CharLiteralContext context) { }
 	/// <summary>
-	/// Enter a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void EnterMulDiv([NotNull] ExprParser.MulDivContext context) { }
-	/// <summary>
-	/// Exit a parse tree produced by the <c>MulDiv</c>
-	/// labeled alternative in <see cref="ExprParser.expr"/>.
-	/// <para>The default implementation does nothing.</para>
-	/// </summary>
-	/// <param name="context">The parse tree.</param>
-	public virtual void ExitMulDiv([NotNull] ExprParser.MulDivContext context) { }
-	/// <summary>
 	/// Enter a parse tree produced by the <c>AddSub</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
 	/// <para>The default implementation does nothing.</para>
@@ -344,6 +330,20 @@ public partial class ExprBaseListener : IExprListener {
 	/// </summary>
 	/// <param name="context">The parse tree.</param>
 	public virtual void ExitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context) { }
+	/// <summary>
+	/// Enter a parse tree produced by the <c>MulDivMod</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void EnterMulDivMod([NotNull] ExprParser.MulDivModContext context) { }
+	/// <summary>
+	/// Exit a parse tree produced by the <c>MulDivMod</c>
+	/// labeled alternative in <see cref="ExprParser.expr"/>.
+	/// <para>The default implementation does nothing.</para>
+	/// </summary>
+	/// <param name="context">The parse tree.</param>
+	public virtual void ExitMulDivMod([NotNull] ExprParser.MulDivModContext context) { }
 	/// <summary>
 	/// Enter a parse tree produced by the <c>ItoaConversion</c>
 	/// labeled alternative in <see cref="ExprParser.expr"/>.
