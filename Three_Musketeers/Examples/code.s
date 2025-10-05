@@ -136,7 +136,7 @@ main:                                   # @main
 	callq	printf@PLT
 	movl	$.Lstr.6, %edi
 	callq	puts@PLT
-	movl	$.L.str.puts.96baa9d9, %edi
+	movl	$.L.str.puts.53049198, %edi
 	callq	puts@PLT
 	xorl	%eax, %eax
 	addq	$360, %rsp                      # imm = 0x168
@@ -269,12 +269,12 @@ main:                                   # @main
 	.asciz	"%lf"
 	.size	.L.fmt.lf, 4
 
-	.type	.L.str.puts.96baa9d9,@object    # @.str.puts.96baa9d9
+	.type	.L.str.puts.53049198,@object    # @.str.puts.53049198
 	.section	.rodata.str1.16,"aMS",@progbits,1
 	.p2align	4, 0x0
-.L.str.puts.96baa9d9:
+.L.str.puts.53049198:
 	.asciz	"Three Musketeers compiler is working!"
-	.size	.L.str.puts.96baa9d9, 38
+	.size	.L.str.puts.53049198, 38
 
 	.type	.Lstr,@object                   # @str
 	.section	.rodata.str1.1,"aMS",@progbits,1

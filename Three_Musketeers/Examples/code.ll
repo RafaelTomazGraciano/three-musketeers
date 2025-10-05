@@ -44,7 +44,7 @@ declare double @atof(i8*)
 declare i32 @sprintf(i8*, i8*, ...)
 @.fmt.d = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 @.fmt.lf = private unnamed_addr constant [4 x i8] c"%lf\00", align 1
-@.str.puts.96baa9d9 = private unnamed_addr constant [38 x i8] c"Three Musketeers compiler is working!\00"
+@.str.puts.53049198 = private unnamed_addr constant [38 x i8] c"Three Musketeers compiler is working!\00"
 define i32 @main() {
 entry:
   %1 = alloca i8*, align 1
@@ -181,7 +181,7 @@ entry:
   %120 = call i32 (i8*, ...) @printf(i8* %118, i8* %119)
   %121 = getelementptr [30 x i8], [30 x i8]* @.str.28, i32 0, i32 0
   %122 = call i32 (i8*, ...) @printf(i8* %121)
-  %123 = getelementptr inbounds [38 x i8], [38 x i8]* @.str.puts.96baa9d9, i32 0, i32 0
+  %123 = getelementptr inbounds [38 x i8], [38 x i8]* @.str.puts.53049198, i32 0, i32 0
   %124 = call i32 @puts(i8* %123)
   ret i32 0
 }

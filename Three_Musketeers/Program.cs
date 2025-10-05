@@ -2,13 +2,14 @@
 using Three_Musketeers.Visitors;
 using Three_Musketeers.Listeners;
 using Three_Musketeers.Grammar;
+using System.Diagnostics;
 
 namespace Three_Musketeers{
     public class Program
     {
         public static int Main()
         {
-            string filePath = "Examples/ShouldCompile/code.m3";
+            string filePath = "Examples/code.m3";
 
             try
             {
@@ -50,7 +51,15 @@ namespace Three_Musketeers{
                 var llvmCode = codeGenerator.Visit(tree);
 
                 string outputPath = Path.ChangeExtension(filePath, ".ll");
+                string bytecodePath = Path.ChangeExtension(filePath, ".bc");
+                string optBytecodePath = Path.ChangeExtension(filePath, ".opt.bc");
+                string assemblyPath = Path.ChangeExtension(filePath, ".s");
+                string resultPath = Path.ChangeExtension(filePath, "");
                 File.WriteAllText(outputPath, llvmCode);
+                Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
+                Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
+                Process.Start("llc", $"{optBytecodePath} -o {assemblyPath}").WaitForExit();
+                Process.Start("gcc", $"{assemblyPath} -o {resultPath} -nopie").WaitForExit();
                 return 0;
             }
             catch (Exception ex)
