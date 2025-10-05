@@ -59,7 +59,7 @@ namespace Three_Musketeers{
                 Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
                 Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
                 Process.Start("llc", $"{optBytecodePath} -o {assemblyPath}").WaitForExit();
-                Process.Start("gcc", $"{assemblyPath} -o {resultPath} -nopie").WaitForExit();
+                Process.Start("gcc", $"{assemblyPath} -o {resultPath} -no-pie").WaitForExit();
                 return 0;
             }
             catch (Exception ex)
