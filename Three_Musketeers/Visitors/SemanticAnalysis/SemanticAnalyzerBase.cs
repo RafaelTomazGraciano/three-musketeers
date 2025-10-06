@@ -8,6 +8,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     public abstract class SemanticAnalyzerBase : ExprBaseVisitor<string?>
     {
         protected SymbolTable symbolTable = new SymbolTable();
+        protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
         public bool hasErrors { get; protected set; } = false;
 
         protected void ReportError(int line, string message)

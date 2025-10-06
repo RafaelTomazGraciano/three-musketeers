@@ -9,19 +9,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class PutsCodeGenerator
     {
         private readonly StringBuilder declarations;
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, Variable> variables;
         private readonly Func<string> nextRegister;
         private bool putsInitialized = false;
 
         public PutsCodeGenerator(
             StringBuilder declarations,
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody, 
             Dictionary<string, Variable> variables,
             Func<string> nextRegister)
         {
             this.declarations = declarations;
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.variables = variables;
             this.nextRegister = nextRegister;
         }
@@ -37,10 +37,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         var variable = variables[varName];
 
         string bufferPtr = nextRegister();
-        mainBody.AppendLine($"  {bufferPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
+        getCurrentBody().AppendLine($"  {bufferPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
 
         string resultReg = nextRegister();
-        mainBody.AppendLine($"  {resultReg} = call i32 @puts(i8* {bufferPtr})");
+        getCurrentBody().AppendLine($"  {resultReg} = call i32 @puts(i8* {bufferPtr})");
     }
     else if (context.STRING_LITERAL() != null)
     {
@@ -52,10 +52,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         declarations.AppendLine($"{strLabel} = private unnamed_addr constant [{length} x i8] c\"{literal}\\00\"");
 
         string strPtr = nextRegister();
-        mainBody.AppendLine($"  {strPtr} = getelementptr inbounds [{length} x i8], [{length} x i8]* {strLabel}, i32 0, i32 0");
+        getCurrentBody().AppendLine($"  {strPtr} = getelementptr inbounds [{length} x i8], [{length} x i8]* {strLabel}, i32 0, i32 0");
 
         string resultReg = nextRegister();
-        mainBody.AppendLine($"  {resultReg} = call i32 @puts(i8* {strPtr})");
+        getCurrentBody().AppendLine($"  {resultReg} = call i32 @puts(i8* {strPtr})");
     }
 
     return null;

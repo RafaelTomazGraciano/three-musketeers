@@ -7,18 +7,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
 {
     public class ComparisonCodeGenerator
     {
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
 
         public ComparisonCodeGenerator(
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string?> visitExpression)
         {
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
@@ -53,7 +53,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
                     "<=" => "fcmp ole",
                     _ => "fcmp oeq"
                 };
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} double {leftConverted}, {rightConverted}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {leftConverted}, {rightConverted}");
             }
             else
             {
@@ -66,7 +66,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
                     "<=" => "icmp sle",
                     _ => "icmp eq"
                 };
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {leftConverted}, {rightConverted}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {leftConverted}, {rightConverted}");
             }
             
             registerTypes[resultReg] = "i1";
@@ -109,7 +109,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
             {
                 // Convert boolean to integer for comparison
                 string convReg = nextRegister();
-                mainBody.AppendLine($"  {convReg} = zext i1 {value} to i32");
+                getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i32");
                 registerTypes[convReg] = "i32";
                 return convReg;
             }
@@ -117,7 +117,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
             {
                 // Convert char to integer for comparison
                 string convReg = nextRegister();
-                mainBody.AppendLine($"  {convReg} = zext i8 {value} to i32");
+                getCurrentBody().AppendLine($"  {convReg} = zext i8 {value} to i32");
                 registerTypes[convReg] = "i32";
                 return convReg;
             }

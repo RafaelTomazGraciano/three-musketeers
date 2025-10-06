@@ -10,7 +10,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class ScanfCodeGenerator
     {
         private readonly StringBuilder globalStrings;
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
@@ -19,7 +19,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
         public ScanfCodeGenerator(
             StringBuilder globalStrings,
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
@@ -27,7 +27,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             Func<string, string> getLLVMType)
         {
             this.globalStrings = globalStrings;
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.variables = variables;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
@@ -65,7 +65,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{formatStr}\\00\", align 1");
 
             string ptrReg = nextRegister();
-            mainBody.AppendLine($"  {ptrReg} = getelementptr inbounds [{strLen} x i8], [{strLen} x i8]* {strLabel}, i32 0, i32 0");
+            getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [{strLen} x i8], [{strLen} x i8]* {strLabel}, i32 0, i32 0");
 
             var scanfArgs = new StringBuilder();
             scanfArgs.Append($"i8* {ptrReg}");
@@ -77,7 +77,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 scanfArgs.Append($", {llvmType}* {variable.register}");
             }
             string resultReg = nextRegister();
-            mainBody.AppendLine($"  {resultReg} = call i32 (i8*, ...) @scanf({scanfArgs})");
+            getCurrentBody().AppendLine($"  {resultReg} = call i32 (i8*, ...) @scanf({scanfArgs})");
 
             return null;
         }

@@ -9,19 +9,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class GetsCodeGenerator
     {
         private readonly StringBuilder declarations;
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, Variable> variables;
         private readonly Func<string> nextRegister;
         private bool fgetsInitialized = false;
 
         public GetsCodeGenerator(
             StringBuilder declarations,
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, Variable> variables,
             Func<string> nextRegister)
         {
             this.declarations = declarations;
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.variables = variables;
             this.nextRegister = nextRegister;
         }
@@ -35,13 +35,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             InitializeFgets();
 
             string bufferPtr = nextRegister();
-            mainBody.AppendLine($"  {bufferPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
+            getCurrentBody().AppendLine($"  {bufferPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
 
             string stdinReg = nextRegister();
-            mainBody.AppendLine($"  {stdinReg} = load %struct._IO_FILE*, %struct._IO_FILE** @stdin");
+            getCurrentBody().AppendLine($"  {stdinReg} = load %struct._IO_FILE*, %struct._IO_FILE** @stdin");
 
             string resultReg = nextRegister();
-            mainBody.AppendLine($"  {resultReg} = call i8* @fgets(i8* {bufferPtr}, i32 256, %struct._IO_FILE* {stdinReg})");
+            getCurrentBody().AppendLine($"  {resultReg} = call i8* @fgets(i8* {bufferPtr}, i32 256, %struct._IO_FILE* {stdinReg})");
             
             return null;
         }

@@ -16,6 +16,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<string> nextRegister;
         private readonly Func<string, string> getLLVMType;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
+        private readonly Func<string?> getCurrentFunctionName;
+        private readonly Func<StringBuilder> getCurrentBody;
 
         public VariableAssignmentCodeGenerator(
             StringBuilder mainBody,
@@ -24,7 +26,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<string, string> getLLVMType,
-            Func<ExprParser.ExprContext, string> visitExpression)
+            Func<ExprParser.ExprContext, string> visitExpression,
+            Func<string?> getCurrentFunctionName,
+            Func<StringBuilder> getCurrentBody)
         {
             this.mainBody = mainBody;
             this.declarations = declarations;
@@ -33,6 +37,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.nextRegister = nextRegister;
             this.getLLVMType = getLLVMType;
             this.visitExpression = visitExpression;
+            this.getCurrentFunctionName = getCurrentFunctionName;
+            this.getCurrentBody = getCurrentBody;
         }
 
         public string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -52,7 +58,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
             else
             {
-                Variable variable = variables[varName];
+                Variable variable = GetVariableWithScope(varName)!;
                 varType = variable.type;
                 llvmType = variable.LLVMType;
                 register = variable.register;
@@ -70,7 +76,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
 
             string value = visitExpression(context.expr());
-            mainBody.AppendLine($"  store {llvmType} {value}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
+            getCurrentBody().AppendLine($"  store {llvmType} {value}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
             return null;
         }
 
@@ -81,30 +87,30 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 declarations.AppendLine("declare i8* @strcpy(i8*, i8*)");
             }
             string destPtr = nextRegister();
-            mainBody.AppendLine($"  {destPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {register}, i32 0, i32 {pos}");
+            getCurrentBody().AppendLine($"  {destPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {register}, i32 0, i32 {pos}");
             string srcPtr = nextRegister();
-            mainBody.AppendLine($"  {srcPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {exprResult}, i32 0, i32 0");
+            getCurrentBody().AppendLine($"  {srcPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {exprResult}, i32 0, i32 0");
 
             string copyResult = nextRegister();
-            mainBody.AppendLine($"  {copyResult} = call i8* @strcpy(i8* {destPtr}, i8* {srcPtr})");
+            getCurrentBody().AppendLine($"  {copyResult} = call i8* @strcpy(i8* {destPtr}, i8* {srcPtr})");
         }
 
         public string VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
 
-            Variable variable = variables[varName];
+            Variable variable = GetVariableWithScope(varName)!;
 
             if (variable.type == "string")
             {
                 string ptrReg = nextRegister();
-                mainBody.AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
+                getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
                 registerTypes[ptrReg] = "i8*";
                 return ptrReg;
             }
 
             string loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             registerTypes[loadReg] = variable.LLVMType;
             return loadReg;
         }
@@ -159,7 +165,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             var indexes = context.index();
             int i = 0;
             int pos = 0;
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)GetVariableWithScope(varName)!;
             foreach (var dim in arrayVar.dimensions)
             {
                 int index = int.Parse(indexes[i].INT().GetText());
@@ -171,7 +177,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             string llvmType = arrayVar.type == "string" ? "i8" : arrayVar.innerType;
 
-            mainBody.AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {pos}");
+            getCurrentBody().AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {pos}");
 
             if (arrayVar.type == "string")
             {
@@ -180,7 +186,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
 
             string loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {elementPtrReg}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {elementPtrReg}, align {GetAlignment(arrayVar.innerType)}");
             registerTypes[loadReg] = arrayVar.innerType;
             return loadReg;
         }
@@ -192,7 +198,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             var indexes = context.index();
             int pos = 0;
             int i = 0;
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)GetVariableWithScope(varName)!;
             foreach (var dim in arrayVar.dimensions)
             {
                 int index = int.Parse(indexes[i].INT().GetText());
@@ -210,14 +216,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
 
             string regElementPtr = nextRegister();
-            mainBody.AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
-            mainBody.AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
             return null;
         }
 
         private void WriteAlloca(string register, string type, int alignment)
         {
-            mainBody.AppendLine($"  {register} = alloca {type}, align {alignment}");
+            getCurrentBody().AppendLine($"  {register} = alloca {type}, align {alignment}");
         }
 
         private static int GetAlignment(string type)
@@ -230,5 +236,29 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 _ => 4
             };
         }
+
+        private Variable? GetVariableWithScope(string varName)
+        {
+            string? currentFunc = getCurrentFunctionName();
+            
+            // search local
+            if (currentFunc != null)
+            {
+                string scopedName = $"@{currentFunc}.{varName}";
+                if (variables.ContainsKey(scopedName))
+                {
+                    return variables[scopedName];
+                }
+            }
+            
+            // search global
+            if (variables.ContainsKey(varName))
+            {
+                return variables[varName];
+            }
+            
+            return null;
+        }
+
     }
 }

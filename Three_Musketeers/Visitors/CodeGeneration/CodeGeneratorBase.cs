@@ -1,6 +1,7 @@
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Visitors.CodeGeneration.Functions;
 
 namespace Three_Musketeers.Visitors.CodeGeneration
 {
@@ -11,6 +12,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         protected StringBuilder mainBody = new StringBuilder();
         protected Dictionary<string, Variable> variables = new Dictionary<string, Variable>();
         protected Dictionary<string, string> registerTypes = new Dictionary<string, string>();
+
+        //for functions
+        protected StringBuilder functionDefinitions = new StringBuilder();
+        protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
+        protected FunctionCodeGenerator? functionCodeGenerator;
+
         protected int stringCounter = 0;
         protected int registerCount = 0;
 
@@ -52,6 +59,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
             finalCode.Append(declarations);
 
+            if (functionDefinitions.Length > 0)
+            {
+                finalCode.Append(functionDefinitions);
+                finalCode.AppendLine();
+            }
+
             finalCode.AppendLine("define i32 @main() {");
             finalCode.AppendLine("entry:");
             finalCode.Append(mainBody);
@@ -59,6 +72,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             finalCode.AppendLine("}");
 
             return finalCode.ToString();
+        }
+
+        protected StringBuilder GetCurrentBody()
+        {
+            // Se estiver dentro de função, retorna o body da função
+            if (functionCodeGenerator != null && functionCodeGenerator.IsInsideFunction())
+            {
+                return functionCodeGenerator.GetCurrentFunctionBody()!;
+            }
+            
+            // Senão, retorna mainBody
+            return mainBody;
         }
     }
 }

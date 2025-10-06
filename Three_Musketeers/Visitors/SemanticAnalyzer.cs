@@ -9,6 +9,7 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Arithmetic;
 using Three_Musketeers.Visitors.SemanticAnalysis.Logical;
 using Three_Musketeers.Visitors.SemanticAnalysis.Equality;
 using Three_Musketeers.Visitors.SemanticAnalysis.Comparison;
+using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
 
 namespace Three_Musketeers.Visitors
 {
@@ -27,6 +28,8 @@ namespace Three_Musketeers.Visitors
         private readonly LogicalSemanticAnalyzer logicalSemanticAnalyzer;
         private readonly EqualitySemanticAnalyzer equalitySemanticAnalyzer;
         private readonly ComparisonSemanticAnalyzer comparisonSemanticAnalyzer;
+        private readonly FunctionSemanticAnalyzer functionSemanticAnalyzer;
+        private readonly FunctionCallSemanticAnalyzer functionCallSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
@@ -51,6 +54,10 @@ namespace Three_Musketeers.Visitors
             equalitySemanticAnalyzer = new EqualitySemanticAnalyzer(ReportError, GetExpressionType, Visit);
             // comparison
             comparisonSemanticAnalyzer = new ComparisonSemanticAnalyzer(ReportError, GetExpressionType, Visit);
+            //functions
+            functionSemanticAnalyzer = new FunctionSemanticAnalyzer(symbolTable, declaredFunctions, ReportError, ReportWarning,
+                GetExpressionType, Visit);
+            functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType, Visit);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -199,7 +206,7 @@ namespace Three_Musketeers.Visitors
         public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
         {
             return comparisonSemanticAnalyzer.VisitComparison(context);
-        }        
+        }
         private static bool TwoTypesArePermitedToCast(string type1, string type2)
         {
             bool anyIsDouble = type1 == "double" || type2 == "double";
@@ -213,6 +220,29 @@ namespace Three_Musketeers.Visitors
             if (anyIsChar && (anyIsBool || !anyIsString)) return true;
             return false;
         }
+
+        public override string? VisitFunction([NotNull] ExprParser.FunctionContext context)
+        {
+            functionSemanticAnalyzer.AnalyzeFunction(context);
+            return null;
+        }
+
+        public override string? VisitStm([NotNull] ExprParser.StmContext context)
+        {
+            if (context.RETURN() != null)
+            {
+                functionSemanticAnalyzer.AnalyzeReturnStatement(context);
+                return null;
+            }
+
+            return base.VisitStm(context);
+        }
+        
+        public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
+        {
+            return functionCallSemanticAnalyzer.VisitFunctionCall(context);
+        }
+
     }
 }
 
