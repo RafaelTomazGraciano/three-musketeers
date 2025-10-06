@@ -20,10 +20,10 @@ bld/
 # ============================================
 # ANTLR Generated Files
 # ============================================
-Grammar/                    # Arquivos gerados pelo ANTLR
+Grammar/                 
 .antlr/
-*.interp                    # Arquivos de análise do ANTLR
-*.tokens                    # Definições de tokens
+*.interp                    
+*.tokens                    
 
 # ============================================
 # LLVM Generated Files
@@ -274,8 +274,8 @@ yarn-error.log*
 # ============================================
 # Custom (adicione suas próprias exclusões)
 # ============================================
-# Examples/output/          # Se você gerar arquivos de teste aqui
-# Tests/temp/               # Arquivos temporários de testes
+# Examples/output/          
+# Tests/temp/               
 .AppleDouble
 .LSOverride
 Icon
@@ -367,10 +367,3 @@ log.txt
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# ============================================
-# Custom (adicione suas próprias exclusões)
-# ============================================
-# Examples/output/          # Se você gerar arquivos de teste aqui
-# Tests/temp/               # Arquivos temporários de testes
-Three_Musketeers/Examples/*
