@@ -56,7 +56,6 @@ att
 
 att_var 
     : ID index+ '=' expr                          #SingleAtt
-//  | type ID index+ '=' '{' expr (',' expr)* '}' #MultipleAtt
     ;
 
 new_type

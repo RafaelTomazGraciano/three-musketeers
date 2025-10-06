@@ -32,7 +32,7 @@ namespace Three_Musketeers.Visitors
         {
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
-                ReportError, ReportWarning, Visit);
+                ReportError, ReportWarning);
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
             scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable);
@@ -51,7 +51,6 @@ namespace Three_Musketeers.Visitors
             equalitySemanticAnalyzer = new EqualitySemanticAnalyzer(ReportError, GetExpressionType, Visit);
             // comparison
             comparisonSemanticAnalyzer = new ComparisonSemanticAnalyzer(ReportError, GetExpressionType, Visit);
-
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -71,12 +70,39 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
         {
-            return variableAssignmentSemanticAnalyzer.VisitAtt(context);
+            string? type = variableAssignmentSemanticAnalyzer.VisitAtt(context);
+            string? exprType = Visit(context.expr());
+            if (type == null || exprType == null) return null;
+
+            if (!TwoTypesArePermitedToCast(type, exprType))
+            {
+                ReportError(context.Start.Line,
+                    $"Cannot assign value of type '{exprType}' to variable of type '{type}'");
+                return null;
+            }
+
+            return type;
         }
 
         public override string? VisitVar([NotNull] ExprParser.VarContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitVar(context);
+        }
+
+        public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
+        {
+            string? arrayType = variableAssignmentSemanticAnalyzer.VisitSingleAtt(context);
+            string? exprType = Visit(context.expr());
+            if (arrayType == null || exprType == null) return null;
+
+            if (!TwoTypesArePermitedToCast(arrayType, exprType))
+            {
+                ReportError(context.Start.Line,
+                    $"Cannot assign value of type '{exprType}' to array element of type '{arrayType}'");
+                return null;
+            }
+
+            return arrayType;
         }
 
         public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
@@ -143,12 +169,6 @@ namespace Three_Musketeers.Visitors
         {
             return dtoaSemanticAnalyzer.VisitDtoaConversion(context);
         }
-
-        public override string VisitAddSub([NotNull] ExprParser.AddSubContext context)
-        {
-            return arithmeticSemanticAnalyzer.VisitAddSub(context) ?? "int";
-        }
-
         public override string VisitMulDivMod([NotNull] ExprParser.MulDivModContext context)
         {
             return arithmeticSemanticAnalyzer.VisitMulDivMod(context) ?? "int";
@@ -179,6 +199,19 @@ namespace Three_Musketeers.Visitors
         public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
         {
             return comparisonSemanticAnalyzer.VisitComparison(context);
+        }        
+        private static bool TwoTypesArePermitedToCast(string type1, string type2)
+        {
+            bool anyIsDouble = type1 == "double" || type2 == "double";
+            bool anyIsChar = type1 == "char" || type2 == "char";
+            bool anyIsInt = type1 == "int" || type2 == "int";
+            bool anyIsBool = type1 == "bool" || type2 == "bool";
+            bool anyIsString = type1 == "string" || type2 == "string";
+            if (type1 == type2) return true;
+            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
+            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
+            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
+            return false;
         }
     }
 }
