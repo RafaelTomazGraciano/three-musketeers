@@ -259,4 +259,101 @@ yarn-error.log*
 # ============================================
 # Examples/output/          # Se você gerar arquivos de teste aqui
 # Tests/temp/               # Arquivos temporários de testes
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# ============================================
+# Linux
+# ============================================
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ============================================
+# Temporary Files
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~.nib
+local.properties
+*.launch
+.settings/
+.loadpath
+.recommenders
+.externalToolBuilders/
+*.launch
+
+# ============================================
+# Development Tools
+# ============================================
+.history/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ============================================
+# Documentation
+# ============================================
+docs/_build/
+site/
+
+# ============================================
+# Environment & Secrets
+# ============================================
+.env
+.env.local
+.env.*.local
+*.env
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# ============================================
+# Database
+# ============================================
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
+log.txt
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Custom (adicione suas próprias exclusões)
+# ============================================
+# Examples/output/          # Se você gerar arquivos de teste aqui
+# Tests/temp/               # Arquivos temporários de testes
 Three_Musketeers/Examples/*
