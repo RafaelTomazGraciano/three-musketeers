@@ -51,7 +51,6 @@ namespace Three_Musketeers.Visitors
             equalitySemanticAnalyzer = new EqualitySemanticAnalyzer(ReportError, GetExpressionType, Visit);
             // comparison
             comparisonSemanticAnalyzer = new ComparisonSemanticAnalyzer(ReportError, GetExpressionType, Visit);
-
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)

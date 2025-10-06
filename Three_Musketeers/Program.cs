@@ -49,12 +49,12 @@ namespace Three_Musketeers{
                 //Intermediate Code generation
                 var codeGenerator = new CodeGenerator();
                 var llvmCode = codeGenerator.Visit(tree);
-
                 string outputPath = Path.ChangeExtension(filePath, ".ll");
                 string bytecodePath = Path.ChangeExtension(filePath, ".bc");
                 string optBytecodePath = bytecodePath.Replace(".bc", "-opt.bc");
                 string assemblyPath = Path.ChangeExtension(filePath, ".s");
-                string resultPath = Path.GetFileNameWithoutExtension(filePath);
+                string resultPath = assemblyPath.Replace(".s","");
+
                 File.WriteAllText(outputPath, llvmCode);
                 Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
                 Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
