@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+# Generate LLVM IR (.ll)
+dotnet build --nologo -v q || exit 1
+dotnet run --no-build || exit 1
+
+# Execute
+./Examples/bin/code
+
+EXIT_CODE=$?
+echo "===================================="
+
+if [ $EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo "Program exited with code: $EXIT_CODE"
+fi
