@@ -18,12 +18,29 @@ bld/
 [Bb]uild/
 
 # ============================================
-# ANTLR Generated Files (IMPORTANTE!)
+# ANTLR Generated Files
 # ============================================
 Grammar/                    # Arquivos gerados pelo ANTLR
 .antlr/
 *.interp                    # Arquivos de análise do ANTLR
 *.tokens                    # Definições de tokens
+
+# ============================================
+# LLVM Generated Files
+# ============================================
+
+# LLVM Intermediate Representation (IR)
+*.ll
+*.bc
+*.opt.bc
+
+# ============================================
+# Compiler Output & Executables
+# ============================================
+# Arquivos objeto e Assembly
+*.o
+*.s
+bin/
 
 # ============================================
 # .NET Core

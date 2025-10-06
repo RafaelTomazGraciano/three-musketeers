@@ -2,11 +2,11 @@
 
 set -e
 
-# 1. Generate LLVM IR (.ll)
+# Generate LLVM IR (.ll)
 dotnet build --nologo -v q || exit 1
 dotnet run --no-build || exit 1
 
-# 6. Execute
+# Execute
 ./Examples/code
 
 EXIT_CODE=$?

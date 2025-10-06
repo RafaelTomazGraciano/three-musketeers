@@ -176,10 +176,15 @@ namespace Three_Musketeers.Visitors
             return arithmeticCodeGenerator.VisitMulDivMod(context);
         }
 
-        public override string VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)
+        public override string? VisitUnaryMinus([NotNull] ExprParser.UnaryMinusContext context)
         {
-            string exprValue = Visit(context.expr());
-            string exprType = registerTypes[exprValue];
+            string? exprValue = Visit(context.expr());
+            if (exprValue == null)
+            {
+                return null;
+            }
+            string exprType;
+            exprType = registerTypes[exprValue];
             string resultReg = NextRegister();
             
             if (exprType == "double")
@@ -205,7 +210,7 @@ namespace Three_Musketeers.Visitors
             return logicalCodeGenerator.VisitLogicalNot(context);
         }
 
-        public override string VisitParens([NotNull] ExprParser.ParensContext context)
+        public override string? VisitParens([NotNull] ExprParser.ParensContext context)
         {
             // For parentheses, just visit the inner expression
             return Visit(context.expr());

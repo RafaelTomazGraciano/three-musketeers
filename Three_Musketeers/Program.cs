@@ -9,7 +9,7 @@ namespace Three_Musketeers{
     {
         public static int Main()
         {
-            string filePath = "Examples/code.m3";
+            string filePath = "Examples/code.3m";
 
             try
             {
@@ -50,12 +50,13 @@ namespace Three_Musketeers{
                 var codeGenerator = new CodeGenerator();
                 var llvmCode = codeGenerator.Visit(tree);
                 string outputPath = Path.ChangeExtension(filePath, ".ll");
+                File.WriteAllText(outputPath, llvmCode);
+
                 string bytecodePath = Path.ChangeExtension(filePath, ".bc");
                 string optBytecodePath = bytecodePath.Replace(".bc", "-opt.bc");
                 string assemblyPath = Path.ChangeExtension(filePath, ".s");
                 string resultPath = assemblyPath.Replace(".s","");
-
-                File.WriteAllText(outputPath, llvmCode);
+                
                 Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
                 Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
                 Process.Start("llc", $"{optBytecodePath} -o {assemblyPath}").WaitForExit();
