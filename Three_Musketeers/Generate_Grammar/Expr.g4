@@ -31,7 +31,7 @@ function
     ;
 
 function_return
-    : type index*
+    : type
     | VOID
     ;
 

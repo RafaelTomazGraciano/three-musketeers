@@ -34,14 +34,6 @@ char getFirstLetter(int code) {
     return letter;
 }
 
-// Test Complex calculation
-int fibonacci(int n) {
-    int a = 0;
-    int b = 1;
-    int result = a + b;
-    return result;
-}
-
 // === MAIN TESTS ===
 
 // Test void function in sequence
@@ -80,11 +72,6 @@ printf("-10 is positive: %d\n", negative);
 printf("\n=== Test Char Function ===\n");
 char firstLetter = getFirstLetter(65);
 printf("First letter: %c\n", firstLetter);
-
-// Test fibonacci
-printf("\n=== Test Fibonacci ===\n");
-int fib = fibonacci(5);
-printf("Fibonacci result: %d\n", fib);
 
 // Test expression with function call
 printf("\n=== Test Expression with Function ===\n");
