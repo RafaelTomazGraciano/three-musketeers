@@ -36,30 +36,27 @@ namespace Three_Musketeers.Visitors
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
                 variables, NextRegister, GetLLVMType, Visit, Visit);
+            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables, 
+                NextRegister, GetLLVMType, Visit, Visit);
             functionCallCodeGenerator = new FunctionCallCodeGenerator(registerTypes, declaredFunctions, NextRegister,
                 GetLLVMType, Visit, () => base.functionCodeGenerator!.IsInsideFunction()
-                ? base.functionCodeGenerator.GetCurrentFunctionBody()! : mainBody);
+                ? base.functionCodeGenerator.GetCurrentFunctionBody()! : mainDefinition);
 
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
-                mainBody, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
+                mainDefinition, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
                 () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
-            printfCodeGenerator = new PrintfCodeGenerator(
-            globalStrings, GetCurrentBody, registerTypes, NextRegister, NextStringLabel, Visit);
-
-            scanfCodeGenerator = new ScanfCodeGenerator(
-                globalStrings, GetCurrentBody, variables,
+            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
+                NextRegister, NextStringLabel, Visit);
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
                 registerTypes, NextRegister, NextStringLabel, GetLLVMType);
-
-            getsCodeGenerator = new GetsCodeGenerator(
-                declarations, GetCurrentBody, variables, NextRegister);
-
-            putsCodeGenerator = new PutsCodeGenerator(
-                declarations, GetCurrentBody, variables, NextRegister);
+            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, variables, NextRegister);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, variables, registerTypes, NextRegister, 
+                () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null);
 
             //string conversion
             atoiCodeGenerator = new AtoiCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
@@ -240,6 +237,12 @@ namespace Three_Musketeers.Visitors
         public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
         {
             return comparisonCodeGenerator.VisitComparison(context);
+        }
+
+        public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
+        {
+            mainFunctionCodeGenerator!.GenerateMainFunction(context);
+            return null;
         }
 
         public override string? VisitFunction([NotNull] ExprParser.FunctionContext context)

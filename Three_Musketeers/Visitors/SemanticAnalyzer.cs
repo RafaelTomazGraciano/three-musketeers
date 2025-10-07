@@ -28,6 +28,7 @@ namespace Three_Musketeers.Visitors
         private readonly LogicalSemanticAnalyzer logicalSemanticAnalyzer;
         private readonly EqualitySemanticAnalyzer equalitySemanticAnalyzer;
         private readonly ComparisonSemanticAnalyzer comparisonSemanticAnalyzer;
+        private readonly MainFunctionSemanticAnalyzer mainFunctionSemanticAnalyzer;
         private readonly FunctionSemanticAnalyzer functionSemanticAnalyzer;
         private readonly FunctionCallSemanticAnalyzer functionCallSemanticAnalyzer;
 
@@ -55,6 +56,7 @@ namespace Three_Musketeers.Visitors
             // comparison
             comparisonSemanticAnalyzer = new ComparisonSemanticAnalyzer(ReportError, GetExpressionType, Visit);
             //functions
+            mainFunctionSemanticAnalyzer = new MainFunctionSemanticAnalyzer(symbolTable, ReportError, Visit);
             functionSemanticAnalyzer = new FunctionSemanticAnalyzer(symbolTable, declaredFunctions, ReportError, ReportWarning,
                 GetExpressionType, Visit);
             functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType, Visit);
@@ -219,6 +221,12 @@ namespace Three_Musketeers.Visitors
             if (anyIsInt && (anyIsChar || anyIsBool)) return true;
             if (anyIsChar && (anyIsBool || !anyIsString)) return true;
             return false;
+        }
+
+        public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
+        {
+            mainFunctionSemanticAnalyzer.AnalyzeMainFunction(context);
+            return null;
         }
 
         public override string? VisitFunction([NotNull] ExprParser.FunctionContext context)

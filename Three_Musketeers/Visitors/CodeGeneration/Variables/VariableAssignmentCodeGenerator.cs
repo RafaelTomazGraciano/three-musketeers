@@ -53,8 +53,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 varType = context.type().GetText();
                 llvmType = getLLVMType(varType);
                 register = nextRegister();
-                WriteAlloca(register, llvmType, GetAlignment(llvmType));
-                variables[varName] = new Variable(varName, varType, llvmType, register);
+                
+                if (varType == "string")
+                {
+                    WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
+                    variables[varName] = new Variable(varName, varType, "[256 x i8]", register);
+                }
+                else
+                {
+                    WriteAlloca(register, llvmType, GetAlignment(llvmType));
+                    variables[varName] = new Variable(varName, varType, llvmType, register);
+                }
             }
             else
             {

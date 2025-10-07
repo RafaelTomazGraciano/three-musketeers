@@ -36,46 +36,49 @@ char getFirstLetter(int code) {
 
 // === MAIN TESTS ===
 
-// Test void function in sequence
-printf("\n=== Test Multiple Void Calls ===\n");
-printWelcome();
-printWelcome();
+int main(int argc, char argv[]) {
+    printf("\n=== Test Arguments ===\n");
+    printf("Argument count: %d\n", argc);
+    puts("Arguments list:");
+    puts(argv[1]);
+    puts(argv[2]);
+    puts(argv[3]);
 
-// Test basic addition
-printf("\n=== Test Addition ===\n");
-int sum = add(10, 20);
-printf("10 + 20 = %d\n", sum);
+    printf("\n=== Test Multiple Void Calls ===\n");
+    printWelcome();
+    printWelcome();
 
-// Test multiplication with 3 params
-printf("\n=== Test Multiplication ===\n");
-int product = multiply(2, 3, 4);
-printf("2 * 3 * 4 = %d\n", product);
+    printf("\n=== Test Addition ===\n");
+    int sum = add(10, 20);
+    printf("10 + 20 = %d\n", sum);
 
-// Test double calculation
-printf("\n=== Test Area Calculation ===\n");
-double area = calculateArea(5.5, 3.2);
-printf("Area: %.2f\n", area);
+    printf("\n=== Test Multiplication ===\n");
+    int product = multiply(2, 3, 4);
+    printf("2 * 3 * 4 = %d\n", product);
 
-// Test nested calls
-printf("\n=== Test Nested Calls ===\n");
-int squared = square(5);
-printf("5 squared = %d\n", squared);
+    printf("\n=== Test Area Calculation ===\n");
+    double area = calculateArea(5.5, 3.2);
+    printf("Area: %.2f\n", area);
 
-// Test boolean function
-printf("\n=== Test Boolean Function ===\n");
-bool positive = isPositive(42);
-bool negative = isPositive(-10);
-printf("42 is positive: %d\n", positive);
-printf("-10 is positive: %d\n", negative);
+    printf("\n=== Test Nested Calls ===\n");
+    int squared = square(5);
+    printf("5 squared = %d\n", squared);
 
-// Test char function
-printf("\n=== Test Char Function ===\n");
-char firstLetter = getFirstLetter(65);
-printf("First letter: %c\n", firstLetter);
+    printf("\n=== Test Boolean Function ===\n");
+    bool positive = isPositive(42);
+    bool negative = isPositive(-10);
+    printf("42 is positive: %d\n", positive);
+    printf("-10 is positive: %d\n", negative);
 
-// Test expression with function call
-printf("\n=== Test Expression with Function ===\n");
-int result = add(5, 3) * multiply(2, 2, 2);
-printf("add(5,3) * multiply(2,2,2) = %d\n", result);
+    printf("\n=== Test Char Function ===\n");
+    char firstLetter = getFirstLetter(65);
+    printf("First letter: %c\n", firstLetter);
 
-printf("\n=== All Function Tests Completed ===\n");
+    printf("\n=== Test Expression with Function ===\n");
+    int result = add(5, 3) * multiply(2, 2, 2);
+    printf("add(5,3) * multiply(2,2,2) = %d\n", result);
+
+    printf("\n=== All Function Tests Completed ===\n");
+
+    return 0;
+}

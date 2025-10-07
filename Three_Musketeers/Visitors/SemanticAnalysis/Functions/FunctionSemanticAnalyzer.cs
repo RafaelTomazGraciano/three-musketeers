@@ -72,11 +72,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
                 //         }
                 //     }
                 // }
-                if (returnTypeCtx.index() != null && returnTypeCtx.index().Length > 0)
-                {
-                    reportError(line, "Array return types are not supported yet");
-                    return;
-                }
             }
             else
             {

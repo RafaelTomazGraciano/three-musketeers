@@ -9,13 +9,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration
     {
         protected StringBuilder globalStrings = new StringBuilder();
         protected StringBuilder declarations = new StringBuilder();
-        protected StringBuilder mainBody = new StringBuilder();
+        protected StringBuilder mainDefinition = new StringBuilder();
         protected Dictionary<string, Variable> variables = new Dictionary<string, Variable>();
         protected Dictionary<string, string> registerTypes = new Dictionary<string, string>();
 
         //for functions
         protected StringBuilder functionDefinitions = new StringBuilder();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
+
+        protected MainFunctionCodeGenerator? mainFunctionCodeGenerator;
         protected FunctionCodeGenerator? functionCodeGenerator;
 
         protected int stringCounter = 0;
@@ -39,51 +41,56 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         public override string VisitStart(ExprParser.StartContext context)
         {
-
+            // Declare external functions
             declarations.AppendLine("declare i32 @printf(i8*, ...)");
             declarations.AppendLine("declare i32 @scanf(i8*, ...)");
             declarations.AppendLine("declare i8* @strcpy(i8*, i8*)");
-
+            declarations.AppendLine();
+            
             base.VisitStart(context);
-
+            
             var finalCode = new StringBuilder();
-            finalCode.AppendLine("; ModuleID = \'Three_Musketeers\'");
+            finalCode.AppendLine("; ModuleID = 'Three_Musketeers'");
             finalCode.AppendLine("target triple = \"x86_64-pc-linux-gnu\"");
             finalCode.AppendLine();
-
+            
+            // Global strings
             if (globalStrings.Length > 0)
             {
                 finalCode.Append(globalStrings);
                 finalCode.AppendLine();
             }
-
+            
+            // External declarations
             finalCode.Append(declarations);
-
+            
+            // User-defined functions
             if (functionDefinitions.Length > 0)
             {
                 finalCode.Append(functionDefinitions);
                 finalCode.AppendLine();
             }
-
-            finalCode.AppendLine("define i32 @main() {");
-            finalCode.AppendLine("entry:");
-            finalCode.Append(mainBody);
-            finalCode.AppendLine("  ret i32 0");
-            finalCode.AppendLine("}");
-
+            
+            // Main function
+            finalCode.Append(mainDefinition);
+            
             return finalCode.ToString();
         }
 
         protected StringBuilder GetCurrentBody()
         {
-            // Se estiver dentro de função, retorna o body da função
             if (functionCodeGenerator != null && functionCodeGenerator.IsInsideFunction())
             {
                 return functionCodeGenerator.GetCurrentFunctionBody()!;
             }
             
-            // Senão, retorna mainBody
-            return mainBody;
+            if (mainFunctionCodeGenerator != null && mainFunctionCodeGenerator.IsInsideMain())
+            {
+                return mainFunctionCodeGenerator.GetMainBody();
+            }
+            
+            // Fallback
+            return new StringBuilder();
         }
     }
 }

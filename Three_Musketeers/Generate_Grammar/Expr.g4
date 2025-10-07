@@ -1,13 +1,21 @@
 grammar Expr;
 
 start
-    : prog+ EOF
+    : prog* mainFunction EOF
     ;
 
 prog
     : stm
     | new_type
     | function
+    ;
+
+mainFunction
+    : 'int' 'main' '(' mainArgs? ')' '{' func_body '}'
+    ;
+
+mainArgs
+    : 'int' ID ',' 'char' ID '[' ']'
     ;
 
 stm
@@ -52,7 +60,7 @@ getsStatement
     ;
 
 putsStatement
-    : 'puts' '(' (ID | STRING_LITERAL) ')' EOL
+    : 'puts' '(' (ID index?| STRING_LITERAL) ')' EOL
     ;
 
 att

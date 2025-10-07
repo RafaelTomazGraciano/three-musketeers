@@ -60,15 +60,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 llvmReturnType = getLLVMType(basetype);
 
                 //handlde array returns
-                var indices = returnTypeCtx.index();
-                if (indices != null && indices.Length > 0)
-                {
-                    isArrayReturn = true;
-                    for (int i = 0; i < indices.Length; i++)
-                    {
-                        llvmReturnType = llvmReturnType + "*";
-                    }
-                }
+                // var indices = returnTypeCtx.index();
+                // if (indices != null && indices.Length > 0)
+                // {
+                //     isArrayReturn = true;
+                //     for (int i = 0; i < indices.Length; i++)
+                //     {
+                //         llvmReturnType = llvmReturnType + "*";
+                //     }
+                // }
             }
             else
             {
