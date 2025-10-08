@@ -9,7 +9,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 {
     public class VariableAssignmentCodeGenerator
     {
-        private readonly StringBuilder mainBody;
         private readonly StringBuilder declarations;
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
@@ -20,7 +19,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<StringBuilder> getCurrentBody;
 
         public VariableAssignmentCodeGenerator(
-            StringBuilder mainBody,
             StringBuilder declarations,
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
@@ -30,7 +28,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Func<string?> getCurrentFunctionName,
             Func<StringBuilder> getCurrentBody)
         {
-            this.mainBody = mainBody;
             this.declarations = declarations;
             this.variables = variables;
             this.registerTypes = registerTypes;
@@ -41,7 +38,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.getCurrentBody = getCurrentBody;
         }
 
-        public string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public string? VisitGenericExpr([NotNull] ExprParser.GenericExprContext context)
         {
             string varType;
             string varName = context.ID().GetText();
@@ -53,7 +50,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 varType = context.type().GetText();
                 llvmType = getLLVMType(varType);
                 register = nextRegister();
-                
+
                 if (varType == "string")
                 {
                     WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
@@ -230,6 +227,29 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             return null;
         }
 
+        private Variable? GetVariableWithScope(string varName)
+        {
+            string? currentFunc = getCurrentFunctionName();
+
+            // search local
+            if (currentFunc != null)
+            {
+                string scopedName = $"@{currentFunc}.{varName}";
+                if (variables.ContainsKey(scopedName))
+                {
+                    return variables[scopedName];
+                }
+            }
+
+            // search global
+            if (variables.ContainsKey(varName))
+            {
+                return variables[varName];
+            }
+
+            return null;
+        }
+
         private void WriteAlloca(string register, string type, int alignment)
         {
             getCurrentBody().AppendLine($"  {register} = alloca {type}, align {alignment}");
@@ -245,29 +265,5 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 _ => 4
             };
         }
-
-        private Variable? GetVariableWithScope(string varName)
-        {
-            string? currentFunc = getCurrentFunctionName();
-            
-            // search local
-            if (currentFunc != null)
-            {
-                string scopedName = $"@{currentFunc}.{varName}";
-                if (variables.ContainsKey(scopedName))
-                {
-                    return variables[scopedName];
-                }
-            }
-            
-            // search global
-            if (variables.ContainsKey(varName))
-            {
-                return variables[varName];
-            }
-            
-            return null;
-        }
-
     }
 }

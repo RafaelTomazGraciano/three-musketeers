@@ -6,7 +6,7 @@ start
 
 prog
     : stm
-    | new_type
+    | newType
     | function
     ;
 
@@ -22,17 +22,20 @@ stm
     : expr EOL
     | declaration EOL
     | att  EOL
-    | att_var EOL
+    | attVar EOL
     | printfStatement
     | scanfStatement
     | getsStatement
     | putsStatement
+    | freeStatement
     | RETURN expr? EOL
     ;
 
-    declaration
+declaration
     : type ID index*
+    | type POINTER ID
     ;
+
 
 function
     : function_return ID '(' args? ')' '{' func_body '}'
@@ -64,14 +67,15 @@ putsStatement
     ;
 
 att
-    : type? ID '=' expr
+    : type? POINTER ID '=' expr                      #GenericExpr
+    | type? POINTER ID '=' 'malloc' '(' expr ')' EOL #MallocExpr
     ;
 
-att_var 
+attVar 
     : ID index+ '=' expr             #SingleAtt
     ;
 
-new_type
+newType
     : 'type' ID 'as' type EOL
     ;
 
@@ -81,6 +85,10 @@ args
 
 index
     : '[' INT ']'
+    ;
+
+freeStatement
+    : 'free''('ID')'EOL
     ;
 
 expr
@@ -96,9 +104,12 @@ expr
     | 'atod' '(' expr ')'            # AtodConversion
     | 'itoa' '(' expr ')'            # ItoaConversion
     | 'dtoa' '(' expr ')'            # DtoaConversion
+    | 'sizeof' '(' (ID | type) ')'   # Sizeof
     | ID '(' (expr (',' expr)*)? ')' # FunctionCall
     | ID                             # Var
     | ID index+                      # VarArray
+    | POINTER ID                     # VarDerref
+    | ADDRESS ID                     # VarAddress
     | INT                            # IntLiteral
     | DOUBLE                         # DoubleLiteral
     | STRING_LITERAL                 # StringLiteral
@@ -141,3 +152,5 @@ LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';
+POINTER       : '*';
+ADDRESS       : '&';

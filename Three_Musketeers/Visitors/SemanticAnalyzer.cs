@@ -10,12 +10,14 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Logical;
 using Three_Musketeers.Visitors.SemanticAnalysis.Equality;
 using Three_Musketeers.Visitors.SemanticAnalysis.Comparison;
 using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
+using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
 
 namespace Three_Musketeers.Visitors
 {
     public class SemanticAnalyzer : SemanticAnalyzerBase
     {
         private readonly VariableAssignmentSemanticAnalyzer variableAssignmentSemanticAnalyzer;
+        private readonly PointerSemanticAnalyzer pointerSemanticAnalyzer;
         private readonly PrintfSemanticAnalyzer printfSemanticAnalyzer;
         private readonly ScanfSemanticAnalyzer scanfSemanticAnalyzer;
         private readonly GetsSemanticAnalyzer getsSemanticAnalyzer;
@@ -31,12 +33,12 @@ namespace Three_Musketeers.Visitors
         private readonly MainFunctionSemanticAnalyzer mainFunctionSemanticAnalyzer;
         private readonly FunctionSemanticAnalyzer functionSemanticAnalyzer;
         private readonly FunctionCallSemanticAnalyzer functionCallSemanticAnalyzer;
-
         public SemanticAnalyzer()
         {
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
                 ReportError, ReportWarning);
+            pointerSemanticAnalyzer = new PointerSemanticAnalyzer(ReportError, ReportWarning, symbolTable);
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
             scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable);
@@ -77,7 +79,7 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
         }
 
-        public override string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public override string? VisitGenericExpr([NotNull] ExprParser.GenericExprContext context)
         {
             string? type = variableAssignmentSemanticAnalyzer.VisitAtt(context);
             string? exprType = Visit(context.expr());
@@ -209,19 +211,6 @@ namespace Three_Musketeers.Visitors
         {
             return comparisonSemanticAnalyzer.VisitComparison(context);
         }
-        private static bool TwoTypesArePermitedToCast(string type1, string type2)
-        {
-            bool anyIsDouble = type1 == "double" || type2 == "double";
-            bool anyIsChar = type1 == "char" || type2 == "char";
-            bool anyIsInt = type1 == "int" || type2 == "int";
-            bool anyIsBool = type1 == "bool" || type2 == "bool";
-            bool anyIsString = type1 == "string" || type2 == "string";
-            if (type1 == type2) return true;
-            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
-            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
-            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
-            return false;
-        }
 
         public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
         {
@@ -245,12 +234,30 @@ namespace Three_Musketeers.Visitors
 
             return base.VisitStm(context);
         }
-        
+
         public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
         {
             return functionCallSemanticAnalyzer.VisitFunctionCall(context);
         }
 
+        public override string VisitMallocExpr([NotNull] ExprParser.MallocExprContext context)
+        {
+            return pointerSemanticAnalyzer.VisitMallocExpr(context);
+        }
+
+        private static bool TwoTypesArePermitedToCast(string type1, string type2)
+        {
+            bool anyIsDouble = type1 == "double" || type2 == "double";
+            bool anyIsChar = type1 == "char" || type2 == "char";
+            bool anyIsInt = type1 == "int" || type2 == "int";
+            bool anyIsBool = type1 == "bool" || type2 == "bool";
+            bool anyIsString = type1 == "string" || type2 == "string";
+            if (type1 == type2) return true;
+            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
+            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
+            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
+            return false;
+        }
     }
 }
 
