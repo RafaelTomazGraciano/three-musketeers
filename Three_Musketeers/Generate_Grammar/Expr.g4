@@ -108,8 +108,8 @@ expr
     | ID '(' (expr (',' expr)*)? ')' # FunctionCall
     | ID                             # Var
     | ID index+                      # VarArray
-    | POINTER ID                     # VarDerref
-    | ADDRESS ID                     # VarAddress
+    | POINTER expr                   # ExprDerref
+    | ADDRESS expr                   # ExprAddress
     | INT                            # IntLiteral
     | DOUBLE                         # DoubleLiteral
     | STRING_LITERAL                 # StringLiteral

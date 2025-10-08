@@ -26,40 +26,54 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             this.visitExpression = visitExpression;
         }
 
-        public string VisitVarAddress(ExprParser.VarAddressContext context)
+        public string VisitExprAddress(ExprParser.ExprAddressContext context)
         {
-            string varName = context.ID().GetText();
-            Variable var = variables[varName];
+            var exprCtx = context.expr();
+        
+            // Caso: &ID (variável simples)
+            if (exprCtx is ExprParser.VarContext varCtx)
+            {
+                string varName = varCtx.ID().GetText();
+                Variable var = variables[varName];
 
-            string baseType = var.LLVMType;
-            string pointerType = baseType + "*";
-            string varLLVMName = var.register;
+                string baseType = var.LLVMType;
+                string pointerType = baseType + "*";
 
-            registerTypes[varLLVMName] = pointerType;
-            return varLLVMName;
+                registerTypes[var.register] = pointerType;
+                return var.register;
+            }
+
+            // Caso: &(*expr) - simplifica para expr
+            if (exprCtx is ExprParser.ExprDerrefContext derrefCtx)
+            {
+                return visitExpression(derrefCtx.expr());
+            }
+
+            // Caso: &(array[i]) - getelementptr
+            if (exprCtx is ExprParser.VarArrayContext arrayCtx)
+            {
+                // Retorna o endereço calculado do elemento
+                // (assumindo que você já tem lógica para arrays)
+                string arrayReg = visitExpression(exprCtx);
+                return arrayReg; // O GEP já retorna um ponteiro
+            }
+
+            // Outros casos: já retornam endereços válidos
+            return visitExpression(exprCtx);
         }
 
-        public string VisitVarDerref(ExprParser.VarDerrefContext context)
+        public string VisitExprDerref(ExprParser.ExprDerrefContext context)
         {
-            string varName = context.ID().GetText();
-            Variable var = variables[varName];
-    
-            string varLLVMName = var.register;
-            string pointerType = var.LLVMType;  // Ex: "i32*"
-    
-            // Remove o * final para obter o tipo base
-            string baseType = pointerType.Substring(0, pointerType.Length - 1);  // Ex: "i32"
-    
-            // Primeiro load: carrega o ponteiro armazenado em alloca
-            string loadedReg = nextRegister();
-            getCurrentBody().AppendLine($"  {loadedReg} = load {pointerType}, {pointerType}* {varLLVMName}");
-    
-            // Segundo load: carrega o valor apontado pelo ponteiro
+            string reg = visitExpression(context.expr());
+
+            string pointerType = registerTypes[reg];
+            string baseType = pointerType.Substring(0, pointerType.Length - 1);
+            string result = nextRegister();
+
             string resultReg = nextRegister();
-            getCurrentBody().AppendLine($"  {resultReg} = load {baseType}, {pointerType} {loadedReg}");
-    
-            registerTypes[resultReg] = baseType;
-            return resultReg;
+            getCurrentBody().AppendLine($"  {resultReg} = load {baseType}, {pointerType} {reg}");
+            registerTypes[result] = baseType;
+            return result;
         }
     }
 }

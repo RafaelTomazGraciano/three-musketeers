@@ -136,14 +136,14 @@ namespace Three_Musketeers.Visitors
             return base.VisitSizeof(context);
         }
 
-        public override string? VisitVarDerref([NotNull] ExprParser.VarDerrefContext context)
+        public override string? VisitExprDerref([NotNull] ExprParser.ExprDerrefContext context)
         {
-            return base.VisitVarDerref(context);
+            return pointerCodeGenerator.VisitExprDerref(context);
         }
 
-        public override string? VisitVarAddress([NotNull] ExprParser.VarAddressContext context)
+        public override string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
         {
-            return pointerCodeGenerator.VisitVarAddress(context);
+            return pointerCodeGenerator.VisitExprAddress(context);
         }
 
         public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
