@@ -43,7 +43,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             //type of return
             var returnTypeCtx = context.function_return();
             string returnType = "";
-            List<int>? returnDimensions = null;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -52,26 +51,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             else if (returnTypeCtx.type() != null)
             {
                 returnType = GetTypeString(returnTypeCtx.type());
-
-                // check if return type is an array
-                // var indices = returnTypeCtx.index();
-                // if (indices != null && indices.Length > 0)
-                // {
-                //     returnDimensions = new List<int>();
-                //     foreach (var idx in indices)
-                //     {
-                //         string sizeText = idx.INT().GetText();
-                //         if (int.TryParse(sizeText, out int size))
-                //         {
-                //             if (size <= 0)
-                //             {
-                //                 reportError(line, $"Array dimension must be positive, got {size}");
-                //                 size = 1; // Default to prevent further errors
-                //             }
-                //             returnDimensions.Add(size);
-                //         }
-                //     }
-                // }
             }
             else
             {
@@ -98,7 +77,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             var functionInfo = new FunctionInfo
             {
                 returnType = returnType,
-                returnDimensions = returnDimensions,
                 parameters = new List<(string, string)>(),
                 hasReturnStatement = false
             };
@@ -144,22 +122,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             if (funcBodyCtx != null)
             {
                 AnalyzeFunctionBody(funcBodyCtx);
-            }
-
-            // check if non-void function has return statement
-            if (!functionInfo.isVoid && !functionInfo.hasReturnStatement)
-            {
-                if (functionInfo.isArray)
-                {
-                    reportError(line, "Functions returning arrays are not supported yet");
-                    return;
-                }
-                reportWarning(line, $"Function '{functionName}' with return type '{returnType}' does not have a 'return' statement");
-
-                // string returnTypeDisplay = functionInfo.isArray
-                //     ? $"{returnType}[{string.Join("][", returnDimensions!)}]"
-                //     : returnType;
-                // reportWarning(line, $"Function '{functionName}' with return type '{returnTypeDisplay}' does not have a 'return' statement");
             }
 
             // exit function scope
@@ -240,10 +202,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             //non void function
             if (exprCtx == null)
             {
-                string? returnTypeDisplay = currentFunction.isArray
-                    ? $"{currentFunction.returnType}[{string.Join("][", currentFunction.returnDimensions!)}]"
-                    : currentFunction.returnType;
-                reportError(line, $"Function '{currentFunctionName}' with return type '{returnTypeDisplay}' must return a value");
+                string? returnTypeDisplay = currentFunction.returnType;
                 return;
             }
 
@@ -254,23 +213,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
                 return;
             }
 
-            // string expectedType = currentFunction.isArray
-            //     ? $"{currentFunction.returnType}_array" 
-            //     : currentFunction.returnType!;
-            if (currentFunction.isArray)
-            {
-                reportError(line, "Returning arrays is not supported yet");
-                return;
-            }
-
             string expectedType = currentFunction.returnType!;
 
             if (currentFunction.returnType != returnExprType)
             {
-                string? returnTypeDisplay = currentFunction.isArray
-                    ? $"{currentFunction.returnType}[{string.Join("][", currentFunction.returnDimensions!)}]"
-                    : currentFunction.returnType;
-                reportError(line, $"Incompatible return type: expected '{returnTypeDisplay}', but got '{returnExprType}'");
+                string? returnTypeDisplay = currentFunction.returnType;
             }
         }
 

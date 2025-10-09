@@ -48,7 +48,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             //get return type
             var returnTypeCtx = context.function_return();
             string llvmReturnType;
-            bool isArrayReturn = false;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -58,17 +57,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 string basetype = GetTypeString(returnTypeCtx.type());
                 llvmReturnType = getLLVMType(basetype);
-
-                //handlde array returns
-                // var indices = returnTypeCtx.index();
-                // if (indices != null && indices.Length > 0)
-                // {
-                //     isArrayReturn = true;
-                //     for (int i = 0; i < indices.Length; i++)
-                //     {
-                //         llvmReturnType = llvmReturnType + "*";
-                //     }
-                // }
             }
             else
             {

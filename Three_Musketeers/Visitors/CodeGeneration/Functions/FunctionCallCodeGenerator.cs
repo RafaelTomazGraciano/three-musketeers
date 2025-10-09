@@ -49,15 +49,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             else
             {
                 llvmReturnType = getLLVMType(functionInfo.returnType!);
-
-                // handle array return types
-                if (functionInfo.isArray && functionInfo.returnDimensions != null)
-                {
-                    for (int i = 0; i < functionInfo.returnDimensions.Count; i++)
-                    {
-                        llvmReturnType += "*";
-                    }
-                }
             }
             
             // evaluate arguments
