@@ -34,6 +34,12 @@ char getFirstLetter(int code) {
     return letter;
 }
 
+//recursion
+void recursionPrint(string message) {
+    puts(message);
+    recursionPrint(message);
+}
+
 // === MAIN TESTS ===
 
 int main(int argc, char argv[]) {
@@ -43,7 +49,6 @@ int main(int argc, char argv[]) {
     puts(argv[1]);
     puts(argv[2]);
     puts(argv[3]);
-
 
     printf("\n=== Test Multiple Void Calls ===\n");
     printWelcome();
@@ -78,6 +83,9 @@ int main(int argc, char argv[]) {
     printf("\n=== Test Expression with Function ===\n");
     int result = add(5, 3) * multiply(2, 2, 2);
     printf("add(5,3) * multiply(2,2,2) = %d\n", result);
+    
+    printf("\n=== Test Recursion ===\n");
+    recursionPrint("Recursion implemented");
 
     printf("\n=== All Function Tests Completed ===\n");
 

@@ -9,6 +9,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Logical;
 using Three_Musketeers.Visitors.CodeGeneration.Equality;
 using Three_Musketeers.Visitors.CodeGeneration.Comparison;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors
 {
@@ -30,9 +31,15 @@ namespace Three_Musketeers.Visitors
         private readonly EqualityCodeGenerator equalityCodeGenerator;
         private readonly ComparisonCodeGenerator comparisonCodeGenerator;
         private readonly FunctionCallCodeGenerator functionCallCodeGenerator;
+        private readonly VariableResolver variableResolver;
 
         public CodeGenerator()
         {
+            variableResolver = new VariableResolver(
+            variables,
+            () => functionCodeGenerator?.GetCurrentFunctionName()
+            );
+
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
                 variables, NextRegister, GetLLVMType, Visit, Visit);
@@ -53,10 +60,11 @@ namespace Three_Musketeers.Visitors
             printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
                 NextRegister, NextStringLabel, Visit);
             scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
-                registerTypes, NextRegister, NextStringLabel, GetLLVMType);
-            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, variables, NextRegister);
-            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, variables, registerTypes, NextRegister, 
-                () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null);
+                registerTypes, NextRegister, NextStringLabel, GetLLVMType, variableResolver);
+            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, variables, NextRegister, variableResolver);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, variables, registerTypes, NextRegister,
+                () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null,
+                variableResolver);
 
             //string conversion
             atoiCodeGenerator = new AtoiCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);

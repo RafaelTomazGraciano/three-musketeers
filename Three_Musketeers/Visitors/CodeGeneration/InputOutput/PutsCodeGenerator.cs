@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 {
@@ -14,6 +15,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<StringBuilder?> getCurrentBody;
+        private readonly VariableResolver variableResolver;
         private bool putsInitialized = false;
 
         public PutsCodeGenerator(
@@ -22,7 +24,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
-            Func<StringBuilder?> getCurrentBody)
+            Func<StringBuilder?> getCurrentBody,
+            VariableResolver variableResolver)
         {
             this.declarations = declarations;
             this.mainBody = mainBody;
@@ -30,6 +33,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.getCurrentBody = getCurrentBody;
+            this.variableResolver = variableResolver;
         }
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
@@ -43,16 +47,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             {
                 string varName = context.ID().GetText();
 
-                var variable = variables[varName];
+                Variable variable = variableResolver.GetVariable(varName);
                 bool hasIndexAccess = context.index() != null;
 
                 if (hasIndexAccess)
                 {
-                    GenerateArrayElementPuts(variable, context.index(), body);
+                    GenerateArrayElementPuts(variable!, context.index(), body);
                 }
                 else
                 {
-                    GenerateWholeVariablePuts(variable, body);
+                    GenerateWholeVariablePuts(variable!, body);
                 }
 
                 return null;

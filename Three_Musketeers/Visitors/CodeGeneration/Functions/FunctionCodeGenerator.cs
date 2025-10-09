@@ -123,6 +123,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                     string paramType = GetTypeString(types[i]);
                     string llvmParamType = getLLVMType(paramType);
 
+                    if (paramType == "string")
+                    {
+                        llvmParamType = "i8*";
+                    }
+
                     string allocaReg = NextFunctionRegister();
                     string paramReg = $"%param.{paramName}";
 

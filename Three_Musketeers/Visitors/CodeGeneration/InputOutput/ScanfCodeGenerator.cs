@@ -16,6 +16,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Func<string> nextRegister;
         private readonly Func<string> nextStringLabel;
         private readonly Func<string, string> getLLVMType;
+        private readonly VariableResolver variableResolver;
 
         public ScanfCodeGenerator(
             StringBuilder globalStrings,
@@ -24,7 +25,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<string> nextStringLabel,
-            Func<string, string> getLLVMType)
+            Func<string, string> getLLVMType,
+            VariableResolver variableResolver)
         {
             this.globalStrings = globalStrings;
             this.getCurrentBody = getCurrentBody;
@@ -33,6 +35,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             this.nextRegister = nextRegister;
             this.nextStringLabel = nextStringLabel;
             this.getLLVMType = getLLVMType;
+            this.variableResolver = variableResolver;
         }
 
         public string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
@@ -50,7 +53,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             {
                 string varName = idToken.GetText();
 
-                var variable = variables[varName];
+                Variable variable = variableResolver.GetVariable(varName);
                 string llvmType = getLLVMType(variable.type);
 
                 string formatSpec = GetFormatSpecifier(variable.type);
