@@ -17,6 +17,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
         private readonly Func<string?> getCurrentFunctionName;
         private readonly Func<StringBuilder> getCurrentBody;
+        private readonly Func<string, int> GetAlignment;
 
         public VariableAssignmentCodeGenerator(
             StringBuilder declarations,
@@ -26,7 +27,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Func<string, string> getLLVMType,
             Func<ExprParser.ExprContext, string> visitExpression,
             Func<string?> getCurrentFunctionName,
-            Func<StringBuilder> getCurrentBody)
+            Func<StringBuilder> getCurrentBody,
+            Func<string, int> GetAlignment)
         {
             this.declarations = declarations;
             this.variables = variables;
@@ -36,9 +38,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.visitExpression = visitExpression;
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.getCurrentBody = getCurrentBody;
+            this.GetAlignment = GetAlignment;
         }
 
-        public string? VisitGenericExpr([NotNull] ExprParser.GenericExprContext context)
+        public string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
             string varType;
             string varName = context.ID().GetText();
@@ -121,7 +124,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             return loadReg;
         }
 
-        public string? VisitDec([NotNull] ExprParser.DeclarationContext context)
+        public string? VisitDec([NotNull] ExprParser.BaseDecContext context)
         {
             string varType = context.type().GetText();
             string varName = context.ID().GetText();
@@ -162,6 +165,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             WriteAlloca(register, llvmType, GetAlignment(llvmType));
             variables[varName] = new Variable(varName, varType, llvmType, register);
+            return null;
+        }
+
+        public string? VisitDec(ExprParser.PointerDecContext context)
+        {
+            string varType = context.type().GetText();
+            string varName = context.ID().GetText();
+            string pointers = context.POINTER().Aggregate("", (a, b) => a + b.GetText());
+            string llvmType = getLLVMType(varType) + pointers;
+            string register = nextRegister();
+            variables[varName] = new Variable(varName, varType, llvmType, register);
+
+            WriteAlloca(register, llvmType, GetAlignment(llvmType));
+            registerTypes[register] = llvmType + "*";
             return null;
         }
 
@@ -253,17 +270,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private void WriteAlloca(string register, string type, int alignment)
         {
             getCurrentBody().AppendLine($"  {register} = alloca {type}, align {alignment}");
-        }
-
-        private static int GetAlignment(string type)
-        {
-            return type switch
-            {
-                "i32" or "i32*" => 4,
-                "double" => 8,
-                "i1" or "i1*" or "i8" or "i8*" => 1,
-                _ => 4
-            };
         }
     }
 }

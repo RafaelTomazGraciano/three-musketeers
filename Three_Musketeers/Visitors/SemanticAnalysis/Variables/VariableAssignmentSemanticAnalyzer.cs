@@ -22,7 +22,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             this.reportWarning = reportWarning;
         }
 
-        public string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public string? VisitAtt([NotNull] ExprParser.GenericAttContext context)
         {
             var typeToken = context.type();
             string varName = context.ID().GetText();
@@ -43,6 +43,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             string type = typeToken.GetText();
 
+            if (type == "void")
+            {
+                reportError(line, $"Variable '{varName}' cannot be void");
+            }
+
             if (symbolTable.Contains(varName))
             {
                 reportError(line, $"Variable '{varName}' has already been declared");
@@ -55,7 +60,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             return null;
         }
 
-        public string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        public string? VisitDeclaration([NotNull] ExprParser.BaseDecContext context)
         {
             string type = context.type().GetText();
             string varName = context.ID().GetText();

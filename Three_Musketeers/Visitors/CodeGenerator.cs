@@ -32,6 +32,7 @@ namespace Three_Musketeers.Visitors
         private readonly ComparisonCodeGenerator comparisonCodeGenerator;
         private readonly FunctionCallCodeGenerator functionCallCodeGenerator;
         private readonly PointerCodeGenerator pointerCodeGenerator;
+        private readonly DynamicMemoryCodeGenerator dynamicMemoryCodeGenerator;
         public CodeGenerator()
         {
             //functions
@@ -46,7 +47,7 @@ namespace Three_Musketeers.Visitors
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
                 declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
-                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody);
+                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
@@ -77,18 +78,24 @@ namespace Three_Musketeers.Visitors
             //comparison
             comparisonCodeGenerator = new ComparisonCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit);
-            //pointers
-            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, declarations, registerTypes, NextRegister, GetLLVMType, Visit);
+            //pointers & dynamic memory
+            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit);
+            dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister, Visit, GetAlignment, GetLLVMType);
         }
 
-        public override string? VisitGenericExpr([NotNull] ExprParser.GenericExprContext context)
+        public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
-            return variableAssignmentCodeGenerator.VisitGenericExpr(context);
+            return variableAssignmentCodeGenerator.VisitGenericAtt(context);
         }
 
         public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
         {
             return variableAssignmentCodeGenerator.VisitSingleAtt(context);
+        }
+
+        public override string VisitDerrefAtt([NotNull] ExprParser.DerrefAttContext context)
+        {
+            return pointerCodeGenerator.VisitDerrefAtt(context);
         }
 
         public override string VisitIntLiteral([NotNull] ExprParser.IntLiteralContext context)
@@ -131,14 +138,9 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitVarArray(context);
         }
 
-        public override string? VisitSizeof([NotNull] ExprParser.SizeofContext context)
+        public override string? VisitDerref([NotNull] ExprParser.DerrefContext context)
         {
-            return base.VisitSizeof(context);
-        }
-
-        public override string? VisitExprDerref([NotNull] ExprParser.ExprDerrefContext context)
-        {
-            return pointerCodeGenerator.VisitExprDerref(context);
+            return pointerCodeGenerator.VisitDerref(context);
         }
 
         public override string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
@@ -146,7 +148,12 @@ namespace Three_Musketeers.Visitors
             return pointerCodeGenerator.VisitExprAddress(context);
         }
 
-        public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        public override string? VisitBaseDec([NotNull] ExprParser.BaseDecContext context)
+        {
+            return variableAssignmentCodeGenerator.VisitDec(context);
+        }
+
+        public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
@@ -277,10 +284,15 @@ namespace Three_Musketeers.Visitors
             
             return base.VisitStm(context);
         }
-        
+
         public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
         {
             return functionCallCodeGenerator.VisitFunctionCall(context);
+        }
+
+        public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
+        {
+            return dynamicMemoryCodeGenerator.VisitMallocAtt(context);
         }
 
     }

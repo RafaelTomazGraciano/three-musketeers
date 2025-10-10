@@ -32,8 +32,8 @@ stm
     ;
 
 declaration
-    : type ID index*
-    | type POINTER ID
+    : type ID index*    #BaseDec
+    | type POINTER+ ID  #PointerDec
     ;
 
 
@@ -43,7 +43,6 @@ function
 
 function_return
     : type
-    | VOID
     ;
 
 func_body
@@ -67,8 +66,9 @@ putsStatement
     ;
 
 att
-    : type? POINTER ID '=' expr                      #GenericExpr
-    | type? POINTER ID '=' 'malloc' '(' expr ')' EOL #MallocExpr
+    : type? POINTER* ID '=' expr                      #GenericAtt
+    | (type POINTER+)? ID '=' 'malloc' '(' expr ')'     #MallocAtt
+    | derref '=' expr                                 #DerrefAtt
     ;
 
 attVar 
@@ -104,11 +104,10 @@ expr
     | 'atod' '(' expr ')'            # AtodConversion
     | 'itoa' '(' expr ')'            # ItoaConversion
     | 'dtoa' '(' expr ')'            # DtoaConversion
-    | 'sizeof' '(' (ID | type) ')'   # Sizeof
     | ID '(' (expr (',' expr)*)? ')' # FunctionCall
     | ID                             # Var
     | ID index+                      # VarArray
-    | POINTER expr                   # ExprDerref
+    | derref                         # DerrefExpr
     | ADDRESS expr                   # ExprAddress
     | INT                            # IntLiteral
     | DOUBLE                         # DoubleLiteral
@@ -118,18 +117,22 @@ expr
     | FALSE                          # FalseLiteral
     ;
 
+derref
+    : POINTER expr
+    ;
+
 type
     : 'int'
     | 'double'
     | 'bool'
     | 'char'
     | 'string'
+    | 'void'
     | ID
     ;
 
 /* -------- TOKENS -------- */
 RETURN        : 'return';
-VOID          : 'void';
 IF            : 'if';
 ELSE          : 'else';
 GR            : '>';

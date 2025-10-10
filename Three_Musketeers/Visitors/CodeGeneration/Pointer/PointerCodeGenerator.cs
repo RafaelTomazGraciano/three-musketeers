@@ -1,4 +1,5 @@
 using System.Text;
+using LLVMSharp;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 
@@ -8,21 +9,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
     public class PointerCodeGenerator
     {
         private readonly Func<StringBuilder> getCurrentBody;
-        private readonly StringBuilder declarations;
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Func<string, string> getLLVMType;
 
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
-        public PointerCodeGenerator(Func<StringBuilder> getCurrentBody, StringBuilder declarations, Dictionary<string, string> registerTypes, Func<string> nextRegister, Func<string, string> getLLVMType, Func<ExprParser.ExprContext, string> visitExpression)
+        public PointerCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, string> registerTypes, Func<string> nextRegister, Func<ExprParser.ExprContext, string> visitExpression)
         {
             this.getCurrentBody = getCurrentBody;
-            this.declarations = declarations;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
-            this.getLLVMType = getLLVMType;
             this.visitExpression = visitExpression;
         }
 
@@ -30,7 +27,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         {
             var exprCtx = context.expr();
         
-            // Caso: &ID (variável simples)
+            // Case: &ID
             if (exprCtx is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
@@ -43,26 +40,23 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 return var.register;
             }
 
-            // Caso: &(*expr) - simplifica para expr
-            if (exprCtx is ExprParser.ExprDerrefContext derrefCtx)
+            // Case: &(*expr)
+            if (exprCtx is ExprParser.DerrefExprContext derrefCtx)
             {
-                return visitExpression(derrefCtx.expr());
+                return visitExpression(derrefCtx.derref().expr());
             }
 
-            // Caso: &(array[i]) - getelementptr
+            // Case: &(array[i]) - getelementptr
             if (exprCtx is ExprParser.VarArrayContext arrayCtx)
             {
-                // Retorna o endereço calculado do elemento
-                // (assumindo que você já tem lógica para arrays)
                 string arrayReg = visitExpression(exprCtx);
-                return arrayReg; // O GEP já retorna um ponteiro
+                return arrayReg;
             }
 
-            // Outros casos: já retornam endereços válidos
             return visitExpression(exprCtx);
         }
 
-        public string VisitExprDerref(ExprParser.ExprDerrefContext context)
+        public string VisitDerref(ExprParser.DerrefContext context)
         {
             string reg = visitExpression(context.expr());
 
@@ -70,10 +64,24 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string baseType = pointerType.Substring(0, pointerType.Length - 1);
             string result = nextRegister();
 
-            string resultReg = nextRegister();
-            getCurrentBody().AppendLine($"  {resultReg} = load {baseType}, {pointerType} {reg}");
+            getCurrentBody().AppendLine($"  {result} = load {baseType}, {pointerType} {reg}");
             registerTypes[result] = baseType;
             return result;
+        }
+
+        public string VisitDerrefAtt(ExprParser.DerrefAttContext context)
+        {
+            string pointerReg = visitExpression(context.derref().expr());
+            string expr = visitExpression(context.expr());
+            string pointerType = registerTypes[pointerReg];
+
+            string baseType = pointerType.EndsWith('*')
+            ? pointerType.Substring(0, pointerReg.Length - 1)
+            : pointerType;
+
+            getCurrentBody().AppendLine($"  store {baseType} {expr}, {pointerType} {pointerReg}");
+    
+            return null;
         }
     }
 }
