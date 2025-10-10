@@ -42,7 +42,7 @@ namespace Three_Musketeers.Visitors
 
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
-                variables, NextRegister, GetLLVMType, Visit, Visit);
+                variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
             base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables, 
                 NextRegister, GetLLVMType, Visit, Visit);
             functionCallCodeGenerator = new FunctionCallCodeGenerator(registerTypes, declaredFunctions, NextRegister,
@@ -57,12 +57,12 @@ namespace Three_Musketeers.Visitors
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
-            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
+            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, declarations, GetCurrentBody, registerTypes,
                 NextRegister, NextStringLabel, Visit);
-            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, declarations, GetCurrentBody, variables,
                 registerTypes, NextRegister, NextStringLabel, GetLLVMType, variableResolver);
-            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, variables, NextRegister, variableResolver);
-            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, variables, registerTypes, NextRegister,
+            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, NextRegister, variableResolver);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, registerTypes, NextRegister,
                 () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null,
                 variableResolver);
 

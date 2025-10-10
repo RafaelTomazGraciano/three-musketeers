@@ -1,7 +1,7 @@
 grammar Expr;
 
 start
-    : prog* mainFunction EOF
+    : prog* mainFunction prog* EOF
     ;
 
 prog

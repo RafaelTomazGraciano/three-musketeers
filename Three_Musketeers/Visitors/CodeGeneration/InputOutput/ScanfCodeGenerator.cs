@@ -10,6 +10,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class ScanfCodeGenerator
     {
         private readonly StringBuilder globalStrings;
+        private readonly StringBuilder declarations;
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
@@ -17,9 +18,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Func<string> nextStringLabel;
         private readonly Func<string, string> getLLVMType;
         private readonly VariableResolver variableResolver;
+        private bool scanfInitialized = false;
 
         public ScanfCodeGenerator(
             StringBuilder globalStrings,
+            StringBuilder declarations,
             Func<StringBuilder> getCurrentBody,
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
@@ -29,6 +32,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             VariableResolver variableResolver)
         {
             this.globalStrings = globalStrings;
+            this.declarations = declarations;
             this.getCurrentBody = getCurrentBody;
             this.variables = variables;
             this.registerTypes = registerTypes;
@@ -40,6 +44,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
         public string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
         {
+            InitializeScanf(); 
+
             var ids = context.ID();
             if (ids.Length == 0)
             {
@@ -95,6 +101,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 "bool" => "%d",
                 _ => "%d"
             };
+        }
+
+        private void InitializeScanf()
+        {
+            if (scanfInitialized)
+                return;
+
+            declarations.AppendLine("declare i32 @scanf(i8*, ...)");
+            scanfInitialized = true;
         }
     }
 }

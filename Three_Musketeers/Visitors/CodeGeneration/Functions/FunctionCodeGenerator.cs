@@ -15,6 +15,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
         private readonly Func<string, string> getLLVMType;
         private readonly Func<ExprParser.StmContext, string?> visitStatement;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
+        private readonly StringBuilder forwardDeclarations;
 
         // Current function context
         private string? currentFunctionName = null;
@@ -31,7 +32,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             Func<string> nextRegister,
             Func<string, string> getLLVMType,
             Func<ExprParser.StmContext, string?> visitStatement,
-            Func<ExprParser.ExprContext, string?> visitExpression)
+            Func<ExprParser.ExprContext, string?> visitExpression,
+            StringBuilder forwardDeclarations)
         {
             this.functionDefinitions = functionDefinitions;
             this.registerTypes = registerTypes;
@@ -41,6 +43,61 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             this.getLLVMType = getLLVMType;
             this.visitStatement = visitStatement;
             this.visitExpression = visitExpression;
+            this.forwardDeclarations = forwardDeclarations;
+        }
+
+        public void CollectFunctionSignature([NotNull] ExprParser.FunctionContext context)
+        {
+            var returnTypeCtx = context.function_return();
+            string llvmReturnType;
+
+            if (returnTypeCtx.VOID() != null)
+            {
+                llvmReturnType = "void";
+            }
+            else if (returnTypeCtx.type != null)
+            {
+                string basetype = GetTypeString(returnTypeCtx.type());
+                llvmReturnType = getLLVMType(basetype);
+                
+                if (basetype == "string")
+                {
+                    llvmReturnType = "i8*";
+                }
+            }
+            else
+            {
+                return;
+            }
+
+            string functionName = context.ID().GetText();
+
+            // register function info
+            if (!declaredFunctions.ContainsKey(functionName))
+            {
+                var funcInfo = new FunctionInfo
+                {
+                    returnType = GetTypeString(returnTypeCtx.type()),
+                    parameters = new List<(string, string)>()
+                };
+
+                // Process parameters
+                var argsCtx = context.args();
+                if (argsCtx != null)
+                {
+                    var types = argsCtx.type();
+                    var ids = argsCtx.ID();
+
+                    for (int i = 0; i < types.Length; i++)
+                    {
+                        string paramType = GetTypeString(types[i]);
+                        string paramName = ids[i].GetText();
+                        funcInfo.parameters.Add((paramType, paramName));
+                    }
+                }
+
+                declaredFunctions[functionName] = funcInfo;
+            }
         }
 
         public string? VisitFunction([NotNull] ExprParser.FunctionContext context)
@@ -284,16 +341,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
         public string? GetCurrentFunctionName()
         {
             return currentFunctionName;
-        }
-
-        public void AppendToFunctionBody(string code)
-        {
-            currentFunctionBody?.Append(code);
-        }
-
-        public void AppendLineToFunctionBody(string code)
-        {
-            currentFunctionBody?.AppendLine(code);
         }
     }
 }

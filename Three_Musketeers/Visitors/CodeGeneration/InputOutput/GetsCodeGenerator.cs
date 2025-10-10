@@ -11,7 +11,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     {
         private readonly StringBuilder declarations;
         private readonly Func<StringBuilder> getCurrentBody;
-        private readonly Dictionary<string, Variable> variables;
         private readonly Func<string> nextRegister;
         private bool fgetsInitialized = false;
         private readonly VariableResolver variableResolver;
@@ -19,13 +18,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         public GetsCodeGenerator(
             StringBuilder declarations,
             Func<StringBuilder> getCurrentBody,
-            Dictionary<string, Variable> variables,
             Func<string> nextRegister,
             VariableResolver variableResolver)
         {
             this.declarations = declarations;
             this.getCurrentBody = getCurrentBody;
-            this.variables = variables;
             this.nextRegister = nextRegister;
             this.variableResolver = variableResolver;
         }

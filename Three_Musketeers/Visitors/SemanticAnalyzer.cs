@@ -62,11 +62,6 @@ namespace Three_Musketeers.Visitors
             functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType, Visit);
         }
 
-        public override string? VisitStart([NotNull] ExprParser.StartContext context)
-        {
-            return base.VisitStart(context);
-        }
-
         public override string? VisitProg([NotNull] ExprParser.ProgContext context)
         {
             return base.VisitProg(context);

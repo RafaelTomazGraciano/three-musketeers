@@ -11,7 +11,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     {
         private readonly StringBuilder declarations;
         private readonly StringBuilder mainBody;
-        private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<StringBuilder?> getCurrentBody;
@@ -21,7 +20,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         public PutsCodeGenerator(
             StringBuilder declarations,
             StringBuilder mainBody,
-            Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<StringBuilder?> getCurrentBody,
@@ -29,7 +27,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         {
             this.declarations = declarations;
             this.mainBody = mainBody;
-            this.variables = variables;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.getCurrentBody = getCurrentBody;
