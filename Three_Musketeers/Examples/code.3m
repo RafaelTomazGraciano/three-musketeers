@@ -78,10 +78,13 @@ int main(int argc, char argv[]) {
     int result = add(5, 3) * multiply(2, 2, 2);
     printf("add(5,3) * multiply(2,2,2) = %d\n", result);
 
-    printf("\n=== Test pointers ===\n");
+    printf("\n=== Test Pointers ===\n");
     int *pointer;
     pointer = malloc(5);
     free(pointer);
+    pointer = &result;
+    
+    printf("Result after pointer derref: %d\n", result);
 
     printf("\n=== All Function Tests Completed ===\n");
 

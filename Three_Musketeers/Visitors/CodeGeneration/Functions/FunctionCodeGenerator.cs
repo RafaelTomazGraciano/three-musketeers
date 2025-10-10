@@ -50,7 +50,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             string llvmReturnType;
             bool isArrayReturn = false;
 
-            if (returnTypeCtx.VOID() != null)
+            if (returnTypeCtx.GetText() == "void")
             {
                 llvmReturnType = "void";
             }

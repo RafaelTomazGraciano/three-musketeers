@@ -45,7 +45,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             string returnType = "";
             List<int>? returnDimensions = null;
 
-            if (returnTypeCtx.VOID() != null)
+            if (returnTypeCtx.GetText() == "void")
             {
                 returnType = "void";
             }

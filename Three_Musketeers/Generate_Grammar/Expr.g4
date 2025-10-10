@@ -67,7 +67,7 @@ putsStatement
 
 att
     : type? POINTER* ID '=' expr                      #GenericAtt
-    | (type POINTER+)? ID '=' 'malloc' '(' expr ')'     #MallocAtt
+    | (type POINTER+)? ID '=' 'malloc' '(' expr ')'   #MallocAtt
     | derref '=' expr                                 #DerrefAtt
     ;
 

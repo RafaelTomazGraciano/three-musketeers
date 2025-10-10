@@ -74,12 +74,12 @@ namespace Three_Musketeers.Visitors
             return base.VisitProg(context);
         }
 
-        public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        public override string? VisitBaseDec([NotNull] ExprParser.BaseDecContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
         }
 
-        public override string? VisitGenericExpr([NotNull] ExprParser.GenericExprContext context)
+        public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
             string? type = variableAssignmentSemanticAnalyzer.VisitAtt(context);
             string? exprType = Visit(context.expr());
@@ -238,11 +238,6 @@ namespace Three_Musketeers.Visitors
         public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
         {
             return functionCallSemanticAnalyzer.VisitFunctionCall(context);
-        }
-
-        public override string VisitMallocExpr([NotNull] ExprParser.MallocExprContext context)
-        {
-            return pointerSemanticAnalyzer.VisitMallocExpr(context);
         }
 
         private static bool TwoTypesArePermitedToCast(string type1, string type2)

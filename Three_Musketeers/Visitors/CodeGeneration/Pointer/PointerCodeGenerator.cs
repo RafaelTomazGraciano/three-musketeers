@@ -69,7 +69,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             return result;
         }
 
-        public string VisitDerrefAtt(ExprParser.DerrefAttContext context)
+        public string? VisitDerrefAtt(ExprParser.DerrefAttContext context)
         {
             string pointerReg = visitExpression(context.derref().expr());
             string expr = visitExpression(context.expr());

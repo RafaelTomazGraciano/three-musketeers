@@ -42,13 +42,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string varType;
             string register;
             string llvmType;
-            string bitcastReg = nextRegister();
-            string mallocReg = nextRegister();
             string exprType = registerTypes[expr];
             string mulReg = nextRegister();
+            string mallocReg = nextRegister();
             int size = 0;
-            mainBody.AppendLine($"   {bitcastReg} = bitcast {exprType} {expr} to i64");
-
+            
             if (type != null)
             {
                 varType = type.GetText();
@@ -57,9 +55,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 register = nextRegister();
                 size = getAlignment(llvmType);
                 llvmType = $"{llvmType}{context.POINTER().Aggregate("", (a, b) => a + b.GetText())}";
-                mainBody.AppendLine($"  {mulReg} = i64 mul {bitcastReg}, {size}");
-                mainBody.AppendLine($" {mallocReg} = call i8* @malloc({mulReg})");
-                mainBody.AppendLine($" {register} = bitcast i8* {mallocReg} to {llvmType}");
+                mainBody.AppendLine($"  {mulReg} = mul i64 {expr}, {size}");
+                mainBody.AppendLine($"  {mallocReg} = call i8* @malloc( i64 {mulReg})");
+                mainBody.AppendLine($"  {register} = bitcast i8* {mallocReg} to {llvmType}");
                 registerTypes[register] = llvmType;
                 variables[varName] = new Variable(varName, varType, llvmType, register);
                 return null;
@@ -68,9 +66,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             register = variable.register;
             llvmType = variable.LLVMType;
             size = getAlignment(llvmType);
-            mainBody.AppendLine($"  {mulReg} = i64 mul {bitcastReg}, {size}");
-            mainBody.AppendLine($" {mallocReg} = call i8* @malloc({mulReg})");
-            mainBody.AppendLine($" {register} = bitcast i8* {mallocReg} to {llvmType}");
+            string bitcastReg = nextRegister();
+            mainBody.AppendLine($"  {mulReg} = mul i64 {expr}, {size}");
+            mainBody.AppendLine($"  {mallocReg} = call i8* @malloc( i64 {mulReg})");
+            mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
+            mainBody.AppendLine($"   store {llvmType} {bitcastReg}, {llvmType}* {register}");
             return null;
         }
 

@@ -15,10 +15,5 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
             this.reportWarning = reportWarning;
             this.symbolTable = symbolTable;
         }
-
-        public string VisitMallocExpr(ExprParser.MallocExprContext context)
-        {
-            return "";
-        }
     }
 }
