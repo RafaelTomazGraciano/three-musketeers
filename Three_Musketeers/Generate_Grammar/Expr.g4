@@ -131,7 +131,7 @@ type
     | ID
     ;
 
-/* -------- TOKENS -------- */
+/* -------- TOKENS -------- */   
 RETURN        : 'return';
 IF            : 'if';
 ELSE          : 'else';

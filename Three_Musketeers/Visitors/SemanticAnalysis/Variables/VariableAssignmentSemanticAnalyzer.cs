@@ -143,6 +143,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
         {
             string varName = context.ID().GetText();
             int line = context.Start.Line;
+            var indices = context.index();
 
             var symbol = symbolTable.GetSymbol(varName);
             if (symbol == null)
@@ -161,7 +162,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             if (symbol is ArraySymbol arraySymbol)
             {
-                var indices = context.index();
+                
                 if (indices.Length != arraySymbol.dimensions.Count)
                 {
                     reportError(line, $"Array '{varName}' expects {arraySymbol.dimensions.Count} indices, but got {indices.Length}");
@@ -181,8 +182,20 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 }
                 return arraySymbol.innerType;
             }
-            return ((PointerSymbol) symbol).innerType;
+
+            var pointerSymbol = (PointerSymbol)symbol;
+
+            if (indices.Length > pointerSymbol.amountOfPointers)
+            {
+                reportError(line, $"Variable '{varName}' have more indices. Expected up to {pointerSymbol.amountOfPointers} got {indices.Length}");
+                return null;
+            }
+
+            
+
+            return pointerSymbol.innerType;
         }
+        
     }
 }
 

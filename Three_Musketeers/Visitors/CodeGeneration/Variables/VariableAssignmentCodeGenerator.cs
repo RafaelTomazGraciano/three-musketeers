@@ -247,6 +247,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string varName = context.ID().GetText();
             string expression = visitExpression(context.expr());
             var indexes = context.index();
+            var mainBody = getCurrentBody();
             int pos = 0;
             int i = 0;
             Variable variable = GetVariableWithScope(varName)!;
@@ -270,15 +271,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 }
 
             string regElementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
-            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            mainBody.AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            mainBody.AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
             return null;
         }
 
         string currentPtr = nextRegister();
         string llvmType = variable.LLVMType;
     
-        getCurrentBody().AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+        mainBody.AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
         string elementType = llvmType.TrimEnd('*');
         string resultPtr = currentPtr;
@@ -287,11 +288,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         {
             int value = int.Parse(index.INT().GetText());
             string gepReg = nextRegister();
-            getCurrentBody().AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
+            mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
             resultPtr = gepReg;
         }
     
-        getCurrentBody().AppendLine($"  store {elementType} {expression}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
+        mainBody.AppendLine($"  store {elementType} {expression}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
     
         return null;
     }
