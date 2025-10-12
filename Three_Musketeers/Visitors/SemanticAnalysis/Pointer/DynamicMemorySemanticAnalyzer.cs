@@ -10,11 +10,14 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
 
         private readonly Action<int, string> reportWarning;
 
-        public DynamicMemorySemanticAnalyzer(SymbolTable symbolTable, Action<int, string> reportError, Action<int, string> reportWarning)
+        private readonly Func<ExprParser.ExprContext, string> VisitExpr;
+
+        public DynamicMemorySemanticAnalyzer(SymbolTable symbolTable, Action<int, string> reportError, Action<int, string> reportWarning, Func<ExprParser.ExprContext, string> VisitExpr)
         {
             this.symbolTable = symbolTable;
             this.reportError = reportError;
             this.reportWarning = reportWarning;
+            this.VisitExpr = VisitExpr;
         }
 
         public string? VisitMallocAtt(ExprParser.MallocAttContext context)
@@ -23,6 +26,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
             string varName = context.ID().GetText();
             int amountOfPointer = context.POINTER().Length;
             int line = context.Start.Line;
+
+            if (VisitExpr(context.expr()) == "string")
+            {
+                reportError(line, $"Expected char, int or double not string");
+            }
 
             if (typeToken == null)
             {

@@ -65,7 +65,7 @@ namespace Three_Musketeers.Visitors
                 GetExpressionType, Visit);
             functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType, Visit);
             //Dynamic memory
-            dynamicMemorySemanticAnalyzer = new DynamicMemorySemanticAnalyzer(symbolTable, ReportError, ReportWarning);
+            dynamicMemorySemanticAnalyzer = new DynamicMemorySemanticAnalyzer(symbolTable, ReportError, ReportWarning, Visit);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
