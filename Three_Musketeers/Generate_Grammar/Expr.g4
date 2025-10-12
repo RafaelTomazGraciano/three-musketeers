@@ -71,7 +71,15 @@ index
     ;
 
 expr
-    : expr ('&&'|'||') expr        # LogicalAndOr
+    : '++' ID                      # PrefixIncrement
+    | '--' ID                      # PrefixDecrement
+    | ID '++'                      # PostfixIncrement
+    | ID '--'                      # PostfixDecrement
+    | '++' ID index+               # PrefixIncrementArray
+    | '--' ID index+               # PrefixDecrementArray
+    | ID index+ '++'               # PostfixIncrementArray
+    | ID index+ '--'               # PostfixDecrementArray
+    | expr ('&&'|'||') expr        # LogicalAndOr
     | expr ('=='|'!=') expr        # Equality
     | expr ('>'|'<'|'>='|'<=') expr # Comparison
     | expr ('*'|'/'|'%') expr  # MulDivMod

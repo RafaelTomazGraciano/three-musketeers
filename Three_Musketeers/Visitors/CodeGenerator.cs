@@ -8,6 +8,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Arithmetic;
 using Three_Musketeers.Visitors.CodeGeneration.Logical;
 using Three_Musketeers.Visitors.CodeGeneration.Equality;
 using Three_Musketeers.Visitors.CodeGeneration.Comparison;
+using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 
 namespace Three_Musketeers.Visitors
 {
@@ -28,6 +29,7 @@ namespace Three_Musketeers.Visitors
         private readonly LogicalCodeGenerator logicalCodeGenerator;
         private readonly EqualityCodeGenerator equalityCodeGenerator;
         private readonly ComparisonCodeGenerator comparisonCodeGenerator;
+        private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
 
         public CodeGenerator()
         {
@@ -63,6 +65,9 @@ namespace Three_Musketeers.Visitors
             //comparison
             comparisonCodeGenerator = new ComparisonCodeGenerator(
                 mainBody, registerTypes, NextRegister, Visit);
+            //increment/decrement
+            incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
+                mainBody, registerTypes, NextRegister, variables);
         }
 
         public override string? VisitAtt([NotNull] ExprParser.AttContext context)
@@ -224,6 +229,48 @@ namespace Three_Musketeers.Visitors
         public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
         {
             return comparisonCodeGenerator.VisitComparison(context);
+        }
+
+        // Increment/Decrement operators for simple variables
+        public override string VisitPrefixIncrement([NotNull] ExprParser.PrefixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrement(context);
+        }
+
+        public override string VisitPrefixDecrement([NotNull] ExprParser.PrefixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrement(context);
+        }
+
+        public override string VisitPostfixIncrement([NotNull] ExprParser.PostfixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrement(context);
+        }
+
+        public override string VisitPostfixDecrement([NotNull] ExprParser.PostfixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrement(context);
+        }
+
+        // Increment/Decrement operators for array elements
+        public override string VisitPrefixIncrementArray([NotNull] ExprParser.PrefixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrementArray(context);
+        }
+
+        public override string VisitPrefixDecrementArray([NotNull] ExprParser.PrefixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrementArray(context);
+        }
+
+        public override string VisitPostfixIncrementArray([NotNull] ExprParser.PostfixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrementArray(context);
+        }
+
+        public override string VisitPostfixDecrementArray([NotNull] ExprParser.PostfixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrementArray(context);
         }
     }
 }
