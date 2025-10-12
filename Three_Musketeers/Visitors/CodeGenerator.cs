@@ -79,7 +79,7 @@ namespace Three_Musketeers.Visitors
             comparisonCodeGenerator = new ComparisonCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit);
             //pointers & dynamic memory
-            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit);
+            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, variables, registerTypes, NextRegister, Visit);
             dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister, Visit, GetAlignment, GetLLVMType);
         }
 
@@ -93,7 +93,7 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitSingleAtt(context);
         }
 
-        public override string VisitDerrefAtt([NotNull] ExprParser.DerrefAttContext context)
+        public override string? VisitDerrefAtt([NotNull] ExprParser.DerrefAttContext context)
         {
             return pointerCodeGenerator.VisitDerrefAtt(context);
         }

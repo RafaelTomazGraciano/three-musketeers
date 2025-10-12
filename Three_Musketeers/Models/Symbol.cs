@@ -5,7 +5,6 @@ namespace Three_Musketeers.Models
         public string name { get; set; }
         public string type { get; set; }
         public bool isInitializated { get; set; }
-        public object? value { get; set; }
         public int line { get; set; } //line declarated
 
         public Symbol(string name, string type, int line)
@@ -38,6 +37,23 @@ namespace Three_Musketeers.Models
         {
             string dims = string.Join("][", dimensions);
             return $"{type} {name}[{dims}] (line {line})";
+        }
+    }
+
+    public class PointerSymbol : Symbol
+    {
+        public string innerType;
+
+        public bool isDynamic;
+
+        public int amountOfPointers;
+
+        public PointerSymbol(string name, string innerType, int line, int amountOfPointers, bool isDynamic = false)
+        : base(name, "pointer", line)
+        {
+            this.innerType = innerType;
+            this.amountOfPointers = amountOfPointers;
+            this.isDynamic = isDynamic;
         }
     }
 }

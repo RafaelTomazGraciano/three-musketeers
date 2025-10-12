@@ -15,10 +15,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
-        public PointerCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, string> registerTypes, Func<string> nextRegister, Func<ExprParser.ExprContext, string> visitExpression)
+        public PointerCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, Variable> variables, Dictionary<string, string> registerTypes, Func<string> nextRegister, Func<ExprParser.ExprContext, string> visitExpression)
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
+            this.variables = variables;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
         }
@@ -31,6 +32,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             if (exprCtx is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
+                Console.WriteLine(varName);
+                foreach (Variable variable in variables.Values)
+                {
+                    Console.WriteLine(variable.name);
+                }
                 Variable var = variables[varName];
 
                 string baseType = var.LLVMType;

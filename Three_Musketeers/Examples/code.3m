@@ -80,11 +80,17 @@ int main(int argc, char argv[]) {
 
     printf("\n=== Test Pointers ===\n");
     int *pointer;
+    int *saved_pointer;
+    int test = 5;
     pointer = malloc(5);
+    saved_pointer = pointer;
+    pointer[1] = 5;
+    printf("Pointer[1] = %d\n", pointer[1]);
     free(pointer);
-    pointer = &result;
-    
-    printf("Result after pointer derref: %d\n", result);
+    pointer = &test;
+    printf("Test before pointer derref: %d\n", test);
+    (*pointer) = 12;
+    printf("Test after pointer derref: %d\n", test);
 
     printf("\n=== All Function Tests Completed ===\n");
 

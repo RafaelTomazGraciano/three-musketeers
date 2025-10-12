@@ -43,6 +43,7 @@ function
 
 function_return
     : type
+    | VOID
     ;
 
 func_body
@@ -118,7 +119,7 @@ expr
     ;
 
 derref
-    : POINTER expr
+    : '(' POINTER expr ')'
     ;
 
 type
@@ -127,7 +128,6 @@ type
     | 'bool'
     | 'char'
     | 'string'
-    | 'void'
     | ID
     ;
 
@@ -146,6 +146,7 @@ EQ            : '==';
 NE            : '!=';
 TRUE          : 'true';
 FALSE         : 'false';
+VOID          : 'void';
 ID            : [a-zA-Z_][a-zA-Z0-9_]*;
 INT           : [0-9]+;
 DOUBLE        : [0-9]+'.'[0-9]* | [0-9]*'.'[0-9]+;

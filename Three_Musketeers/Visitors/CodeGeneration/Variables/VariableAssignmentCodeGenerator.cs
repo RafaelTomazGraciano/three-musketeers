@@ -185,32 +185,60 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         public string VisitVarArray(ExprParser.VarArrayContext context)
         {
             string varName = context.ID().GetText();
+            var mainBody = getCurrentBody();
             var indexes = context.index();
             int i = 0;
             int pos = 0;
-            ArrayVariable arrayVar = (ArrayVariable)GetVariableWithScope(varName)!;
-            foreach (var dim in arrayVar.dimensions)
+            Variable variable = GetVariableWithScope(varName)!;
+            string llvmType;
+            string loadReg;
+            if (variable is ArrayVariable arrayVar)
             {
-                int index = int.Parse(indexes[i].INT().GetText());
-                pos = pos * dim + index;
-                i++;
+                foreach (var dim in arrayVar.dimensions)
+                {
+                    int index = int.Parse(indexes[i].INT().GetText());
+                    pos = pos * dim + index;
+                    i++;
+                }
+
+                string elementPtrReg = nextRegister();
+
+                llvmType = arrayVar.type == "string" ? "i8" : arrayVar.innerType;
+
+                mainBody.AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {pos}");
+
+                if (arrayVar.type == "string")
+                {
+                    registerTypes[elementPtrReg] = "i8*";
+                    return elementPtrReg;
+                }
+
+                loadReg = nextRegister();
+                getCurrentBody().AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {elementPtrReg}, align {GetAlignment(arrayVar.innerType)}");
+                registerTypes[loadReg] = arrayVar.innerType;
+                return loadReg;
             }
 
-            string elementPtrReg = nextRegister();
-
-            string llvmType = arrayVar.type == "string" ? "i8" : arrayVar.innerType;
-
-            getCurrentBody().AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {pos}");
-
-            if (arrayVar.type == "string")
+            string currentPtr = nextRegister();
+            llvmType = variable.LLVMType;
+    
+            mainBody.AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+    
+            string elementType = llvmType.TrimEnd('*');
+            string resultPtr = currentPtr;
+            foreach (var index in indexes)
             {
-                registerTypes[elementPtrReg] = "i8*";
-                return elementPtrReg;
-            }
+                int value = int.Parse(index.INT().GetText());
+                string gepReg = nextRegister();
 
-            string loadReg = nextRegister();
-            getCurrentBody().AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {elementPtrReg}, align {GetAlignment(arrayVar.innerType)}");
-            registerTypes[loadReg] = arrayVar.innerType;
+                mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
+                resultPtr = gepReg;
+            }
+    
+            loadReg = nextRegister();
+            mainBody.AppendLine($"  {loadReg} = load {elementType}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
+            registerTypes[loadReg] = elementType;
+    
             return loadReg;
         }
 
@@ -221,28 +249,57 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             var indexes = context.index();
             int pos = 0;
             int i = 0;
-            ArrayVariable arrayVar = (ArrayVariable)GetVariableWithScope(varName)!;
-            foreach (var dim in arrayVar.dimensions)
-            {
-                int index = int.Parse(indexes[i].INT().GetText());
-                pos = pos * dim + index;
-                i++;
-            }
+            Variable variable = GetVariableWithScope(varName)!;
 
-            if (arrayVar.type == "string")
+            if (variable is ArrayVariable arrayVar)
             {
-                if (registerTypes.ContainsKey(expression) && registerTypes[expression] == "i8*")
+                foreach (var dim in arrayVar.dimensions)
                 {
-                    WriteStrCopy(arrayVar.register, expression, pos * 256);
+                    int index = int.Parse(indexes[i].INT().GetText());
+                    pos = pos * dim + index;
+                    i++;
                 }
+
+                if (arrayVar.type == "string")
+                {
+                    if (registerTypes.TryGetValue(expression, out string? value) && value == "i8*")
+                    {
+                        WriteStrCopy(arrayVar.register, expression, pos * 256);
+                    }
+                    return null;
+                }
+
+                string regElementPtr = nextRegister();
+                getCurrentBody().AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+                getCurrentBody().AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
                 return null;
             }
 
-            string regElementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
-            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
-            return null;
+            string currentPtr = nextRegister();
+        string llvmType = variable.LLVMType;
+    
+        // Carregar o ponteiro base
+        getCurrentBody().AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+
+        // Extrair o tipo do elemento do ponteiro (remover o *)
+        string elementType = llvmType.TrimEnd('*');
+        string resultPtr = currentPtr;
+
+        // Para cada índice, calcular o GEP
+        foreach (var index in indexes)
+        {
+            int value = int.Parse(index.INT().GetText());
+            string gepReg = nextRegister();
+            // getelementptr para avançar no ponteiro
+            getCurrentBody().AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
+            resultPtr = gepReg;
         }
+    
+        // Armazenar o valor no endereço calculado
+        getCurrentBody().AppendLine($"  store {elementType} {expression}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
+    
+        return null;
+    }
 
         private Variable? GetVariableWithScope(string varName)
         {
