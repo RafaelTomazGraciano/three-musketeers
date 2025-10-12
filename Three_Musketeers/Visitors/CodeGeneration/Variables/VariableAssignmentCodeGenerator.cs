@@ -269,33 +269,28 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                     return null;
                 }
 
-                string regElementPtr = nextRegister();
-                getCurrentBody().AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
-                getCurrentBody().AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
-                return null;
-            }
+            string regElementPtr = nextRegister();
+            getCurrentBody().AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            return null;
+        }
 
-            string currentPtr = nextRegister();
+        string currentPtr = nextRegister();
         string llvmType = variable.LLVMType;
     
-        // Carregar o ponteiro base
         getCurrentBody().AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
-        // Extrair o tipo do elemento do ponteiro (remover o *)
         string elementType = llvmType.TrimEnd('*');
         string resultPtr = currentPtr;
 
-        // Para cada índice, calcular o GEP
         foreach (var index in indexes)
         {
             int value = int.Parse(index.INT().GetText());
             string gepReg = nextRegister();
-            // getelementptr para avançar no ponteiro
             getCurrentBody().AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
             resultPtr = gepReg;
         }
     
-        // Armazenar o valor no endereço calculado
         getCurrentBody().AppendLine($"  store {elementType} {expression}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
     
         return null;

@@ -45,7 +45,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
             
             return Visit(context.expr());
         }
-        
+
         public string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
         {
             var exprContext = context.expr();
@@ -56,6 +56,27 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
             }
 
             return "pointer";
+        }
+        
+        public string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
+        {
+            string varName = context.ID().GetText();
+            int line = context.Start.Line;
+            Symbol? symbol = symbolTable.GetSymbol(varName);
+            if (symbol == null)
+            {
+                reportError(line, $"Variable '{varName}' was not declared");
+                return null;
+            }
+            if (symbol is not PointerSymbol)
+            {
+                reportError(line, $"Variable '{varName}' is not a pointer");
+                return null;
+            }
+            PointerSymbol pointer = (PointerSymbol)symbol;
+            pointer.isDynamic = false;
+            pointer.isInitializated = false;
+            return null;
         }
     }
 }

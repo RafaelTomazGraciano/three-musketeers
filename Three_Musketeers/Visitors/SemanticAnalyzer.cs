@@ -138,6 +138,11 @@ namespace Three_Musketeers.Visitors
             return "int";
         }
 
+        public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
+        {
+            return pointerSemanticAnalyzer.VisitFreeStatement(context);
+        }
+
         public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
         {
             return "string";
