@@ -51,11 +51,15 @@ putsStatement
     ;
 
 att
-    : type? ID '=' expr
+    : type? ID '=' expr                    # AttRegular
+    | type? ID '+=' expr                   # AttPlusEquals
+    | type? ID '-=' expr                   # AttMinusEquals
     ;
 
 att_var 
-    : ID index+ '=' expr                          #SingleAtt
+    : ID index+ '=' expr                          # SingleAtt
+    | ID index+ '+=' expr                         # SingleAttPlusEquals
+    | ID index+ '-=' expr                         # SingleAttMinusEquals
     ;
 
 new_type

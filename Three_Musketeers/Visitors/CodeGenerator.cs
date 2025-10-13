@@ -9,6 +9,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Logical;
 using Three_Musketeers.Visitors.CodeGeneration.Equality;
 using Three_Musketeers.Visitors.CodeGeneration.Comparison;
 using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
+using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
 
 namespace Three_Musketeers.Visitors
 {
@@ -30,6 +31,7 @@ namespace Three_Musketeers.Visitors
         private readonly EqualityCodeGenerator equalityCodeGenerator;
         private readonly ComparisonCodeGenerator comparisonCodeGenerator;
         private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
+        private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
 
         public CodeGenerator()
         {
@@ -68,16 +70,39 @@ namespace Three_Musketeers.Visitors
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
                 mainBody, registerTypes, NextRegister, variables);
+            //compound assignment
+            compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
+                mainBody, registerTypes, NextRegister, variables, Visit);
         }
 
-        public override string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public override string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)
         {
-            return variableAssignmentCodeGenerator.VisitAtt(context);
+            return variableAssignmentCodeGenerator.VisitAttRegular(context);
+        }
+
+        public override string? VisitAttPlusEquals([NotNull] ExprParser.AttPlusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttPlusEquals(context);
+        }
+
+        public override string? VisitAttMinusEquals([NotNull] ExprParser.AttMinusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttMinusEquals(context);
         }
 
         public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
         {
             return variableAssignmentCodeGenerator.VisitSingleAtt(context);
+        }
+
+        public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttPlusEquals(context);
+        }
+
+        public override string? VisitSingleAttMinusEquals([NotNull] ExprParser.SingleAttMinusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMinusEquals(context);
         }
 
         public override string VisitIntLiteral([NotNull] ExprParser.IntLiteralContext context)

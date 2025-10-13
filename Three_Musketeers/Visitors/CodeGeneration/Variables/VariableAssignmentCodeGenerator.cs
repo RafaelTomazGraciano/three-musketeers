@@ -35,7 +35,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.visitExpression = visitExpression;
         }
 
-        public string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)
         {
             string varType;
             string varName = context.ID().GetText();
