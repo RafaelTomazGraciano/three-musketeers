@@ -1,13 +1,21 @@
 grammar Expr;
 
 start
-    : prog+ EOF
+    : prog* mainFunction prog* EOF
     ;
 
 prog
     : stm
     | new_type
     | function
+    ;
+
+mainFunction
+    : 'int' 'main' '(' mainArgs? ')' '{' func_body '}'
+    ;
+
+mainArgs
+    : 'int' ID ',' 'char' ID '[' ']'
     ;
 
 stm
@@ -27,7 +35,12 @@ stm
     ;
 
 function
-    : type ID '(' args? ')' '{' func_body '}'
+    : function_return ID '(' args? ')' '{' func_body '}'
+    ;
+
+function_return
+    : type
+    | VOID
     ;
 
 func_body
@@ -47,7 +60,7 @@ getsStatement
     ;
 
 putsStatement
-    : 'puts' '(' (ID | STRING_LITERAL) ')' EOL
+    : 'puts' '(' (ID index?| STRING_LITERAL) ')' EOL
     ;
 
 att
@@ -55,7 +68,7 @@ att
     ;
 
 att_var 
-    : ID index+ '=' expr                          #SingleAtt
+    : ID index+ '=' expr             #SingleAtt
     ;
 
 new_type
@@ -71,26 +84,27 @@ index
     ;
 
 expr
-    : expr ('&&'|'||') expr        # LogicalAndOr
-    | expr ('=='|'!=') expr        # Equality
-    | expr ('>'|'<'|'>='|'<=') expr # Comparison
-    | expr ('*'|'/'|'%') expr  # MulDivMod
-    | expr ('+'|'-') expr      # AddSub
-    | '(' expr ')'             # Parens
-    | '!' expr                 # LogicalNot
-    | '-' expr                 # UnaryMinus
-    | 'atoi' '(' expr ')'           # AtoiConversion
-    | 'atod' '(' expr ')'           # AtodConversion
-    | 'itoa' '(' expr ')'           # ItoaConversion
-    | 'dtoa' '(' expr ')'           # DtoaConversion
-    | ID                       # Var
-    | ID index+                # VarArray
-    | INT                      # IntLiteral
-    | DOUBLE                   # DoubleLiteral
-    | STRING_LITERAL           # StringLiteral
-    | CHAR_LITERAL             # CharLiteral
-    | TRUE                     # TrueLiteral
-    | FALSE                    # FalseLiteral
+    : expr ('&&'|'||') expr          # LogicalAndOr
+    | expr ('=='|'!=') expr          # Equality
+    | expr ('>'|'<'|'>='|'<=') expr  # Comparison
+    | expr ('*'|'/'|'%') expr        # MulDivMod
+    | expr ('+'|'-') expr            # AddSub
+    | '(' expr ')'                   # Parens
+    | '!' expr                       # LogicalNot
+    | '-' expr                       # UnaryMinus
+    | 'atoi' '(' expr ')'            # AtoiConversion
+    | 'atod' '(' expr ')'            # AtodConversion
+    | 'itoa' '(' expr ')'            # ItoaConversion
+    | 'dtoa' '(' expr ')'            # DtoaConversion
+    | ID '(' (expr (',' expr)*)? ')' # FunctionCall
+    | ID                             # Var
+    | ID index+                      # VarArray
+    | INT                            # IntLiteral
+    | DOUBLE                         # DoubleLiteral
+    | STRING_LITERAL                 # StringLiteral
+    | CHAR_LITERAL                   # CharLiteral
+    | TRUE                           # TrueLiteral
+    | FALSE                          # FalseLiteral
     ;
 
 type
@@ -104,6 +118,7 @@ type
 
 /* -------- TOKENS -------- */
 RETURN        : 'return';
+VOID          : 'void';
 IF            : 'if';
 ELSE          : 'else';
 GR            : '>';

@@ -7,18 +7,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
 {
     public class EqualityCodeGenerator
     {
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
 
         public EqualityCodeGenerator(
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string?> visitExpression)
         {
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
@@ -47,19 +47,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
                 // Equality comparison
                 if (comparisonType == "double")
                 {
-                    mainBody.AppendLine($"  {resultReg} = fcmp oeq double {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = fcmp oeq double {leftConverted}, {rightConverted}");
                 }
                 else if (comparisonType == "i32")
                 {
-                    mainBody.AppendLine($"  {resultReg} = icmp eq i32 {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = icmp eq i32 {leftConverted}, {rightConverted}");
                 }
                 else if (comparisonType == "i8")
                 {
-                    mainBody.AppendLine($"  {resultReg} = icmp eq i8 {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = icmp eq i8 {leftConverted}, {rightConverted}");
                 }
                 else
                 {
-                    mainBody.AppendLine($"  {resultReg} = icmp eq i32 {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = icmp eq i32 {leftConverted}, {rightConverted}");
                 }
             }
             else if (op == "!=")
@@ -67,19 +67,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
                 // Inequality comparison
                 if (comparisonType == "double")
                 {
-                    mainBody.AppendLine($"  {resultReg} = fcmp one double {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = fcmp one double {leftConverted}, {rightConverted}");
                 }
                 else if (comparisonType == "i32")
                 {
-                    mainBody.AppendLine($"  {resultReg} = icmp ne i32 {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = icmp ne i32 {leftConverted}, {rightConverted}");
                 }
                 else if (comparisonType == "i8")
                 {
-                    mainBody.AppendLine($"  {resultReg} = icmp ne i8 {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = icmp ne i8 {leftConverted}, {rightConverted}");
                 }
                 else
                 {
-                    mainBody.AppendLine($"  {resultReg} = icmp ne i32 {leftConverted}, {rightConverted}");
+                    getCurrentBody().AppendLine($"  {resultReg} = icmp ne i32 {leftConverted}, {rightConverted}");
                 }
             }
             
@@ -123,7 +123,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
             {
                 // Convert boolean to integer for comparison
                 string convReg = nextRegister();
-                mainBody.AppendLine($"  {convReg} = zext i1 {value} to i32");
+                getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i32");
                 registerTypes[convReg] = "i32";
                 return convReg;
             }
@@ -131,7 +131,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
             {
                 // Convert char to integer for comparison
                 string convReg = nextRegister();
-                mainBody.AppendLine($"  {convReg} = zext i8 {value} to i32");
+                getCurrentBody().AppendLine($"  {convReg} = zext i8 {value} to i32");
                 registerTypes[convReg] = "i32";
                 return convReg;
             }
