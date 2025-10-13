@@ -1,87 +1,114 @@
-string msg = "Welcome to the Three Musketeers Language!";
-puts(msg);
+int main(int argc, char argv[]) {
+    printf("\n=== Test Arguments ===\n");
+    printf("Argument count: %d\n", argc);
+    puts("Arguments list:");
+    puts(argv[1]);
+    puts(argv[2]);
+    puts(argv[3]);
 
-printf("=== Testing Basic Types ===\n");
+    printf("\n=== Test Multiple Void Calls ===\n");
+    printWelcome();
+    printWelcome();
 
-// Teste de bool
-bool isRegistered;
-isRegistered = false;
-printf("Bool value: %d\n", isRegistered);
-isRegistered = true;
-printf("Bool value changed: %d\n", isRegistered);
+    printf("\n=== Test Addition ===\n");
+    int sum = add(10, 20);
+    printf("10 + 20 = %d\n", sum);
+    sum++;
+    printf("Incremented sum: %d\n", sum);
 
-// Teste de char
-char letter = 'A';
-printf("Character: %c\n", letter);
+    printf("\n=== Test Multiplication ===\n");
+    int product = multiply(2, 3, 4);
+    printf("2 * 3 * 4 = %d\n", product);
 
-// Teste de int
-int count = 42;
-printf("Integer: %d\n", count);
+    printf("\n=== Test Area Calculation ===\n");
+    double area = calculateArea(5.5, 3.2);
+    printf("Area: %.2f\n", area);
 
-// Teste de double
-double price = 19.99;
-printf("Double: %.2f\n", price);
+    printf("\n=== Test Nested Calls ===\n");
+    int squared = square(5);
+    printf("5 squared = %d\n", squared);
 
-// Teste de array
-printf("\n=== Testing Arrays ===\n");
-int numbers[3];
-numbers[0] = 10;
-numbers[1] = 20;
-numbers[2] = 30;
-printf("Array[0]: %d\n", numbers[0]);
-printf("Array[1]: %d\n", numbers[1]);
-printf("Array[2]: %d\n", numbers[2]);
+    printf("\n=== Test Boolean Function ===\n");
+    bool positive = isPositive(42);
+    bool negative = isPositive(-10);
+    printf("42 is positive: %d\n", positive);
+    printf("-10 is positive: %d\n", negative);
 
-// Teste de string input
-printf("\n=== Testing String Input ===\n");
-string name;
-printf("Enter your name: ");
-gets(name);
-printf("Hello, %s!\n", name);
+    printf("\n=== Test Char Function ===\n");
+    char firstLetter = getFirstLetter(65);
+    printf("First letter: %c\n", firstLetter);
 
-// Teste de scanf
-printf("\n=== Testing Scanf ===\n");
-int age;
-double weight;
-printf("Enter your age: ");
-scanf(age);
-printf("Enter your weight: ");
-scanf(weight);
-printf("You are %d years old and weigh %.1f kg\n", age, weight);
+    printf("\n=== Test Expression with Function ===\n");
+    int result = add(5, 3) * multiply(2, 2, 2);
+    printf("add(5,3) * multiply(2,2,2) = %d\n", result);
+    
+    printf("\n=== Test Recursion ===\n");
+    //recursionPrint("Recursion implemented");
 
-// Teste de conversões string para número
-printf("\n=== Testing String to Number Conversions ===\n");
-string strNum = "123";
-int convertedInt = atoi(strNum);
-printf("String '123' converted to int: %d\n", convertedInt);
+    printf("\n=== Test Pointers ===\n");
+    int *pointer;
+    int *saved_pointer;
+    int **other_pointer;
+    int test = 5;
+    pointer = malloc(5);
+    saved_pointer = pointer;
+    pointer[1] = 5;
+    printf("Pointer[1] = %d\n", pointer[1]);
+    printf("Trying semantic warning\n");
+    pointer = malloc(test);
+    free(pointer);
+    pointer = &test;
+    printf("Test before pointer derref: %d\n", test);
+    (*pointer) = 12;
+    printf("Test after pointer derref: %d\n", test);
+    other_pointer = &pointer;
+    (*(*other_pointer)) = 26;
+    printf("Test after pointer derref of derref: %d\n", test);
 
-string strDouble = "45.67";
-double convertedDouble = atod(strDouble);
-printf("String '45.67' converted to double: %.2f\n", convertedDouble);
+    printf("\n=== All Function Tests Completed ===\n");
 
-// Teste de conversões número para string
-printf("\n=== Testing Number to String Conversions ===\n");
-int myInt = 999;
-string strFromInt = itoa(myInt);
-printf("Int 999 converted to string: %s\n", strFromInt);
+    return 0;
+}
+// Test Simple void function
+void printWelcome() {
+    puts("=== Three Musketeers Function Tests ===");
+}
 
-double myDouble = 3.14159;
-string strFromDouble = dtoa(myDouble);
-printf("Double 3.14159 converted to string: %s\n", strFromDouble);
+// Test Function with int return
+int add(int x, int y) {
+    return x + y;
+}
 
-// Teste de operações aritméticas
-printf("\n=== Testing Arithmetic ===\n");
-int a = 10;
-int b = 3;
-int sum = a + b;
-int diff = a - b;
-int prod = a * b;
-int quot = a / b;
-printf("%d + %d = %d\n", a, b, sum);
-printf("%d - %d = %d\n", a, b, diff);
-printf("%d * %d = %d\n", a, b, prod);
-printf("%d / %d = %d\n", a, b, quot);
+// Test Function with multiple parameters
+int multiply(int a, int b, int c) {
+    return a * b * c;
+}
 
-// Teste final
-printf("\n=== All Tests Completed ===\n");
-puts("Three Musketeers compiler is working!");
+// Test Function with double
+double calculateArea(double width, double height) {
+    return width * height;
+}
+
+// Test Nested function calls
+int square(int n) {
+    return multiply(n, n, 1);
+}
+
+// Test Function with boolean
+bool isPositive(int num) {
+    return num > 0;
+}
+
+// Test Function with char
+char getFirstLetter(int code) {
+    char letter = 'A';
+    return letter;
+}
+
+//recursion
+void recursionPrint(string message) {
+    puts(message);
+    recursionPrint(message);
+}
+
+// === MAIN TESTS ===

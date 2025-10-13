@@ -7,18 +7,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
 {
     public class LogicalCodeGenerator
     {
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
 
         public LogicalCodeGenerator(
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string?> visitExpression)
         {
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
@@ -44,12 +44,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             if (op == "&&")
             {
                 // Logical AND
-                mainBody.AppendLine($"  {resultReg} = and i1 {leftBool}, {rightBool}");
+                getCurrentBody().AppendLine($"  {resultReg} = and i1 {leftBool}, {rightBool}");
             }
             else if (op == "||")
             {
                 // Logical OR
-                mainBody.AppendLine($"  {resultReg} = or i1 {leftBool}, {rightBool}");
+                getCurrentBody().AppendLine($"  {resultReg} = or i1 {leftBool}, {rightBool}");
             }
             
             registerTypes[resultReg] = "i1";
@@ -65,7 +65,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             string exprBool = ConvertToBool(exprValue, exprType);
             
             string resultReg = nextRegister();
-            mainBody.AppendLine($"  {resultReg} = xor i1 {exprBool}, 1");
+            getCurrentBody().AppendLine($"  {resultReg} = xor i1 {exprBool}, 1");
             
             registerTypes[resultReg] = "i1";
             return resultReg;
@@ -115,29 +115,29 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             {
                 // Convert integer to boolean: != 0
                 string tempReg = nextRegister();
-                mainBody.AppendLine($"  {tempReg} = icmp ne i32 {value}, 0");
-                mainBody.AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                getCurrentBody().AppendLine($"  {tempReg} = icmp ne i32 {value}, 0");
+                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
             }
             else if (currentType == "double")
             {
                 // Convert double to boolean: != 0.0
                 string tempReg = nextRegister();
-                mainBody.AppendLine($"  {tempReg} = fcmp one double {value}, 0.0");
-                mainBody.AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                getCurrentBody().AppendLine($"  {tempReg} = fcmp one double {value}, 0.0");
+                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
             }
             else if (currentType == "i8")
             {
                 // Convert char to boolean: != 0
                 string tempReg = nextRegister();
-                mainBody.AppendLine($"  {tempReg} = icmp ne i8 {value}, 0");
-                mainBody.AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                getCurrentBody().AppendLine($"  {tempReg} = icmp ne i8 {value}, 0");
+                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
             }
             else
             {
                 // Default case - treat as integer
                 string tempReg = nextRegister();
-                mainBody.AppendLine($"  {tempReg} = icmp ne i32 {value}, 0");
-                mainBody.AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                getCurrentBody().AppendLine($"  {tempReg} = icmp ne i32 {value}, 0");
+                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
             }
             
             registerTypes[convReg] = "i1";

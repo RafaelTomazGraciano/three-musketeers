@@ -22,7 +22,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             this.reportWarning = reportWarning;
         }
 
-        public string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public string? VisitAtt([NotNull] ExprParser.GenericAttContext context)
         {
             var typeToken = context.type();
             string varName = context.ID().GetText();
@@ -33,7 +33,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 var existingSymbol = symbolTable.GetSymbol(varName);
                 if (existingSymbol == null)
                 {
-
                     reportError(context.Start.Line, $"Variable {varName} does not have a type");
                     return null;
                 }
@@ -50,12 +49,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             }
 
             var symbol = new Symbol(varName, type, line);
+            symbol.isInitializated = true;
             symbolTable.AddSymbol(symbol);
-            symbolTable.MarkInitializated(varName);
             return null;
         }
 
-        public string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        public string? VisitDeclaration([NotNull] ExprParser.BaseDecContext context)
         {
             string type = context.type().GetText();
             string varName = context.ID().GetText();
@@ -96,6 +95,29 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             return type;
         }
 
+        public string? VisitDeclaration([NotNull] ExprParser.PointerDecContext context)
+        {
+            var typeToken = context.type();
+            string varName = context.ID().GetText();
+            int pointers = context.POINTER().Length;
+            int line = context.Start.Line;
+
+            if (typeToken == null)
+            {
+                var variable = symbolTable.GetSymbol(varName);
+                if (variable == null)
+                {
+                    reportError(line, $"Variable '{varName}' was not declared");
+                    return null;
+                }
+                return variable.type;
+            }
+
+            string type = typeToken.GetText();
+            symbolTable.AddSymbol(new PointerSymbol(varName, type, line, pointers));
+            return "pointer";
+        }
+
         public string? VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
@@ -121,6 +143,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
         {
             string varName = context.ID().GetText();
             int line = context.Start.Line;
+            var indices = context.index();
 
             var symbol = symbolTable.GetSymbol(varName);
             if (symbol == null)
@@ -129,33 +152,55 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
-            if (symbol is not ArraySymbol arraySymbol)
+            string type = symbol.type;
+
+            if (indices.Length == 0)
             {
-                reportError(line, $"Variable '{varName}' is not an array");
+                return type;
+            }
+
+            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
+            {
+                reportError(line, $"Variable '{varName}' is not an array nor Pointer");
                 return null;
             }
 
-            var indices = context.index();
-            if (indices.Length != arraySymbol.dimensions.Count)
+            if (symbol is ArraySymbol arraySymbol)
             {
-                reportError(line, $"Array '{varName}' expects {arraySymbol.dimensions.Count} indices, but got {indices.Length}");
-                return null;
-            }
-
-            for (int i = 0; i < indices.Length; i++)
-            {
-                var indexCtx = indices[i];
-                int indexValue = int.Parse(indexCtx.INT().GetText());
-                if (indexValue < 0 || indexValue >= arraySymbol.dimensions[i])
+                
+                if (indices.Length != arraySymbol.dimensions.Count)
                 {
-                    reportError(indexCtx.Start.Line,
-                        $"Index {i} of array '{varName}' is out of bounds. Expected 0 to {arraySymbol.dimensions[i] - 1}, but got {indexValue}");
+                    reportError(line, $"Array '{varName}' expects {arraySymbol.dimensions.Count} indices, but got {indices.Length}");
                     return null;
                 }
+
+                for (int i = 0; i < indices.Length; i++)
+                {
+                    var indexCtx = indices[i];
+                    int indexValue = int.Parse(indexCtx.INT().GetText());
+                    if (indexValue < 0 || indexValue >= arraySymbol.dimensions[i])
+                    {
+                        reportError(indexCtx.Start.Line,
+                            $"Index {i} of array '{varName}' is out of bounds. Expected 0 to {arraySymbol.dimensions[i] - 1}, but got {indexValue}");
+                        return null;
+                    }
+                }
+                return arraySymbol.innerType;
             }
 
-            return arraySymbol.innerType;
+            var pointerSymbol = (PointerSymbol)symbol;
+
+            if (indices.Length > pointerSymbol.amountOfPointers)
+            {
+                reportError(line, $"Variable '{varName}' have more indices. Expected up to {pointerSymbol.amountOfPointers} got {indices.Length}");
+                return null;
+            }
+
+            
+
+            return pointerSymbol.innerType;
         }
+        
     }
 }
 

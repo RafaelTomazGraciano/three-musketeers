@@ -8,7 +8,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.StringConversion
     public class AtodCodeGenerator
     {
         private readonly StringBuilder declarations;
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
@@ -16,13 +16,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.StringConversion
 
         public AtodCodeGenerator(
             StringBuilder declarations,
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string?> visitExpression)
         {
             this.declarations = declarations;
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
@@ -34,7 +34,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.StringConversion
 
             string? strPtr = visitExpression(context.expr());
             string resultReg = nextRegister();
-            mainBody.AppendLine($"  {resultReg} = call double @atof(i8* {strPtr})");
+            getCurrentBody().AppendLine($"  {resultReg} = call double @atof(i8* {strPtr})");
             registerTypes[resultReg] = "double";
             return resultReg;
         }

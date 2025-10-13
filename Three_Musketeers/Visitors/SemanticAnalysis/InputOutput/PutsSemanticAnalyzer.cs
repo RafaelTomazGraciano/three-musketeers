@@ -19,39 +19,94 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
         {
+            int line = context.Start.Line;
+
+            // puts(ID) or puts(ID[index])
             if (context.ID() != null)
             {
                 string varName = context.ID().GetText();
-
                 Symbol? symbol = symbolTable.GetSymbol(varName);
+
                 if (symbol == null)
                 {
-                    reportError(context.Start.Line,
-                        $"Variable '{varName}' not declarated before use in puts()");
+                    reportError(line, $"Variable '{varName}' not declared before use in puts()");
                     return null;
                 }
 
-                if (symbol.type != "string")
+                bool hasIndexAccess = context.index() != null;
+
+                if (hasIndexAccess)
                 {
-                    reportError(context.Start.Line,
-                        $"puts() can only be used with string variables, but '{varName}' is '{symbol.type}'");
-                    return null;
+                    ValidateArrayElementAccess(symbol, varName, line);
+                }
+                else
+                {
+                    ValidateWholeVariableAccess(symbol, varName, line);
                 }
 
                 if (!symbol.isInitializated)
                 {
-                    reportError(context.Start.Line,
-                    $"Variable '{varName}' may not have been  initializated before use in puts()");
+                    reportError(line, $"Variable '{varName}' may not have been initialized before use in puts()");
                 }
+
                 return null;
             }
 
+            // STRING_LITERAL
             if (context.STRING_LITERAL() != null)
             {
-                //for string is always valid
+                // string are always valid
             }
+
             return null;
         }
 
+        private void ValidateArrayElementAccess(Symbol symbol, string varName, int line)
+        {
+            if (symbol is ArraySymbol arraySymbol)
+            {
+                if (arraySymbol.innerType != "string" && arraySymbol.innerType != "char")
+                {
+                    reportError(line,
+                        $"puts() can only print string or char array elements, but '{varName}' is '{arraySymbol.innerType}[]'");
+                }
+            }
+            else
+            {
+                reportError(line,
+                    $"Variable '{varName}' is not an array, cannot use index access in puts()");
+            }
+        }
+
+        private void ValidateWholeVariableAccess(Symbol symbol, string varName, int line)
+        {
+            if (symbol is ArraySymbol arraySymbol)
+            {
+                if (arraySymbol.innerType == "char")
+                {
+                    // char array can be printed as a whole (it's a string)
+                    return;
+                }
+                else if (arraySymbol.innerType == "string")
+                {
+                    // string array without index - not allowed
+                    reportError(line,
+                        $"Cannot print entire string array '{varName}', use index access: puts({varName}[index])");
+                    return;
+                }
+                else
+                {
+                    reportError(line,
+                        $"puts() cannot print array of type '{arraySymbol.innerType}'");
+                    return;
+                }
+            }
+
+            if (symbol.type != "string")
+            {
+                reportError(line,
+                    $"puts() can only be used with string variables, but '{varName}' is '{symbol.type}'");
+            }
+        }
     }
 }

@@ -1,33 +1,49 @@
 grammar Expr;
 
 start
-    : prog+ EOF
+    : prog* mainFunction prog* EOF
     ;
 
 prog
     : stm
-    | new_type
+    | newType
     | function
+    ;
+
+mainFunction
+    : 'int' 'main' '(' mainArgs? ')' '{' func_body '}'
+    ;
+
+mainArgs
+    : 'int' ID ',' 'char' ID '[' ']'
     ;
 
 stm
     : expr EOL
     | declaration EOL
     | att  EOL
-    | att_var EOL
+    | attVar EOL
     | printfStatement
     | scanfStatement
     | getsStatement
     | putsStatement
+    | freeStatement
     | RETURN expr? EOL
     ;
 
-    declaration
-    : type ID index*
+declaration
+    : type ID index*    #BaseDec
+    | type POINTER+ ID  #PointerDec
     ;
 
+
 function
-    : type ID '(' args? ')' '{' func_body '}'
+    : function_return ID '(' args? ')' '{' func_body '}'
+    ;
+
+function_return
+    : type
+    | VOID
     ;
 
 func_body
@@ -47,18 +63,24 @@ getsStatement
     ;
 
 putsStatement
-    : 'puts' '(' (ID | STRING_LITERAL) ')' EOL
+    : 'puts' '(' (ID index?| STRING_LITERAL) ')' EOL
     ;
 
 att
-    : type? ID '=' expr
+    : type? POINTER* ID '=' expr                      #GenericAtt
+    | (type POINTER+)? ID '=' 'malloc' '(' expr ')'   #MallocAtt
+    | derref '=' expr                                 #DerrefAtt
     ;
 
-att_var 
-    : ID index+ '=' expr                          #SingleAtt
+attVar 
+    : type? ID index* '=' expr                    # SingleAtt
+    | ID index* '+=' expr                   # SingleAttPlusEquals
+    | ID index* '-=' expr                   # SingleAttMinusEquals
+    | ID index* '*=' expr                   # SingleAttMultiplyEquals
+    | ID index* '/=' expr                   # SingleAttDivideEquals
     ;
 
-new_type
+newType
     : 'type' ID 'as' type EOL
     ;
 
@@ -70,27 +92,46 @@ index
     : '[' INT ']'
     ;
 
+freeStatement
+    : 'free''('ID')'EOL
+    ;
+
 expr
-    : expr ('&&'|'||') expr        # LogicalAndOr
-    | expr ('=='|'!=') expr        # Equality
-    | expr ('>'|'<'|'>='|'<=') expr # Comparison
-    | expr ('*'|'/'|'%') expr  # MulDivMod
-    | expr ('+'|'-') expr      # AddSub
-    | '(' expr ')'             # Parens
-    | '!' expr                 # LogicalNot
-    | '-' expr                 # UnaryMinus
-    | 'atoi' '(' expr ')'           # AtoiConversion
-    | 'atod' '(' expr ')'           # AtodConversion
-    | 'itoa' '(' expr ')'           # ItoaConversion
-    | 'dtoa' '(' expr ')'           # DtoaConversion
-    | ID                       # Var
-    | ID index+                # VarArray
-    | INT                      # IntLiteral
-    | DOUBLE                   # DoubleLiteral
-    | STRING_LITERAL           # StringLiteral
-    | CHAR_LITERAL             # CharLiteral
-    | TRUE                     # TrueLiteral
-    | FALSE                    # FalseLiteral
+    : '++' ID                      # PrefixIncrement
+    | '--' ID                      # PrefixDecrement
+    | ID '++'                      # PostfixIncrement
+    | ID '--'                      # PostfixDecrement
+    | '++' ID index+               # PrefixIncrementArray
+    | '--' ID index+               # PrefixDecrementArray
+    | ID index+ '++'               # PostfixIncrementArray
+    | ID index+ '--'               # PostfixDecrementArray
+    | expr ('&&'|'||') expr          # LogicalAndOr
+    | expr ('=='|'!=') expr          # Equality
+    | expr ('>'|'<'|'>='|'<=') expr  # Comparison
+    | expr ('*'|'/'|'%') expr        # MulDivMod
+    | expr ('+'|'-') expr            # AddSub
+    | '(' expr ')'                   # Parens
+    | '!' expr                       # LogicalNot
+    | '-' expr                       # UnaryMinus
+    | 'atoi' '(' expr ')'            # AtoiConversion
+    | 'atod' '(' expr ')'            # AtodConversion
+    | 'itoa' '(' expr ')'            # ItoaConversion
+    | 'dtoa' '(' expr ')'            # DtoaConversion
+    | ID '(' (expr (',' expr)*)? ')' # FunctionCall
+    | ID                             # Var
+    | ID index+                      # VarArray
+    | derref                         # DerrefExpr
+    | ADDRESS expr                   # ExprAddress
+    | INT                            # IntLiteral
+    | DOUBLE                         # DoubleLiteral
+    | STRING_LITERAL                 # StringLiteral
+    | CHAR_LITERAL                   # CharLiteral
+    | TRUE                           # TrueLiteral
+    | FALSE                          # FalseLiteral
+    ;
+
+derref
+    : '(' POINTER expr ')'
     ;
 
 type
@@ -102,7 +143,7 @@ type
     | ID
     ;
 
-/* -------- TOKENS -------- */
+/* -------- TOKENS -------- */   
 RETURN        : 'return';
 IF            : 'if';
 ELSE          : 'else';
@@ -117,6 +158,7 @@ EQ            : '==';
 NE            : '!=';
 TRUE          : 'true';
 FALSE         : 'false';
+VOID          : 'void';
 ID            : [a-zA-Z_][a-zA-Z0-9_]*;
 INT           : [0-9]+;
 DOUBLE        : [0-9]+'.'[0-9]* | [0-9]*'.'[0-9]+;
@@ -126,3 +168,5 @@ LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';
+POINTER       : '*';
+ADDRESS       : '&';

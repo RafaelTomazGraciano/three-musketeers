@@ -7,18 +7,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
 {
     public class ArithmeticCodeGenerator
     {
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
         public ArithmeticCodeGenerator(
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string> visitExpression)
         {
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
@@ -52,7 +52,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                 };
                 
                 string resultReg = nextRegister();
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} double {leftDouble}, {rightDouble}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {leftDouble}, {rightDouble}");
                 registerTypes[resultReg] = resultType;
                 return resultReg;
             }
@@ -70,7 +70,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                 };
                 
                 string resultReg = nextRegister();
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {leftInt}, {rightInt}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {leftInt}, {rightInt}");
                 registerTypes[resultReg] = resultType;
                 return resultReg;
             }
@@ -94,7 +94,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                 string rightInt = ConvertToInt(rightValue, rightType);
                 
                 string resultReg = nextRegister();
-                mainBody.AppendLine($"  {resultReg} = srem i32 {leftInt}, {rightInt}");
+                getCurrentBody().AppendLine($"  {resultReg} = srem i32 {leftInt}, {rightInt}");
                 registerTypes[resultReg] = "i32";
                 return resultReg;
             }
@@ -116,7 +116,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                 };
                 
                 string resultReg = nextRegister();
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} double {leftDouble}, {rightDouble}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {leftDouble}, {rightDouble}");
                 registerTypes[resultReg] = resultType;
                 return resultReg;
             }
@@ -134,7 +134,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                 };
                 
                 string resultReg = nextRegister();
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {leftInt}, {rightInt}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {leftInt}, {rightInt}");
                 registerTypes[resultReg] = resultType;
                 return resultReg;
             }
@@ -161,12 +161,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                 // Check if it's a literal value or a register
                 if (value.StartsWith("%"))
                 {
-                    mainBody.AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {value} to double");
                 }
                 else
                 {
                     // It's a literal value, convert it directly
-                    mainBody.AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {value} to double");
                 }
             }
             else if (currentType == "i8" || currentType == "i1")
@@ -174,17 +174,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
                 string intReg = nextRegister();
                 if (value.StartsWith("%"))
                 {
-                    mainBody.AppendLine($"  {intReg} = zext {currentType} {value} to i32");
+                    getCurrentBody().AppendLine($"  {intReg} = zext {currentType} {value} to i32");
                 }
                 else
                 {
-                    mainBody.AppendLine($"  {intReg} = zext {currentType} {value} to i32");
+                    getCurrentBody().AppendLine($"  {intReg} = zext {currentType} {value} to i32");
                 }
-                mainBody.AppendLine($"  {convReg} = sitofp i32 {intReg} to double");
+                getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {intReg} to double");
             }
             else
             {
-                mainBody.AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {value} to double");
             }
             
             registerTypes[convReg] = "double";
@@ -199,15 +199,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Arithmetic
             string convReg = nextRegister();
             if (currentType == "double")
             {
-                mainBody.AppendLine($"  {convReg} = fptosi double {value} to i32");
+                getCurrentBody().AppendLine($"  {convReg} = fptosi double {value} to i32");
             }
             else if (currentType == "i8" || currentType == "i1")
             {
-                mainBody.AppendLine($"  {convReg} = zext {currentType} {value} to i32");
+                getCurrentBody().AppendLine($"  {convReg} = zext {currentType} {value} to i32");
             }
             else
             {
-                mainBody.AppendLine($"  {convReg} = zext i32 {value} to i32");
+                getCurrentBody().AppendLine($"  {convReg} = zext i32 {value} to i32");
             }
             
             registerTypes[convReg] = "i32";

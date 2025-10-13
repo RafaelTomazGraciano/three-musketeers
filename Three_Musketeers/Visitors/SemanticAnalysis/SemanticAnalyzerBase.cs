@@ -8,7 +8,128 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     public abstract class SemanticAnalyzerBase : ExprBaseVisitor<string?>
     {
         protected SymbolTable symbolTable = new SymbolTable();
+        protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
         public bool hasErrors { get; protected set; } = false;
+
+        public override string? VisitStart([NotNull] ExprParser.StartContext context)
+        {
+            CollectFunctionSignatures(context);
+
+            return base.VisitStart(context);
+        }
+
+        private void CollectFunctionSignatures([NotNull] ExprParser.StartContext context)
+        {
+            var allProgs = context.prog();
+
+            foreach (var prog in allProgs)
+            {
+                if (prog.function() != null)
+                {
+                    CollectSingleFunctionSignature(prog.function());
+                }
+            }
+        }
+
+        private void CollectSingleFunctionSignature(ExprParser.FunctionContext context)
+        {
+            int line = context.Start.Line;
+
+            // Get return type
+            var returnTypeCtx = context.function_return();
+            string returnType = "";
+
+            if (returnTypeCtx.VOID() != null)
+            {
+                returnType = "void";
+            }
+            else if (returnTypeCtx.type() != null)
+            {
+                returnType = GetTypeStringFromContext(returnTypeCtx.type());
+            }
+            else
+            {
+                ReportError(line, $"Invalid return type in function");
+                return;
+            }
+
+            // Get function name
+            string functionName = context.ID().GetText();
+
+            // Check for duplicates
+            if (declaredFunctions.ContainsKey(functionName))
+            {
+                ReportError(line, $"Function '{functionName}' has already been declared");
+                return;
+            }
+
+            // Create function info
+            var functionInfo = new FunctionInfo
+            {
+                returnType = returnType,
+                parameters = new List<(string, string)>(),
+                hasReturnStatement = false
+            };
+
+            // Process parameters
+            var argsCtx = context.args();
+            if (argsCtx != null)
+            {
+                var types = argsCtx.type();
+                var ids = argsCtx.ID();
+
+                HashSet<string> paramNames = new HashSet<string>();
+
+                for (int i = 0; i < types.Length; i++)
+                {
+                    string paramType = GetTypeStringFromContext(types[i]);
+                    string paramName = ids[i].GetText();
+
+                    if (paramNames.Contains(paramName))
+                    {
+                        ReportError(line, $"Parameter '{paramName}' duplicated in function '{functionName}'");
+                        continue;
+                    }
+
+                    paramNames.Add(paramName);
+                    functionInfo.parameters?.Add((paramType, paramName));
+                }
+            }
+
+            // Register function
+            declaredFunctions[functionName] = functionInfo;
+
+            // Add function to symbol table as a special symbol
+            var functionSymbol = new Symbol(functionName, returnType, line);
+            functionSymbol.isInitializated = true;
+            symbolTable.AddSymbol(functionSymbol);
+        }
+
+        private string GetTypeStringFromContext(ExprParser.TypeContext context)
+        {
+            if (context.GetText() == "int") return "int";
+            if (context.GetText() == "double") return "double";
+            if (context.GetText() == "bool") return "bool";
+            if (context.GetText() == "char") return "char";
+            if (context.GetText() == "string") return "string";
+
+            var id = context.ID();
+            if (id != null)
+            {
+                string typeName = id.GetText();
+                var typeSymbol = symbolTable.GetSymbol(typeName);
+
+                if (typeSymbol != null)
+                {
+                    return typeSymbol.type;
+                }
+                ReportError(context.Start.Line, $"type '{typeName}' has not been defined");
+                return "error";
+            }
+
+            return "unknown";
+        }
+
 
         protected void ReportError(int line, string message)
         {

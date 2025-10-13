@@ -8,6 +8,11 @@ using Three_Musketeers.Visitors.CodeGeneration.Arithmetic;
 using Three_Musketeers.Visitors.CodeGeneration.Logical;
 using Three_Musketeers.Visitors.CodeGeneration.Equality;
 using Three_Musketeers.Visitors.CodeGeneration.Comparison;
+using Three_Musketeers.Visitors.CodeGeneration.Functions;
+using Three_Musketeers.Visitors.CodeGeneration.Pointer;
+using Three_Musketeers.Utils;
+using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
+using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
 
 namespace Three_Musketeers.Visitors
 {
@@ -28,51 +33,111 @@ namespace Three_Musketeers.Visitors
         private readonly LogicalCodeGenerator logicalCodeGenerator;
         private readonly EqualityCodeGenerator equalityCodeGenerator;
         private readonly ComparisonCodeGenerator comparisonCodeGenerator;
+        private readonly FunctionCallCodeGenerator functionCallCodeGenerator;
+        private readonly PointerCodeGenerator pointerCodeGenerator;
+        private readonly DynamicMemoryCodeGenerator dynamicMemoryCodeGenerator;
+        private readonly VariableResolver variableResolver;
+        private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
+        private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
 
         public CodeGenerator()
         {
+            variableResolver = new VariableResolver(
+            variables,
+            () => functionCodeGenerator?.GetCurrentFunctionName()
+            );
+
+            //functions
+            base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
+                variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
+            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
+                NextRegister, GetLLVMType, Visit, Visit);
+            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
+                NextRegister, GetLLVMType, Visit, Visit);
+            functionCallCodeGenerator = new FunctionCallCodeGenerator(registerTypes, declaredFunctions, NextRegister,
+                GetLLVMType, Visit, () => base.functionCodeGenerator!.IsInsideFunction()
+                ? base.functionCodeGenerator.GetCurrentFunctionBody()! : mainDefinition);
+
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
-                mainBody, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit);
+                declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
+                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
-            printfCodeGenerator = new PrintfCodeGenerator(
-                globalStrings, mainBody, registerTypes, NextRegister, NextStringLabel, Visit);
-            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, mainBody, variables,
-                registerTypes, NextRegister, NextStringLabel, GetLLVMType);
-            getsCodeGenerator = new GetsCodeGenerator(declarations, mainBody, variables, NextRegister);
-            putsCodeGenerator = new PutsCodeGenerator(declarations, mainBody, variables, NextRegister);
+            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, declarations, GetCurrentBody, registerTypes,
+                NextRegister, NextStringLabel, Visit);
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, declarations, GetCurrentBody, variables,
+                registerTypes, NextRegister, NextStringLabel, GetLLVMType, variableResolver);
+            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, NextRegister, variableResolver);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, registerTypes, NextRegister,
+                () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null,
+                variableResolver);
 
             //string conversion
-            atoiCodeGenerator = new AtoiCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
-            atodCodeGenerator = new AtodCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
-            itoaCodeGenerator = new ItoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
-            dtoaCodeGenerator = new DtoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
+            atoiCodeGenerator = new AtoiCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
+            atodCodeGenerator = new AtodCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
+            itoaCodeGenerator = new ItoaCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
+            dtoaCodeGenerator = new DtoaCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
 
             //arithmetic
             arithmeticCodeGenerator = new ArithmeticCodeGenerator(
-                mainBody, registerTypes, NextRegister, Visit);
+                GetCurrentBody, registerTypes, NextRegister, Visit);
             //logical
             logicalCodeGenerator = new LogicalCodeGenerator(
-                mainBody, registerTypes, NextRegister, Visit);
+                GetCurrentBody, registerTypes, NextRegister, Visit);
             //equality
             equalityCodeGenerator = new EqualityCodeGenerator(
-                mainBody, registerTypes, NextRegister, Visit);
+                GetCurrentBody, registerTypes, NextRegister, Visit);
             //comparison
             comparisonCodeGenerator = new ComparisonCodeGenerator(
-                mainBody, registerTypes, NextRegister, Visit);
+                GetCurrentBody, registerTypes, NextRegister, Visit);
+            //pointers & dynamic memory
+            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, variables, registerTypes, NextRegister, Visit);
+            dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister, Visit, GetAlignment, GetLLVMType);
+
+            //increment/decrement
+            incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, variables);
+            //compound assignment
+            compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, variables, Visit);
         }
 
-        public override string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
-            return variableAssignmentCodeGenerator.VisitAtt(context);
+            return variableAssignmentCodeGenerator.VisitGenericAtt(context);
+
         }
 
         public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
         {
             return variableAssignmentCodeGenerator.VisitSingleAtt(context);
+        }
+
+        public override string? VisitDerrefAtt([NotNull] ExprParser.DerrefAttContext context)
+        {
+            return pointerCodeGenerator.VisitDerrefAtt(context);
+        }
+        public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttPlusEquals(context);
+        }
+
+        public override string? VisitSingleAttMinusEquals([NotNull] ExprParser.SingleAttMinusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMinusEquals(context);
+        }
+
+        public override string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMultiplyEquals(context);
+        }
+
+        public override string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttDivideEquals(context);
         }
 
         public override string VisitIntLiteral([NotNull] ExprParser.IntLiteralContext context)
@@ -105,7 +170,6 @@ namespace Three_Musketeers.Visitors
             registerTypes["false"] = "i1";
             return "0";
         }
-
         public override string VisitVar([NotNull] ExprParser.VarContext context)
         {
             return variableAssignmentCodeGenerator.VisitVar(context);
@@ -116,7 +180,22 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitVarArray(context);
         }
 
-        public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        public override string? VisitDerref([NotNull] ExprParser.DerrefContext context)
+        {
+            return pointerCodeGenerator.VisitDerref(context);
+        }
+
+        public override string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
+        {
+            return pointerCodeGenerator.VisitExprAddress(context);
+        }
+
+        public override string? VisitBaseDec([NotNull] ExprParser.BaseDecContext context)
+        {
+            return variableAssignmentCodeGenerator.VisitDec(context);
+        }
+
+        public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
@@ -186,16 +265,16 @@ namespace Three_Musketeers.Visitors
             string exprType;
             exprType = registerTypes[exprValue];
             string resultReg = NextRegister();
-            
+
             if (exprType == "double")
             {
-                mainBody.AppendLine($"  {resultReg} = fneg double {exprValue}");
+                GetCurrentBody().AppendLine($"  {resultReg} = fneg double {exprValue}");
             }
             else
             {
-                mainBody.AppendLine($"  {resultReg} = sub i32 0, {exprValue}");
+                GetCurrentBody().AppendLine($"  {resultReg} = sub i32 0, {exprValue}");
             }
-            
+
             registerTypes[resultReg] = exprType;
             return resultReg;
         }
@@ -224,6 +303,86 @@ namespace Three_Musketeers.Visitors
         public override string VisitComparison([NotNull] ExprParser.ComparisonContext context)
         {
             return comparisonCodeGenerator.VisitComparison(context);
+        }
+
+        public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
+        {
+            mainFunctionCodeGenerator!.GenerateMainFunction(context);
+            return null;
+        }
+
+        public override string? VisitFunction([NotNull] ExprParser.FunctionContext context)
+        {
+            return base.functionCodeGenerator!.VisitFunction(context);
+        }
+
+        public override string? VisitStm([NotNull] ExprParser.StmContext context)
+        {
+            if (context.RETURN() != null && base.functionCodeGenerator!.IsInsideFunction())
+            {
+                base.functionCodeGenerator.VisitReturnStatement(context);
+                return null;
+            }
+            
+            return base.VisitStm(context);
+        }
+
+        public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
+        {
+            return functionCallCodeGenerator.VisitFunctionCall(context);
+        }
+
+        public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
+        {
+            return dynamicMemoryCodeGenerator.VisitMallocAtt(context);
+        }
+
+        public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
+        {
+            return dynamicMemoryCodeGenerator.VisitFreeStatment(context);
+        }
+
+
+        // Increment/Decrement operators for simple variables
+        public override string VisitPrefixIncrement([NotNull] ExprParser.PrefixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrement(context);
+        }
+
+        public override string VisitPrefixDecrement([NotNull] ExprParser.PrefixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrement(context);
+        }
+
+        public override string VisitPostfixIncrement([NotNull] ExprParser.PostfixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrement(context);
+        }
+
+        public override string VisitPostfixDecrement([NotNull] ExprParser.PostfixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrement(context);
+        }
+
+        // Increment/Decrement operators for array elements
+        public override string VisitPrefixIncrementArray([NotNull] ExprParser.PrefixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrementArray(context);
+        }
+
+        public override string VisitPrefixDecrementArray([NotNull] ExprParser.PrefixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrementArray(context);
+        }
+
+        public override string VisitPostfixIncrementArray([NotNull] ExprParser.PostfixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrementArray(context);
+        }
+
+        public override string VisitPostfixDecrementArray([NotNull] ExprParser.PostfixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrementArray(context);
         }
     }
 }

@@ -3,13 +3,41 @@ using Three_Musketeers.Visitors;
 using Three_Musketeers.Listeners;
 using Three_Musketeers.Grammar;
 using System.Diagnostics;
+using System.CommandLine;
+using System.CommandLine.Parsing;
 
-namespace Three_Musketeers{
+namespace Three_Musketeers {
     public class Program
     {
-        public static int Main()
+
+        private static readonly Argument<string> input = new("input")
+            {
+                Description = "File to be compiled",
+            };
+
+        private static readonly Option<string> output = new("-o", ["--out"])
         {
-            string filePath = "Examples/code.3m";
+            Description = "Path of executable",
+            DefaultValueFactory = value => "a.out"
+        };
+
+        public static int Main(string[] args)
+        {
+            RootCommand rootCommand = new("Three Musketeers Language Compiler");
+            rootCommand.Add(input);
+            rootCommand.Add(output);
+
+            var result = rootCommand.Parse(args);
+            if (result.Errors.Count > 0)
+            {
+                foreach (ParseError parseError in result.Errors)
+                {
+                    Console.Error.WriteLine(parseError.Message);
+                }
+                return 1;
+            }
+            string filePath = result.GetValue(input)!;
+            string resultPath = result.GetValue(output)!;
 
             try
             {
@@ -46,29 +74,20 @@ namespace Three_Musketeers{
                     return 1;
                 }
 
-                //Intermediate Code generation 
+                //Intermediate Code generation
                 var codeGenerator = new CodeGenerator();
                 var llvmCode = codeGenerator.Visit(tree);
+                string outputPath = Path.ChangeExtension(filePath, ".ll");
+                string bytecodePath = Path.ChangeExtension(filePath, ".bc");
+                string optBytecodePath = bytecodePath.Replace(".bc", "-opt.bc");
+                string assemblyPath = Path.ChangeExtension(filePath, ".s");
 
-                //genereate directory bin
-                string outputDir = Path.Combine(Path.GetDirectoryName(filePath) ?? "", "bin");
-                string baseFileName = Path.GetFileNameWithoutExtension(filePath);
-                Directory.CreateDirectory(outputDir);
-
-                //LLVM
-                string outputPath = Path.Combine(outputDir, baseFileName + ".ll");
-                string bytecodePath = Path.Combine(outputDir, baseFileName + ".bc");
-                string optBytecodePath = Path.Combine(outputDir, baseFileName + "-opt.bc");
-                string assemblyPath = Path.Combine(outputDir, baseFileName + ".s");
-                string resultPath = Path.Combine(outputDir, baseFileName);
-                
                 File.WriteAllText(outputPath, llvmCode);
-
                 Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
                 Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
                 Process.Start("llc", $"{optBytecodePath} -o {assemblyPath}").WaitForExit();
                 Process.Start("gcc", $"{assemblyPath} -o {resultPath} -no-pie").WaitForExit();
-
+                Process.Start("rm", $"{bytecodePath} {optBytecodePath} {assemblyPath}");
                 return 0;
             }
             catch (Exception ex)
