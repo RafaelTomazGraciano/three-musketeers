@@ -90,10 +90,10 @@ namespace Three_Musketeers.Visitors
                 GetCurrentBody, registerTypes, NextRegister, Visit);
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
-                mainBody, registerTypes, NextRegister, variables);
+                GetCurrentBody, registerTypes, NextRegister, variables);
             //compound assignment
             compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
-                mainBody, registerTypes, NextRegister, variables, Visit);
+                GetCurrentBody, registerTypes, NextRegister, variables, Visit);
         }
 
         public override string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)

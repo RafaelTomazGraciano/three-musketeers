@@ -8,20 +8,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
 {
     public class CompoundAssignmentCodeGenerator
     {
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Dictionary<string, Variable> variables;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
         public CompoundAssignmentCodeGenerator(
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Dictionary<string, Variable> variables,
             Func<ExprParser.ExprContext, string> visitExpression)
         {
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.variables = variables;
@@ -44,7 +44,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "+=", variable.LLVMType);
             
             // Store result
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             return null;
         }
@@ -65,7 +65,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "-=", variable.LLVMType);
             
             // Store result
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             return null;
         }
@@ -82,7 +82,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -94,7 +94,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "+=", arrayVar.innerType);
             
             // Store result
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             return null;
         }
@@ -111,7 +111,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -123,7 +123,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "-=", arrayVar.innerType);
             
             // Store result
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             return null;
         }
@@ -144,7 +144,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "*=", variable.LLVMType);
             
             // Store result
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             return null;
         }
@@ -165,7 +165,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "/=", variable.LLVMType);
             
             // Store result
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             return null;
         }
@@ -182,7 +182,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -194,7 +194,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "*=", arrayVar.innerType);
             
             // Store result
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             return null;
         }
@@ -211,7 +211,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -223,7 +223,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             string resultValue = PerformCompoundOperation(currentValue, exprValue, "/=", arrayVar.innerType);
             
             // Store result
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             return null;
         }
@@ -231,7 +231,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         private string LoadVariableValue(string register, string llvmType)
         {
             string loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
+            getCurrentBody().AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
             registerTypes[loadReg] = llvmType;
             return loadReg;
         }
@@ -239,7 +239,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         private string LoadArrayElementValue(string elementPtr, string llvmType)
         {
             string loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {elementPtr}, align {GetAlignment(llvmType)}");
+            getCurrentBody().AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {elementPtr}, align {GetAlignment(llvmType)}");
             registerTypes[loadReg] = llvmType;
             return loadReg;
         }
@@ -276,7 +276,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                     "/=" => "fdiv",
                     _ => "fadd"
                 };
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} double {currentValue}, {convertedExpr}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {currentValue}, {convertedExpr}");
             }
             else if (llvmType == "i8")
             {
@@ -288,7 +288,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                     "/=" => "sdiv",
                     _ => "add"
                 };
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i8 {currentValue}, {convertedExpr}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i8 {currentValue}, {convertedExpr}");
             }
             else if (llvmType == "i1")
             {
@@ -300,7 +300,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                     "/=" => "sdiv",
                     _ => "add"
                 };
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i1 {currentValue}, {convertedExpr}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i1 {currentValue}, {convertedExpr}");
             }
             else
             {
@@ -312,7 +312,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                     "/=" => "sdiv",
                     _ => "add"
                 };
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {currentValue}, {convertedExpr}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {currentValue}, {convertedExpr}");
             }
             
             registerTypes[resultReg] = llvmType;
@@ -329,24 +329,24 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             {
                 if (fromType == "i32")
                 {
-                    mainBody.AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {value} to double");
                 }
                 else if (fromType == "i8" || fromType == "i1")
                 {
                     string intReg = nextRegister();
-                    mainBody.AppendLine($"  {intReg} = zext {fromType} {value} to i32");
-                    mainBody.AppendLine($"  {convReg} = sitofp i32 {intReg} to double");
+                    getCurrentBody().AppendLine($"  {intReg} = zext {fromType} {value} to i32");
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {intReg} to double");
                 }
             }
             else if (toType == "i32")
             {
                 if (fromType == "double")
                 {
-                    mainBody.AppendLine($"  {convReg} = fptosi double {value} to i32");
+                    getCurrentBody().AppendLine($"  {convReg} = fptosi double {value} to i32");
                 }
                 else if (fromType == "i8" || fromType == "i1")
                 {
-                    mainBody.AppendLine($"  {convReg} = zext {fromType} {value} to i32");
+                    getCurrentBody().AppendLine($"  {convReg} = zext {fromType} {value} to i32");
                 }
             }
             else if (toType == "i8" || toType == "i1")
@@ -354,12 +354,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                 if (fromType == "double")
                 {
                     string intReg = nextRegister();
-                    mainBody.AppendLine($"  {intReg} = fptosi double {value} to i32");
-                    mainBody.AppendLine($"  {convReg} = trunc i32 {intReg} to {toType}");
+                    getCurrentBody().AppendLine($"  {intReg} = fptosi double {value} to i32");
+                    getCurrentBody().AppendLine($"  {convReg} = trunc i32 {intReg} to {toType}");
                 }
                 else if (fromType == "i32")
                 {
-                    mainBody.AppendLine($"  {convReg} = trunc i32 {value} to {toType}");
+                    getCurrentBody().AppendLine($"  {convReg} = trunc i32 {value} to {toType}");
                 }
             }
             

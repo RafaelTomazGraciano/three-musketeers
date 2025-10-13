@@ -8,18 +8,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
 {
     public class IncrementDecrementCodeGenerator
     {
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Dictionary<string, Variable> variables;
 
         public IncrementDecrementCodeGenerator(
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Dictionary<string, Variable> variables)
         {
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.variables = variables;
@@ -38,7 +38,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, variable.LLVMType, true);
             
             // Store new value
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             // Return new value (prefix behavior)
             registerTypes[resultValue] = variable.LLVMType;
@@ -58,7 +58,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, variable.LLVMType, false);
             
             // Store new value
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             // Return new value (prefix behavior)
             registerTypes[resultValue] = variable.LLVMType;
@@ -78,19 +78,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string returnValue = nextRegister();
             if (variable.LLVMType == "double")
             {
-                mainBody.AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
+                getCurrentBody().AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
             }
             else if (variable.LLVMType == "i8")
             {
-                mainBody.AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
             }
             else if (variable.LLVMType == "i1")
             {
-                mainBody.AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
             }
             else
             {
-                mainBody.AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
             }
             registerTypes[returnValue] = variable.LLVMType;
             
@@ -98,7 +98,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, variable.LLVMType, true);
             
             // Store new value
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             return returnValue;
         }
@@ -116,19 +116,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string returnValue = nextRegister();
             if (variable.LLVMType == "double")
             {
-                mainBody.AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
+                getCurrentBody().AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
             }
             else if (variable.LLVMType == "i8")
             {
-                mainBody.AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
             }
             else if (variable.LLVMType == "i1")
             {
-                mainBody.AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
             }
             else
             {
-                mainBody.AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
             }
             registerTypes[returnValue] = variable.LLVMType;
             
@@ -136,7 +136,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, variable.LLVMType, false);
             
             // Store new value
-            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             return returnValue;
         }
@@ -153,7 +153,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -162,7 +162,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, arrayVar.innerType, true);
             
             // Store new value
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             // Return new value (prefix behavior)
             registerTypes[resultValue] = arrayVar.innerType;
@@ -181,7 +181,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -190,7 +190,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, arrayVar.innerType, false);
             
             // Store new value
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             // Return new value (prefix behavior)
             registerTypes[resultValue] = arrayVar.innerType;
@@ -209,7 +209,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -218,19 +218,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string returnValue = nextRegister();
             if (arrayVar.innerType == "double")
             {
-                mainBody.AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
+                getCurrentBody().AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
             }
             else if (arrayVar.innerType == "i8")
             {
-                mainBody.AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
             }
             else if (arrayVar.innerType == "i1")
             {
-                mainBody.AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
             }
             else
             {
-                mainBody.AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
             }
             registerTypes[returnValue] = arrayVar.innerType;
             
@@ -238,7 +238,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, arrayVar.innerType, true);
             
             // Store new value
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             return returnValue;
         }
@@ -255,7 +255,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             
             // Get element pointer
             string elementPtr = nextRegister();
-            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -264,19 +264,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string returnValue = nextRegister();
             if (arrayVar.innerType == "double")
             {
-                mainBody.AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
+                getCurrentBody().AppendLine($"  {returnValue} = fadd double {currentValue}, 0.0");
             }
             else if (arrayVar.innerType == "i8")
             {
-                mainBody.AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i8 {currentValue}, 0");
             }
             else if (arrayVar.innerType == "i1")
             {
-                mainBody.AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i1 {currentValue}, 0");
             }
             else
             {
-                mainBody.AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
+                getCurrentBody().AppendLine($"  {returnValue} = add i32 {currentValue}, 0");
             }
             registerTypes[returnValue] = arrayVar.innerType;
             
@@ -284,7 +284,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             string resultValue = PerformIncrementDecrement(currentValue, arrayVar.innerType, false);
             
             // Store new value
-            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
             
             return returnValue;
         }
@@ -292,7 +292,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         private string LoadVariableValue(string register, string llvmType)
         {
             string loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
+            getCurrentBody().AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
             registerTypes[loadReg] = llvmType;
             return loadReg;
         }
@@ -300,7 +300,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         private string LoadArrayElementValue(string elementPtr, string llvmType)
         {
             string loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {elementPtr}, align {GetAlignment(llvmType)}");
+            getCurrentBody().AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {elementPtr}, align {GetAlignment(llvmType)}");
             registerTypes[loadReg] = llvmType;
             return loadReg;
         }
@@ -326,25 +326,25 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             {
                 string oneValue = isIncrement ? "1.0" : "-1.0";
                 string llvmOp = isIncrement ? "fadd" : "fsub";
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} double {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {value}, {oneValue}");
             }
             else if (llvmType == "i8")
             {
                 string oneValue = isIncrement ? "1" : "-1";
                 string llvmOp = isIncrement ? "add" : "sub";
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i8 {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i8 {value}, {oneValue}");
             }
             else if (llvmType == "i1")
             {
                 string oneValue = isIncrement ? "1" : "-1";
                 string llvmOp = isIncrement ? "add" : "sub";
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i1 {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i1 {value}, {oneValue}");
             }
             else
             {
                 string oneValue = isIncrement ? "1" : "-1";
                 string llvmOp = isIncrement ? "add" : "sub";
-                mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {value}, {oneValue}");
             }
             
             registerTypes[resultReg] = llvmType;
