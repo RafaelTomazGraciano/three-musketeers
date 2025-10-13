@@ -105,6 +105,26 @@ namespace Three_Musketeers.Visitors
             return compoundAssignmentCodeGenerator.VisitSingleAttMinusEquals(context);
         }
 
+        public override string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttMultiplyEquals(context);
+        }
+
+        public override string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttDivideEquals(context);
+        }
+
+        public override string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMultiplyEquals(context);
+        }
+
+        public override string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttDivideEquals(context);
+        }
+
         public override string VisitIntLiteral([NotNull] ExprParser.IntLiteralContext context)
         {
             string value = context.INT().GetText();

@@ -54,12 +54,16 @@ att
     : type? ID '=' expr                    # AttRegular
     | type? ID '+=' expr                   # AttPlusEquals
     | type? ID '-=' expr                   # AttMinusEquals
+    | type? ID '*=' expr                   # AttMultiplyEquals
+    | type? ID '/=' expr                   # AttDivideEquals
     ;
 
 att_var 
     : ID index+ '=' expr                          # SingleAtt
     | ID index+ '+=' expr                         # SingleAttPlusEquals
     | ID index+ '-=' expr                         # SingleAttMinusEquals
+    | ID index+ '*=' expr                         # SingleAttMultiplyEquals
+    | ID index+ '/=' expr                         # SingleAttDivideEquals
     ;
 
 new_type

@@ -133,6 +133,26 @@ namespace Three_Musketeers.Visitors
             return compoundAssignmentSemanticAnalyzer.VisitSingleAttMinusEquals(context);
         }
 
+        public override string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitAttMultiplyEquals(context);
+        }
+
+        public override string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitAttDivideEquals(context);
+        }
+
+        public override string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitSingleAttMultiplyEquals(context);
+        }
+
+        public override string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitSingleAttDivideEquals(context);
+        }
+
         public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
         {
             return "string";

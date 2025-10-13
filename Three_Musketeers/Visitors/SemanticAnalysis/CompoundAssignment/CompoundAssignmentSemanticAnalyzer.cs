@@ -62,6 +62,44 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
         }
 
+        // Simple variable *=
+        public string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            int line = context.Start.Line;
+
+            return ValidateCompoundAssignment(varName, context.expr(), line);
+        }
+
+        // Simple variable /=
+        public string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            int line = context.Start.Line;
+
+            return ValidateCompoundAssignment(varName, context.expr(), line);
+        }
+
+        // Array element *=
+        public string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            var indexes = context.index();
+            int line = context.Start.Line;
+
+            return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
+        }
+
+        // Array element /=
+        public string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            var indexes = context.index();
+            int line = context.Start.Line;
+
+            return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
+        }
+
         private string? ValidateCompoundAssignment(string varName, ExprParser.ExprContext exprContext, int line)
         {
             var symbol = symbolTable.GetSymbol(varName);

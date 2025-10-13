@@ -128,6 +128,106 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             return null;
         }
 
+        // Simple variable *=
+        public string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            Variable variable = variables[varName];
+            
+            // Load current value
+            string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
+            
+            // Evaluate expression
+            string exprValue = visitExpression(context.expr());
+            
+            // Perform multiplication
+            string resultValue = PerformCompoundOperation(currentValue, exprValue, "*=", variable.LLVMType);
+            
+            // Store result
+            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            
+            return null;
+        }
+
+        // Simple variable /=
+        public string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            Variable variable = variables[varName];
+            
+            // Load current value
+            string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
+            
+            // Evaluate expression
+            string exprValue = visitExpression(context.expr());
+            
+            // Perform division
+            string resultValue = PerformCompoundOperation(currentValue, exprValue, "/=", variable.LLVMType);
+            
+            // Store result
+            mainBody.AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            
+            return null;
+        }
+
+        // Array element *=
+        public string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            var indexes = context.index();
+            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            
+            // Calculate position
+            int pos = CalculateArrayPosition(indexes, arrayVar);
+            
+            // Get element pointer
+            string elementPtr = nextRegister();
+            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            
+            // Load current value
+            string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
+            
+            // Evaluate expression
+            string exprValue = visitExpression(context.expr());
+            
+            // Perform multiplication
+            string resultValue = PerformCompoundOperation(currentValue, exprValue, "*=", arrayVar.innerType);
+            
+            // Store result
+            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            
+            return null;
+        }
+
+        // Array element /=
+        public string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            string varName = context.ID().GetText();
+            var indexes = context.index();
+            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            
+            // Calculate position
+            int pos = CalculateArrayPosition(indexes, arrayVar);
+            
+            // Get element pointer
+            string elementPtr = nextRegister();
+            mainBody.AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            
+            // Load current value
+            string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
+            
+            // Evaluate expression
+            string exprValue = visitExpression(context.expr());
+            
+            // Perform division
+            string resultValue = PerformCompoundOperation(currentValue, exprValue, "/=", arrayVar.innerType);
+            
+            // Store result
+            mainBody.AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            
+            return null;
+        }
+
         private string LoadVariableValue(string register, string llvmType)
         {
             string loadReg = nextRegister();
@@ -172,6 +272,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                 {
                     "+=" => "fadd",
                     "-=" => "fsub",
+                    "*=" => "fmul",
+                    "/=" => "fdiv",
                     _ => "fadd"
                 };
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} double {currentValue}, {convertedExpr}");
@@ -182,6 +284,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                 {
                     "+=" => "add",
                     "-=" => "sub",
+                    "*=" => "mul",
+                    "/=" => "sdiv",
                     _ => "add"
                 };
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} i8 {currentValue}, {convertedExpr}");
@@ -192,6 +296,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                 {
                     "+=" => "add",
                     "-=" => "sub",
+                    "*=" => "mul",
+                    "/=" => "sdiv",
                     _ => "add"
                 };
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} i1 {currentValue}, {convertedExpr}");
@@ -202,6 +308,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                 {
                     "+=" => "add",
                     "-=" => "sub",
+                    "*=" => "mul",
+                    "/=" => "sdiv",
                     _ => "add"
                 };
                 mainBody.AppendLine($"  {resultReg} = {llvmOp} i32 {currentValue}, {convertedExpr}");
