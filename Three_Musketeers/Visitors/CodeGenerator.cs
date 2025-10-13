@@ -10,6 +10,8 @@ using Three_Musketeers.Visitors.CodeGeneration.Equality;
 using Three_Musketeers.Visitors.CodeGeneration.Comparison;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
 using Three_Musketeers.Utils;
+using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
+using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
 
 namespace Three_Musketeers.Visitors
 {
@@ -32,6 +34,8 @@ namespace Three_Musketeers.Visitors
         private readonly ComparisonCodeGenerator comparisonCodeGenerator;
         private readonly FunctionCallCodeGenerator functionCallCodeGenerator;
         private readonly VariableResolver variableResolver;
+        private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
+        private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
 
         public CodeGenerator()
         {
@@ -84,16 +88,62 @@ namespace Three_Musketeers.Visitors
             //comparison
             comparisonCodeGenerator = new ComparisonCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit);
+            //increment/decrement
+            incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
+                mainBody, registerTypes, NextRegister, variables);
+            //compound assignment
+            compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
+                mainBody, registerTypes, NextRegister, variables, Visit);
         }
 
-        public override string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public override string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)
         {
-            return variableAssignmentCodeGenerator.VisitAtt(context);
+            return variableAssignmentCodeGenerator.VisitAttRegular(context);
+        }
+
+        public override string? VisitAttPlusEquals([NotNull] ExprParser.AttPlusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttPlusEquals(context);
+        }
+
+        public override string? VisitAttMinusEquals([NotNull] ExprParser.AttMinusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttMinusEquals(context);
         }
 
         public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
         {
             return variableAssignmentCodeGenerator.VisitSingleAtt(context);
+        }
+
+        public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttPlusEquals(context);
+        }
+
+        public override string? VisitSingleAttMinusEquals([NotNull] ExprParser.SingleAttMinusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMinusEquals(context);
+        }
+
+        public override string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttMultiplyEquals(context);
+        }
+
+        public override string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitAttDivideEquals(context);
+        }
+
+        public override string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMultiplyEquals(context);
+        }
+
+        public override string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttDivideEquals(context);
         }
 
         public override string VisitIntLiteral([NotNull] ExprParser.IntLiteralContext context)
@@ -274,6 +324,48 @@ namespace Three_Musketeers.Visitors
             return functionCallCodeGenerator.VisitFunctionCall(context);
         }
 
+
+        // Increment/Decrement operators for simple variables
+        public override string VisitPrefixIncrement([NotNull] ExprParser.PrefixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrement(context);
+        }
+
+        public override string VisitPrefixDecrement([NotNull] ExprParser.PrefixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrement(context);
+        }
+
+        public override string VisitPostfixIncrement([NotNull] ExprParser.PostfixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrement(context);
+        }
+
+        public override string VisitPostfixDecrement([NotNull] ExprParser.PostfixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrement(context);
+        }
+
+        // Increment/Decrement operators for array elements
+        public override string VisitPrefixIncrementArray([NotNull] ExprParser.PrefixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrementArray(context);
+        }
+
+        public override string VisitPrefixDecrementArray([NotNull] ExprParser.PrefixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrementArray(context);
+        }
+
+        public override string VisitPostfixIncrementArray([NotNull] ExprParser.PostfixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrementArray(context);
+        }
+
+        public override string VisitPostfixDecrementArray([NotNull] ExprParser.PostfixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrementArray(context);
+        }
     }
 }
 

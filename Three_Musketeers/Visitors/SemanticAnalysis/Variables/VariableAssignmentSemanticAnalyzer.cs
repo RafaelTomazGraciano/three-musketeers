@@ -22,7 +22,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             this.reportWarning = reportWarning;
         }
 
-        public string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)
         {
             var typeToken = context.type();
             string varName = context.ID().GetText();

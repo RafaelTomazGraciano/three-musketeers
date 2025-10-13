@@ -10,6 +10,8 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Logical;
 using Three_Musketeers.Visitors.SemanticAnalysis.Equality;
 using Three_Musketeers.Visitors.SemanticAnalysis.Comparison;
 using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
+using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
+using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
 
 namespace Three_Musketeers.Visitors
 {
@@ -31,6 +33,8 @@ namespace Three_Musketeers.Visitors
         private readonly MainFunctionSemanticAnalyzer mainFunctionSemanticAnalyzer;
         private readonly FunctionSemanticAnalyzer functionSemanticAnalyzer;
         private readonly FunctionCallSemanticAnalyzer functionCallSemanticAnalyzer;
+        private readonly IncrementDecrementSemanticAnalyzer incrementDecrementSemanticAnalyzer;
+        private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
 
         public SemanticAnalyzer()
         {
@@ -60,6 +64,15 @@ namespace Three_Musketeers.Visitors
             functionSemanticAnalyzer = new FunctionSemanticAnalyzer(symbolTable, declaredFunctions, ReportError, ReportWarning,
                 GetExpressionType, Visit);
             functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType, Visit);
+            // increment/decrement
+            incrementDecrementSemanticAnalyzer = new IncrementDecrementSemanticAnalyzer(ReportError, ReportWarning, symbolTable);
+            // compound assignment
+            compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable, GetExpressionType);
+        }
+
+        public override string? VisitStart([NotNull] ExprParser.StartContext context)
+        {
+            return base.VisitStart(context);
         }
 
         public override string? VisitProg([NotNull] ExprParser.ProgContext context)
@@ -72,9 +85,9 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
         }
 
-        public override string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public override string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)
         {
-            string? type = variableAssignmentSemanticAnalyzer.VisitAtt(context);
+            string? type = variableAssignmentSemanticAnalyzer.VisitAttRegular(context);
             string? exprType = Visit(context.expr());
             if (type == null || exprType == null) return null;
 
@@ -86,6 +99,16 @@ namespace Three_Musketeers.Visitors
             }
 
             return type;
+        }
+
+        public override string? VisitAttPlusEquals([NotNull] ExprParser.AttPlusEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitAttPlusEquals(context);
+        }
+
+        public override string? VisitAttMinusEquals([NotNull] ExprParser.AttMinusEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitAttMinusEquals(context);
         }
 
         public override string? VisitVar([NotNull] ExprParser.VarContext context)
@@ -107,6 +130,36 @@ namespace Three_Musketeers.Visitors
             }
 
             return arrayType;
+        }
+
+        public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitSingleAttPlusEquals(context);
+        }
+
+        public override string? VisitSingleAttMinusEquals([NotNull] ExprParser.SingleAttMinusEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitSingleAttMinusEquals(context);
+        }
+
+        public override string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitAttMultiplyEquals(context);
+        }
+
+        public override string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitAttDivideEquals(context);
+        }
+
+        public override string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitSingleAttMultiplyEquals(context);
+        }
+
+        public override string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            return compoundAssignmentSemanticAnalyzer.VisitSingleAttDivideEquals(context);
         }
 
         public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
@@ -204,6 +257,49 @@ namespace Three_Musketeers.Visitors
         {
             return comparisonSemanticAnalyzer.VisitComparison(context);
         }
+
+        // Increment/Decrement operators for simple variables
+        public override string VisitPrefixIncrement([NotNull] ExprParser.PrefixIncrementContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPrefixIncrement(context) ?? "int";
+        }
+
+        public override string VisitPrefixDecrement([NotNull] ExprParser.PrefixDecrementContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPrefixDecrement(context) ?? "int";
+        }
+
+        public override string VisitPostfixIncrement([NotNull] ExprParser.PostfixIncrementContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPostfixIncrement(context) ?? "int";
+        }
+
+        public override string VisitPostfixDecrement([NotNull] ExprParser.PostfixDecrementContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPostfixDecrement(context) ?? "int";
+        }
+
+        // Increment/Decrement operators for array elements
+        public override string VisitPrefixIncrementArray([NotNull] ExprParser.PrefixIncrementArrayContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPrefixIncrementArray(context) ?? "int";
+        }
+
+        public override string VisitPrefixDecrementArray([NotNull] ExprParser.PrefixDecrementArrayContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPrefixDecrementArray(context) ?? "int";
+        }
+
+        public override string VisitPostfixIncrementArray([NotNull] ExprParser.PostfixIncrementArrayContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPostfixIncrementArray(context) ?? "int";
+        }
+
+        public override string VisitPostfixDecrementArray([NotNull] ExprParser.PostfixDecrementArrayContext context)
+        {
+            return incrementDecrementSemanticAnalyzer.VisitPostfixDecrementArray(context) ?? "int";
+        }
+        
         private static bool TwoTypesArePermitedToCast(string type1, string type2)
         {
             bool anyIsDouble = type1 == "double" || type2 == "double";

@@ -41,7 +41,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.getCurrentBody = getCurrentBody;
         }
 
-        public string? VisitAtt([NotNull] ExprParser.AttContext context)
+        public string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)
         {
             string varType;
             string varName = context.ID().GetText();

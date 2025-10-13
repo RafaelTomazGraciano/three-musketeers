@@ -64,11 +64,19 @@ putsStatement
     ;
 
 att
-    : type? ID '=' expr
+    : type? ID '=' expr                    # AttRegular
+    | type? ID '+=' expr                   # AttPlusEquals
+    | type? ID '-=' expr                   # AttMinusEquals
+    | type? ID '*=' expr                   # AttMultiplyEquals
+    | type? ID '/=' expr                   # AttDivideEquals
     ;
 
 att_var 
-    : ID index+ '=' expr             #SingleAtt
+    : ID index+ '=' expr             # SingleAtt
+    | ID index+ '+=' expr                         # SingleAttPlusEquals
+    | ID index+ '-=' expr                         # SingleAttMinusEquals
+    | ID index+ '*=' expr                         # SingleAttMultiplyEquals
+    | ID index+ '/=' expr                         # SingleAttDivideEquals
     ;
 
 new_type
@@ -84,7 +92,15 @@ index
     ;
 
 expr
-    : expr ('&&'|'||') expr          # LogicalAndOr
+    : '++' ID                      # PrefixIncrement
+    | '--' ID                      # PrefixDecrement
+    | ID '++'                      # PostfixIncrement
+    | ID '--'                      # PostfixDecrement
+    | '++' ID index+               # PrefixIncrementArray
+    | '--' ID index+               # PrefixDecrementArray
+    | ID index+ '++'               # PostfixIncrementArray
+    | ID index+ '--'               # PostfixDecrementArray
+    | expr ('&&'|'||') expr          # LogicalAndOr
     | expr ('=='|'!=') expr          # Equality
     | expr ('>'|'<'|'>='|'<=') expr  # Comparison
     | expr ('*'|'/'|'%') expr        # MulDivMod
