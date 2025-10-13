@@ -295,7 +295,7 @@ namespace Three_Musketeers.Visitors
             return dynamicMemoryCodeGenerator.VisitMallocAtt(context);
         }
 
-        public override string VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
+        public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
         {
             return dynamicMemoryCodeGenerator.VisitFreeStatment(context);
         }
