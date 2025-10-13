@@ -3,14 +3,42 @@ using Three_Musketeers.Visitors;
 using Three_Musketeers.Listeners;
 using Three_Musketeers.Grammar;
 using System.Diagnostics;
+using System.CommandLine;
+using System.CommandLine.Parsing;
 
 namespace Three_Musketeers {
     public class Program
     {
+
+        private static readonly Argument<string> input = new("input")
+            {
+                Description = "File to be compiled",
+            };
+
+        private static readonly Option<string> output = new("-o", ["--out"])
+        {
+            Description = "Path of executable",
+            DefaultValueFactory = value => "a.out"
+        };
+
         public static int Main(string[] args)
         {
-            string filePath = "Examples/code.3m";
-            string defaultFileOutput = "a.out";
+            RootCommand rootCommand = new("Three Musketeers Language Compiler");
+            rootCommand.Add(input);
+            rootCommand.Add(output);
+
+            var result = rootCommand.Parse(args);
+            if (result.Errors.Count > 0)
+            {
+                foreach (ParseError parseError in result.Errors)
+                {
+                    Console.Error.WriteLine(parseError.Message);
+                }
+                return 1;
+            }
+            string filePath = result.GetValue(input);
+            string resultPath = result.GetValue(output);
+
             try
             {
                 // Lexical Analysis
@@ -53,14 +81,13 @@ namespace Three_Musketeers {
                 string bytecodePath = Path.ChangeExtension(filePath, ".bc");
                 string optBytecodePath = bytecodePath.Replace(".bc", "-opt.bc");
                 string assemblyPath = Path.ChangeExtension(filePath, ".s");
-                string resultPath = assemblyPath.Replace(".s", "");
 
                 File.WriteAllText(outputPath, llvmCode);
                 Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
                 Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
                 Process.Start("llc", $"{optBytecodePath} -o {assemblyPath}").WaitForExit();
                 Process.Start("gcc", $"{assemblyPath} -o {resultPath} -no-pie").WaitForExit();
-                Process.Start("rm", "*.bc *.s *.ll");
+                Process.Start("rm", $"{bytecodePath} {optBytecodePath} {assemblyPath}");
                 return 0;
             }
             catch (Exception ex)
