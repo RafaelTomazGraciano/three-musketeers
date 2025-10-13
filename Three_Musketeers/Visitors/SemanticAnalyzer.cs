@@ -109,8 +109,6 @@ namespace Three_Musketeers.Visitors
             string? arrayType = variableAssignmentSemanticAnalyzer.VisitSingleAtt(context);
             string? exprType = Visit(context.expr());
             if (arrayType == null || exprType == null) return null;
-
-            Console.WriteLine(arrayType, exprType);
             if (!TwoTypesArePermitedToCast(arrayType, exprType))
             {
                 ReportError(context.Start.Line,
