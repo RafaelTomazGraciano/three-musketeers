@@ -35,35 +35,52 @@ namespace Three_Musketeers.Visitors
 
         public CodeGenerator()
         {
+            variableResolver = new VariableResolver(
+            variables,
+            () => functionCodeGenerator?.GetCurrentFunctionName()
+            );
+
+            //functions
+            base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
+                variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
+            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables, 
+                NextRegister, GetLLVMType, Visit, Visit);
+            functionCallCodeGenerator = new FunctionCallCodeGenerator(registerTypes, declaredFunctions, NextRegister,
+                GetLLVMType, Visit, () => base.functionCodeGenerator!.IsInsideFunction()
+                ? base.functionCodeGenerator.GetCurrentFunctionBody()! : mainDefinition);
+
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
-                mainBody, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit);
+                mainDefinition, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
+                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
-            printfCodeGenerator = new PrintfCodeGenerator(
-                globalStrings, mainBody, registerTypes, NextRegister, NextStringLabel, Visit);
-            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, mainBody, variables,
-                registerTypes, NextRegister, NextStringLabel, GetLLVMType);
-            getsCodeGenerator = new GetsCodeGenerator(declarations, mainBody, variables, NextRegister);
-            putsCodeGenerator = new PutsCodeGenerator(declarations, mainBody, variables, NextRegister);
+            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, declarations, GetCurrentBody, registerTypes,
+                NextRegister, NextStringLabel, Visit);
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, declarations, GetCurrentBody, variables,
+                registerTypes, NextRegister, NextStringLabel, GetLLVMType, variableResolver);
+            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, NextRegister, variableResolver);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, registerTypes, NextRegister,
+                () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null,
+                variableResolver);
 
             //string conversion
-            atoiCodeGenerator = new AtoiCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
-            atodCodeGenerator = new AtodCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
-            itoaCodeGenerator = new ItoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
-            dtoaCodeGenerator = new DtoaCodeGenerator(declarations, mainBody, registerTypes, NextRegister, Visit);
+            atoiCodeGenerator = new AtoiCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
+            atodCodeGenerator = new AtodCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
+            itoaCodeGenerator = new ItoaCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
+            dtoaCodeGenerator = new DtoaCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
 
             //arithmetic
             arithmeticCodeGenerator = new ArithmeticCodeGenerator(
-                mainBody, registerTypes, NextRegister, Visit);
+                GetCurrentBody, registerTypes, NextRegister, Visit);
             //logical
             logicalCodeGenerator = new LogicalCodeGenerator(
-                mainBody, registerTypes, NextRegister, Visit);
+                GetCurrentBody, registerTypes, NextRegister, Visit);
             //equality
             equalityCodeGenerator = new EqualityCodeGenerator(
-                mainBody, registerTypes, NextRegister, Visit);
+                GetCurrentBody, registerTypes, NextRegister, Visit);
             //comparison
             comparisonCodeGenerator = new ComparisonCodeGenerator(
                 mainBody, registerTypes, NextRegister, Visit);
@@ -236,16 +253,16 @@ namespace Three_Musketeers.Visitors
             string exprType;
             exprType = registerTypes[exprValue];
             string resultReg = NextRegister();
-            
+
             if (exprType == "double")
             {
-                mainBody.AppendLine($"  {resultReg} = fneg double {exprValue}");
+                GetCurrentBody().AppendLine($"  {resultReg} = fneg double {exprValue}");
             }
             else
             {
-                mainBody.AppendLine($"  {resultReg} = sub i32 0, {exprValue}");
+                GetCurrentBody().AppendLine($"  {resultReg} = sub i32 0, {exprValue}");
             }
-            
+
             registerTypes[resultReg] = exprType;
             return resultReg;
         }

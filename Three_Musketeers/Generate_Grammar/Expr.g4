@@ -1,13 +1,21 @@
 grammar Expr;
 
 start
-    : prog+ EOF
+    : prog* mainFunction prog* EOF
     ;
 
 prog
     : stm
     | new_type
     | function
+    ;
+
+mainFunction
+    : 'int' 'main' '(' mainArgs? ')' '{' func_body '}'
+    ;
+
+mainArgs
+    : 'int' ID ',' 'char' ID '[' ']'
     ;
 
 stm
@@ -27,7 +35,12 @@ stm
     ;
 
 function
-    : type ID '(' args? ')' '{' func_body '}'
+    : function_return ID '(' args? ')' '{' func_body '}'
+    ;
+
+function_return
+    : type
+    | VOID
     ;
 
 func_body
@@ -47,7 +60,7 @@ getsStatement
     ;
 
 putsStatement
-    : 'puts' '(' (ID | STRING_LITERAL) ')' EOL
+    : 'puts' '(' (ID index?| STRING_LITERAL) ')' EOL
     ;
 
 att
@@ -120,6 +133,7 @@ type
 
 /* -------- TOKENS -------- */
 RETURN        : 'return';
+VOID          : 'void';
 IF            : 'if';
 ELSE          : 'else';
 GR            : '>';

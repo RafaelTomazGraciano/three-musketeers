@@ -10,33 +10,42 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class ScanfCodeGenerator
     {
         private readonly StringBuilder globalStrings;
-        private readonly StringBuilder mainBody;
+        private readonly StringBuilder declarations;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<string> nextStringLabel;
         private readonly Func<string, string> getLLVMType;
+        private readonly VariableResolver variableResolver;
+        private bool scanfInitialized = false;
 
         public ScanfCodeGenerator(
             StringBuilder globalStrings,
-            StringBuilder mainBody,
+            StringBuilder declarations,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<string> nextStringLabel,
-            Func<string, string> getLLVMType)
+            Func<string, string> getLLVMType,
+            VariableResolver variableResolver)
         {
             this.globalStrings = globalStrings;
-            this.mainBody = mainBody;
+            this.declarations = declarations;
+            this.getCurrentBody = getCurrentBody;
             this.variables = variables;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.nextStringLabel = nextStringLabel;
             this.getLLVMType = getLLVMType;
+            this.variableResolver = variableResolver;
         }
 
         public string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
         {
+            InitializeScanf(); 
+
             var ids = context.ID();
             if (ids.Length == 0)
             {
@@ -50,7 +59,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             {
                 string varName = idToken.GetText();
 
-                var variable = variables[varName];
+                Variable variable = variableResolver.GetVariable(varName);
                 string llvmType = getLLVMType(variable.type);
 
                 string formatSpec = GetFormatSpecifier(variable.type);
@@ -65,7 +74,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{formatStr}\\00\", align 1");
 
             string ptrReg = nextRegister();
-            mainBody.AppendLine($"  {ptrReg} = getelementptr inbounds [{strLen} x i8], [{strLen} x i8]* {strLabel}, i32 0, i32 0");
+            getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [{strLen} x i8], [{strLen} x i8]* {strLabel}, i32 0, i32 0");
 
             var scanfArgs = new StringBuilder();
             scanfArgs.Append($"i8* {ptrReg}");
@@ -77,7 +86,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 scanfArgs.Append($", {llvmType}* {variable.register}");
             }
             string resultReg = nextRegister();
-            mainBody.AppendLine($"  {resultReg} = call i32 (i8*, ...) @scanf({scanfArgs})");
+            getCurrentBody().AppendLine($"  {resultReg} = call i32 (i8*, ...) @scanf({scanfArgs})");
 
             return null;
         }
@@ -92,6 +101,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 "bool" => "%d",
                 _ => "%d"
             };
+        }
+
+        private void InitializeScanf()
+        {
+            if (scanfInitialized)
+                return;
+
+            declarations.AppendLine("declare i32 @scanf(i8*, ...)");
+            scanfInitialized = true;
         }
     }
 }

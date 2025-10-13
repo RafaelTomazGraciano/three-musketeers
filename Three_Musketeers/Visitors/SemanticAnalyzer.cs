@@ -304,6 +304,35 @@ namespace Three_Musketeers.Visitors
             if (anyIsChar && (anyIsBool || !anyIsString)) return true;
             return false;
         }
+
+        public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
+        {
+            mainFunctionSemanticAnalyzer.AnalyzeMainFunction(context);
+            return null;
+        }
+
+        public override string? VisitFunction([NotNull] ExprParser.FunctionContext context)
+        {
+            functionSemanticAnalyzer.AnalyzeFunction(context);
+            return null;
+        }
+
+        public override string? VisitStm([NotNull] ExprParser.StmContext context)
+        {
+            if (context.RETURN() != null)
+            {
+                functionSemanticAnalyzer.AnalyzeReturnStatement(context);
+                return null;
+            }
+
+            return base.VisitStm(context);
+        }
+        
+        public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
+        {
+            return functionCallSemanticAnalyzer.VisitFunctionCall(context);
+        }
+
     }
 }
 

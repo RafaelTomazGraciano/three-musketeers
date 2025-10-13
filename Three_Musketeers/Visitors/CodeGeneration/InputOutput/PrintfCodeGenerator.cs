@@ -8,22 +8,26 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class PrintfCodeGenerator
     {
         private readonly StringBuilder globalStrings;
-        private readonly StringBuilder mainBody;
+        private readonly StringBuilder declarations;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<string> nextStringLabel;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
+        private bool printfInitialized = false;
 
         public PrintfCodeGenerator(
             StringBuilder globalStrings,
-            StringBuilder mainBody,
+            StringBuilder declarations,
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<string> nextStringLabel,
             Func<ExprParser.ExprContext, string> visitExpression)
         {
             this.globalStrings = globalStrings;
-            this.mainBody = mainBody;
+            this.declarations = declarations;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.nextStringLabel = nextStringLabel;
@@ -32,6 +36,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
         public string? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
         {
+            InitializePrintf();
+
             string formatString = context.STRING_LITERAL().GetText();
             formatString = formatString.Substring(1, formatString.Length - 2); //remove quotes
 
@@ -43,7 +49,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             globalStrings.AppendLine($"{stringLabel} = private unnamed_addr constant [{stringLength} x i8] c\"{processedString}\\00\"");
 
             string strPtrReg = nextRegister();
-            mainBody.AppendLine($"  {strPtrReg} = getelementptr [{stringLength} x i8], [{stringLength} x i8]* {stringLabel}, i32 0, i32 0");
+            getCurrentBody().AppendLine($"  {strPtrReg} = getelementptr [{stringLength} x i8], [{stringLength} x i8]* {stringLabel}, i32 0, i32 0");
 
             var args = new List<string>();
             args.Add($"i8* {strPtrReg}");
@@ -64,7 +70,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                         if (actualType == "i32" && expectedType == "double")
                         {
                             string convertedReg = nextRegister();
-                            mainBody.AppendLine($"  {convertedReg} = sitofp i32 {argReg} to double");
+                            getCurrentBody().AppendLine($"  {convertedReg} = sitofp i32 {argReg} to double");
                             registerTypes[convertedReg] = "double";
                             argReg = convertedReg;
                             actualType = "double";
@@ -72,11 +78,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                         else if (actualType == "double" && expectedType == "i32")
                         {
                             string convertedReg = nextRegister();
-                            mainBody.AppendLine($"  {convertedReg} = fptosi double {argReg} to i32");
+                            getCurrentBody().AppendLine($"  {convertedReg} = fptosi double {argReg} to i32");
                             registerTypes[convertedReg] = "i32";
                             argReg = convertedReg;
                             actualType = "i32";
-                        }   
+                        }
                     }
                     args.Add($"{actualType} {argReg}");
                 }
@@ -84,9 +90,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
             string resultReg = nextRegister();
             string argsString = string.Join(", ", args);
-            mainBody.AppendLine($"  {resultReg} = call i32 (i8*, ...) @printf({argsString})");
+            getCurrentBody().AppendLine($"  {resultReg} = call i32 (i8*, ...) @printf({argsString})");
 
             return null;
+        }
+        
+        private void InitializePrintf()
+        {
+            if (printfInitialized)
+                return;
+
+            declarations.AppendLine("declare i32 @printf(i8*, ...)");
+            printfInitialized = true;
         }
     }
 }
