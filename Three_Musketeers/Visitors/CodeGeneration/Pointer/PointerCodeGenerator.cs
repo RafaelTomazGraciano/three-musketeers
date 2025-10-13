@@ -32,11 +32,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             if (exprCtx is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
-                Console.WriteLine(varName);
-                foreach (Variable variable in variables.Values)
-                {
-                    Console.WriteLine(variable.name);
-                }
                 Variable var = variables[varName];
 
                 string baseType = var.LLVMType;

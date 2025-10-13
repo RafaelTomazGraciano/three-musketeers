@@ -1,3 +1,74 @@
+int main(int argc, char argv[]) {
+    printf("\n=== Test Arguments ===\n");
+    printf("Argument count: %d\n", argc);
+    puts("Arguments list:");
+    puts(argv[1]);
+    puts(argv[2]);
+    puts(argv[3]);
+
+    printf("\n=== Test Multiple Void Calls ===\n");
+    printWelcome();
+    printWelcome();
+
+    printf("\n=== Test Addition ===\n");
+    int sum = add(10, 20);
+    printf("10 + 20 = %d\n", sum);
+    sum++;
+    printf("Incremented sum: %d\n", sum);
+
+    printf("\n=== Test Multiplication ===\n");
+    int product = multiply(2, 3, 4);
+    printf("2 * 3 * 4 = %d\n", product);
+
+    printf("\n=== Test Area Calculation ===\n");
+    double area = calculateArea(5.5, 3.2);
+    printf("Area: %.2f\n", area);
+
+    printf("\n=== Test Nested Calls ===\n");
+    int squared = square(5);
+    printf("5 squared = %d\n", squared);
+
+    printf("\n=== Test Boolean Function ===\n");
+    bool positive = isPositive(42);
+    bool negative = isPositive(-10);
+    printf("42 is positive: %d\n", positive);
+    printf("-10 is positive: %d\n", negative);
+
+    printf("\n=== Test Char Function ===\n");
+    char firstLetter = getFirstLetter(65);
+    printf("First letter: %c\n", firstLetter);
+
+    printf("\n=== Test Expression with Function ===\n");
+    int result = add(5, 3) * multiply(2, 2, 2);
+    printf("add(5,3) * multiply(2,2,2) = %d\n", result);
+    
+    printf("\n=== Test Recursion ===\n");
+    //recursionPrint("Recursion implemented");
+
+    printf("\n=== Test Pointers ===\n");
+    int *pointer;
+    int *saved_pointer;
+    int **other_pointer;
+    int test = 5;
+    pointer = malloc(5);
+    saved_pointer = pointer;
+    pointer[1] = 5;
+    printf("Pointer[1] = %d\n", pointer[1]);
+    printf("Trying semantic warning\n");
+    pointer = malloc(test);
+    free(pointer);
+    pointer = &test;
+    printf("Test before pointer derref: %d\n", test);
+    (*pointer) = 12;
+    printf("Test after pointer derref: %d\n", test);
+    other_pointer = &pointer;
+    (*(*other_pointer)) = 26;
+    printf("Test after pointer derref of derref: %d\n", test);
+
+    printf("\n=== All Function Tests Completed ===\n");
+
+    return 0;
+}
 // Test Simple void function
 void printWelcome() {
     puts("=== Three Musketeers Function Tests ===");
@@ -34,71 +105,10 @@ char getFirstLetter(int code) {
     return letter;
 }
 
-// === MAIN TESTS ===
-
-int main(int argc, char argv[]) {
-    printf("\n=== Test Arguments ===\n");
-    printf("Argument count: %d\n", argc);
-    puts("Arguments list:");
-    puts(argv[1]);
-    puts(argv[2]);
-    puts(argv[3]);
-
-    printf("\n=== Test Multiple Void Calls ===\n");
-    printWelcome();
-    printWelcome();
-
-    printf("\n=== Test Addition ===\n");
-    int sum = add(10, 20);
-    printf("10 + 20 = %d\n", sum);
-
-    printf("\n=== Test Multiplication ===\n");
-    int product = multiply(2, 3, 4);
-    printf("2 * 3 * 4 = %d\n", product);
-
-    printf("\n=== Test Area Calculation ===\n");
-    double area = calculateArea(5.5, 3.2);
-    printf("Area: %.2f\n", area);
-
-    printf("\n=== Test Nested Calls ===\n");
-    int squared = square(5);
-    printf("5 squared = %d\n", squared);
-
-    printf("\n=== Test Boolean Function ===\n");
-    bool positive = isPositive(42);
-    bool negative = isPositive(-10);
-    printf("42 is positive: %d\n", positive);
-    printf("-10 is positive: %d\n", negative);
-
-    printf("\n=== Test Char Function ===\n");
-    char firstLetter = getFirstLetter(65);
-    printf("First letter: %c\n", firstLetter);
-
-    printf("\n=== Test Expression with Function ===\n");
-    int result = add(5, 3) * multiply(2, 2, 2);
-    printf("add(5,3) * multiply(2,2,2) = %d\n", result);
-
-    printf("\n=== Test Pointers ===\n");
-    int *pointer;
-    int *saved_pointer;
-    int **other_pointer;
-    int test = 5;
-    pointer = malloc(5);
-    saved_pointer = pointer;
-    pointer[1] = 5;
-    printf("Pointer[1] = %d\n", pointer[1]);
-    printf("Trying semantic warning\n");
-    pointer = malloc(test);
-    free(pointer);
-    pointer = &test;
-    printf("Test before pointer derref: %d\n", test);
-    (*pointer) = 12;
-    printf("Test after pointer derref: %d\n", test);
-    other_pointer = &pointer;
-    (*(*other_pointer)) = 26;
-    printf("Test after pointer derref of derref: %d\n", test);
-
-    printf("\n=== All Function Tests Completed ===\n");
-
-    return 0;
+//recursion
+void recursionPrint(string message) {
+    puts(message);
+    recursionPrint(message);
 }
+
+// === MAIN TESTS ===

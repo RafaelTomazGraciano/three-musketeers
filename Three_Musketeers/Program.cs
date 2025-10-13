@@ -36,8 +36,8 @@ namespace Three_Musketeers {
                 }
                 return 1;
             }
-            string filePath = result.GetValue(input);
-            string resultPath = result.GetValue(output);
+            string filePath = result.GetValue(input)!;
+            string resultPath = result.GetValue(output)!;
 
             try
             {

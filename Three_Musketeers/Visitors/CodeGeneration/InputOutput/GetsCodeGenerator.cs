@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 {
@@ -10,27 +11,27 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     {
         private readonly StringBuilder declarations;
         private readonly Func<StringBuilder> getCurrentBody;
-        private readonly Dictionary<string, Variable> variables;
         private readonly Func<string> nextRegister;
         private bool fgetsInitialized = false;
+        private readonly VariableResolver variableResolver;
 
         public GetsCodeGenerator(
             StringBuilder declarations,
             Func<StringBuilder> getCurrentBody,
-            Dictionary<string, Variable> variables,
-            Func<string> nextRegister)
+            Func<string> nextRegister,
+            VariableResolver variableResolver)
         {
             this.declarations = declarations;
             this.getCurrentBody = getCurrentBody;
-            this.variables = variables;
             this.nextRegister = nextRegister;
+            this.variableResolver = variableResolver;
         }
 
         public string? VisitGetsStatement([NotNull] ExprParser.GetsStatementContext context)
         {
             string varName = context.ID().GetText();
 
-            var variable = variables[varName];
+            Variable variable = variableResolver.GetVariable(varName);
 
             InitializeFgets();
 

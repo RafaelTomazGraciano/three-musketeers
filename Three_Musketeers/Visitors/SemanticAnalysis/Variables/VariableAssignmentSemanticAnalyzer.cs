@@ -154,6 +154,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             string type = symbol.type;
 
+            if (indices.Length == 0)
+            {
+                return type;
+            }
+
             if (symbol is not ArraySymbol && symbol is not PointerSymbol)
             {
                 reportError(line, $"Variable '{varName}' is not an array nor Pointer");

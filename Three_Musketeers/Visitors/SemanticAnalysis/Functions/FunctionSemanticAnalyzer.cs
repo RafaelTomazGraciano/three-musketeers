@@ -39,83 +39,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
         public void AnalyzeFunction(ExprParser.FunctionContext context)
         {
             int line = context.Start.Line;
-
-            //type of return
-            var returnTypeCtx = context.function_return();
-            string returnType = "";
-            List<int>? returnDimensions = null;
-
-            if (returnTypeCtx.GetText() == "void")
-            {
-                returnType = "void";
-            }
-            else if (returnTypeCtx.type() != null)
-            {
-                returnType = GetTypeString(returnTypeCtx.type());
-
-                // check if return type is an array
-                // var indices = returnTypeCtx.index();
-                // if (indices != null && indices.Length > 0)
-                // {
-                //     returnDimensions = new List<int>();
-                //     foreach (var idx in indices)
-                //     {
-                //         string sizeText = idx.INT().GetText();
-                //         if (int.TryParse(sizeText, out int size))
-                //         {
-                //             if (size <= 0)
-                //             {
-                //                 reportError(line, $"Array dimension must be positive, got {size}");
-                //                 size = 1; // Default to prevent further errors
-                //             }
-                //             returnDimensions.Add(size);
-                //         }
-                //     }
-                // }
-            }
-            else
-            {
-                reportError(line, $"Invalid return type in function");
-            }
-
-            //get function name
             string functionName = context.ID().GetText();
 
-            if (declaredFunctions.ContainsKey(functionName))
+            // function already declared
+            if (!declaredFunctions.ContainsKey(functionName))
             {
-                reportError(line, $"Function '{functionName}' has already been declared");
+                reportError(line, $"Internal error: Function '{functionName}' not pre-registered");
                 return;
             }
 
-            // check if function name conflicts with existing variable
-            if (symbolTable.Contains(functionName))
-            {
-                reportError(line, $"Function name '{functionName}' conflicts with existing variable");
-                return;
-            }
-
-            //function info
-            var functionInfo = new FunctionInfo
-            {
-                returnType = returnType,
-                returnDimensions = returnDimensions,
-                parameters = new List<(string, string)>(),
-                hasReturnStatement = false
-            };
-
-            //args
-            var argsCtx = context.args();
-            if (argsCtx != null)
-            {
-                ProcessFunctionArguments(argsCtx, functionInfo, functionName);
-            }
-
-            declaredFunctions[functionName] = functionInfo;
-
-            // Add function to symbol table as a special symbol
-            var functionSymbol = new Symbol(functionName, returnType, line);
-            functionSymbol.isInitializated = true;
-            symbolTable.AddSymbol(functionSymbol);
+            var functionInfo = declaredFunctions[functionName];
 
             // enter new scope for function body
             symbolTable.EnterScope();
@@ -149,17 +82,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             // check if non-void function has return statement
             if (!functionInfo.isVoid && !functionInfo.hasReturnStatement)
             {
-                if (functionInfo.isArray)
-                {
-                    reportError(line, "Functions returning arrays are not supported yet");
-                    return;
-                }
-                reportWarning(line, $"Function '{functionName}' with return type '{returnType}' does not have a 'return' statement");
-
-                // string returnTypeDisplay = functionInfo.isArray
-                //     ? $"{returnType}[{string.Join("][", returnDimensions!)}]"
-                //     : returnType;
-                // reportWarning(line, $"Function '{functionName}' with return type '{returnTypeDisplay}' does not have a 'return' statement");
+                reportWarning(line, $"Function '{functionName}' with return type '{functionInfo.returnType}' does not have a 'return' statement");
             }
 
             // exit function scope
@@ -168,33 +91,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             // exit function context
             currentFunctionName = null;
             currentFunction = null;
-
-        }
-
-        private void ProcessFunctionArguments(
-            ExprParser.ArgsContext argsCtx,
-            FunctionInfo functionInfo,
-            string functionName)
-        {
-            var types = argsCtx.type();
-            var ids = argsCtx.ID();
-
-            HashSet<string> paramNames = new HashSet<string>();
-
-            for (int i = 0; i < types.Length; i++)
-            {
-                string paramType = GetTypeString(types[i]);
-                string paramName = ids[i].GetText();
-
-                if (paramNames.Contains(paramName))
-                {
-                    reportError(argsCtx.Start.Line, $"Parameter '{functionName}' duplicated in function '{functionName}'");
-                    continue;
-                }
-
-                paramNames.Add(paramName);
-                functionInfo.parameters?.Add((paramType, paramName));
-            }
         }
 
         private void AnalyzeFunctionBody(ExprParser.Func_bodyContext context)
@@ -240,10 +136,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             //non void function
             if (exprCtx == null)
             {
-                string? returnTypeDisplay = currentFunction.isArray
-                    ? $"{currentFunction.returnType}[{string.Join("][", currentFunction.returnDimensions!)}]"
-                    : currentFunction.returnType;
-                reportError(line, $"Function '{currentFunctionName}' with return type '{returnTypeDisplay}' must return a value");
+                string? returnTypeDisplay = currentFunction.returnType;
                 return;
             }
 
@@ -254,76 +147,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
                 return;
             }
 
-            // string expectedType = currentFunction.isArray
-            //     ? $"{currentFunction.returnType}_array" 
-            //     : currentFunction.returnType!;
-            if (currentFunction.isArray)
-            {
-                reportError(line, "Returning arrays is not supported yet");
-                return;
-            }
-
             string expectedType = currentFunction.returnType!;
 
             if (currentFunction.returnType != returnExprType)
             {
-                string? returnTypeDisplay = currentFunction.isArray
-                    ? $"{currentFunction.returnType}[{string.Join("][", currentFunction.returnDimensions!)}]"
-                    : currentFunction.returnType;
-                reportError(line, $"Incompatible return type: expected '{returnTypeDisplay}', but got '{returnExprType}'");
+                string? returnTypeDisplay = currentFunction.returnType;
             }
-        }
-
-        private string GetTypeString(ExprParser.TypeContext context)
-        {
-            if (context.GetText() == "int") return "int";
-            if (context.GetText() == "double") return "double";
-            if (context.GetText() == "bool") return "bool";
-            if (context.GetText() == "char") return "char";
-            if (context.GetText() == "string") return "string";
-
-            var id = context.ID();
-            if (id != null)
-            {
-                string typeName = id.GetText();
-                var typeSymbol = symbolTable.GetSymbol(typeName);
-
-                if (typeSymbol != null)
-                {
-                    return typeSymbol.type;
-                }
-                reportError(context.Start.Line, $"type '{typeName}' has not been defined");
-                return "error";
-            }
-
-            return "unknown";
-        }
-
-        private bool IsFunctionDeclared(string functionName)
-        {
-            return declaredFunctions.ContainsKey(functionName);
-        }
-
-        public FunctionInfo? GetFunctionInfo(string functionName)
-        {
-            return declaredFunctions.ContainsKey(functionName)
-                ? declaredFunctions[functionName]
-                : null;
-        }
-
-        public Dictionary<string, FunctionInfo> GetAllFunctions()
-        {
-            return new Dictionary<string, FunctionInfo>(declaredFunctions);
-        }
-        
-        public bool IsInsideFunction()
-        {
-            return currentFunction != null;
-        }
-
-        public string? GetCurrentFunctionName()
-        {
-            return currentFunctionName;
         }
 
     }

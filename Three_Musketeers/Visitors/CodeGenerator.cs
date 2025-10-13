@@ -10,6 +10,9 @@ using Three_Musketeers.Visitors.CodeGeneration.Equality;
 using Three_Musketeers.Visitors.CodeGeneration.Comparison;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
 using Three_Musketeers.Visitors.CodeGeneration.Pointer;
+using Three_Musketeers.Utils;
+using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
+using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
 
 namespace Three_Musketeers.Visitors
 {
@@ -33,11 +36,22 @@ namespace Three_Musketeers.Visitors
         private readonly FunctionCallCodeGenerator functionCallCodeGenerator;
         private readonly PointerCodeGenerator pointerCodeGenerator;
         private readonly DynamicMemoryCodeGenerator dynamicMemoryCodeGenerator;
+        private readonly VariableResolver variableResolver;
+        private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
+        private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
+
         public CodeGenerator()
         {
+            variableResolver = new VariableResolver(
+            variables,
+            () => functionCodeGenerator?.GetCurrentFunctionName()
+            );
+
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
-                variables, NextRegister, GetLLVMType, Visit, Visit);
+                variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
+            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
+                NextRegister, GetLLVMType, Visit, Visit);
             base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
                 NextRegister, GetLLVMType, Visit, Visit);
             functionCallCodeGenerator = new FunctionCallCodeGenerator(registerTypes, declaredFunctions, NextRegister,
@@ -52,13 +66,14 @@ namespace Three_Musketeers.Visitors
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
-            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
+            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, declarations, GetCurrentBody, registerTypes,
                 NextRegister, NextStringLabel, Visit);
-            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
-                registerTypes, NextRegister, NextStringLabel, GetLLVMType);
-            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, variables, NextRegister);
-            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, variables, registerTypes, NextRegister,
-                () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null);
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, declarations, GetCurrentBody, variables,
+                registerTypes, NextRegister, NextStringLabel, GetLLVMType, variableResolver);
+            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, NextRegister, variableResolver);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, mainDefinition, registerTypes, NextRegister,
+                () => functionCodeGenerator.IsInsideFunction() ? functionCodeGenerator.GetCurrentFunctionBody() : null,
+                variableResolver);
 
             //string conversion
             atoiCodeGenerator = new AtoiCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
@@ -81,11 +96,19 @@ namespace Three_Musketeers.Visitors
             //pointers & dynamic memory
             pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, variables, registerTypes, NextRegister, Visit);
             dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister, Visit, GetAlignment, GetLLVMType);
+
+            //increment/decrement
+            incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, variables);
+            //compound assignment
+            compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, variables, Visit);
         }
 
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
             return variableAssignmentCodeGenerator.VisitGenericAtt(context);
+
         }
 
         public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
@@ -96,6 +119,25 @@ namespace Three_Musketeers.Visitors
         public override string? VisitDerrefAtt([NotNull] ExprParser.DerrefAttContext context)
         {
             return pointerCodeGenerator.VisitDerrefAtt(context);
+        }
+        public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttPlusEquals(context);
+        }
+
+        public override string? VisitSingleAttMinusEquals([NotNull] ExprParser.SingleAttMinusEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMinusEquals(context);
+        }
+
+        public override string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttMultiplyEquals(context);
+        }
+
+        public override string? VisitSingleAttDivideEquals([NotNull] ExprParser.SingleAttDivideEqualsContext context)
+        {
+            return compoundAssignmentCodeGenerator.VisitSingleAttDivideEquals(context);
         }
 
         public override string VisitIntLiteral([NotNull] ExprParser.IntLiteralContext context)
@@ -300,6 +342,48 @@ namespace Three_Musketeers.Visitors
             return dynamicMemoryCodeGenerator.VisitFreeStatment(context);
         }
 
+
+        // Increment/Decrement operators for simple variables
+        public override string VisitPrefixIncrement([NotNull] ExprParser.PrefixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrement(context);
+        }
+
+        public override string VisitPrefixDecrement([NotNull] ExprParser.PrefixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrement(context);
+        }
+
+        public override string VisitPostfixIncrement([NotNull] ExprParser.PostfixIncrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrement(context);
+        }
+
+        public override string VisitPostfixDecrement([NotNull] ExprParser.PostfixDecrementContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrement(context);
+        }
+
+        // Increment/Decrement operators for array elements
+        public override string VisitPrefixIncrementArray([NotNull] ExprParser.PrefixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixIncrementArray(context);
+        }
+
+        public override string VisitPrefixDecrementArray([NotNull] ExprParser.PrefixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPrefixDecrementArray(context);
+        }
+
+        public override string VisitPostfixIncrementArray([NotNull] ExprParser.PostfixIncrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixIncrementArray(context);
+        }
+
+        public override string VisitPostfixDecrementArray([NotNull] ExprParser.PostfixDecrementArrayContext context)
+        {
+            return incrementDecrementCodeGenerator.VisitPostfixDecrementArray(context);
+        }
     }
 }
 

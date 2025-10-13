@@ -1,7 +1,7 @@
 grammar Expr;
 
 start
-    : prog* mainFunction EOF
+    : prog* mainFunction prog* EOF
     ;
 
 prog
@@ -73,7 +73,11 @@ att
     ;
 
 attVar 
-    : ID index+ '=' expr             #SingleAtt
+    : type? ID index* '=' expr                    # SingleAtt
+    | ID index* '+=' expr                   # SingleAttPlusEquals
+    | ID index* '-=' expr                   # SingleAttMinusEquals
+    | ID index* '*=' expr                   # SingleAttMultiplyEquals
+    | ID index* '/=' expr                   # SingleAttDivideEquals
     ;
 
 newType
@@ -93,7 +97,15 @@ freeStatement
     ;
 
 expr
-    : expr ('&&'|'||') expr          # LogicalAndOr
+    : '++' ID                      # PrefixIncrement
+    | '--' ID                      # PrefixDecrement
+    | ID '++'                      # PostfixIncrement
+    | ID '--'                      # PostfixDecrement
+    | '++' ID index+               # PrefixIncrementArray
+    | '--' ID index+               # PrefixDecrementArray
+    | ID index+ '++'               # PostfixIncrementArray
+    | ID index+ '--'               # PostfixDecrementArray
+    | expr ('&&'|'||') expr          # LogicalAndOr
     | expr ('=='|'!=') expr          # Equality
     | expr ('>'|'<'|'>='|'<=') expr  # Comparison
     | expr ('*'|'/'|'%') expr        # MulDivMod
