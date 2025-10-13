@@ -6,7 +6,7 @@ start
 
 prog
     : stm
-    | new_type
+    | newType
     | function
     ;
 
@@ -22,17 +22,20 @@ stm
     : expr EOL
     | declaration EOL
     | att  EOL
-    | att_var EOL
+    | attVar EOL
     | printfStatement
     | scanfStatement
     | getsStatement
     | putsStatement
+    | freeStatement
     | RETURN expr? EOL
     ;
 
-    declaration
-    : type ID index*
+declaration
+    : type ID index*    #BaseDec
+    | type POINTER+ ID  #PointerDec
     ;
+
 
 function
     : function_return ID '(' args? ')' '{' func_body '}'
@@ -64,22 +67,20 @@ putsStatement
     ;
 
 att
-    : type? ID '=' expr                    # AttRegular
-    | type? ID '+=' expr                   # AttPlusEquals
-    | type? ID '-=' expr                   # AttMinusEquals
-    | type? ID '*=' expr                   # AttMultiplyEquals
-    | type? ID '/=' expr                   # AttDivideEquals
+    : type? POINTER* ID '=' expr                      #GenericAtt
+    | (type POINTER+)? ID '=' 'malloc' '(' expr ')'   #MallocAtt
+    | derref '=' expr                                 #DerrefAtt
     ;
 
-att_var 
-    : ID index+ '=' expr             # SingleAtt
-    | ID index+ '+=' expr                         # SingleAttPlusEquals
-    | ID index+ '-=' expr                         # SingleAttMinusEquals
-    | ID index+ '*=' expr                         # SingleAttMultiplyEquals
-    | ID index+ '/=' expr                         # SingleAttDivideEquals
+attVar 
+    : type? ID index* '=' expr                    # SingleAtt
+    | ID index* '+=' expr                   # SingleAttPlusEquals
+    | ID index* '-=' expr                   # SingleAttMinusEquals
+    | ID index* '*=' expr                   # SingleAttMultiplyEquals
+    | ID index* '/=' expr                   # SingleAttDivideEquals
     ;
 
-new_type
+newType
     : 'type' ID 'as' type EOL
     ;
 
@@ -89,6 +90,10 @@ args
 
 index
     : '[' INT ']'
+    ;
+
+freeStatement
+    : 'free''('ID')'EOL
     ;
 
 expr
@@ -115,12 +120,18 @@ expr
     | ID '(' (expr (',' expr)*)? ')' # FunctionCall
     | ID                             # Var
     | ID index+                      # VarArray
+    | derref                         # DerrefExpr
+    | ADDRESS expr                   # ExprAddress
     | INT                            # IntLiteral
     | DOUBLE                         # DoubleLiteral
     | STRING_LITERAL                 # StringLiteral
     | CHAR_LITERAL                   # CharLiteral
     | TRUE                           # TrueLiteral
     | FALSE                          # FalseLiteral
+    ;
+
+derref
+    : '(' POINTER expr ')'
     ;
 
 type
@@ -132,9 +143,8 @@ type
     | ID
     ;
 
-/* -------- TOKENS -------- */
+/* -------- TOKENS -------- */   
 RETURN        : 'return';
-VOID          : 'void';
 IF            : 'if';
 ELSE          : 'else';
 GR            : '>';
@@ -148,6 +158,7 @@ EQ            : '==';
 NE            : '!=';
 TRUE          : 'true';
 FALSE         : 'false';
+VOID          : 'void';
 ID            : [a-zA-Z_][a-zA-Z0-9_]*;
 INT           : [0-9]+;
 DOUBLE        : [0-9]+'.'[0-9]* | [0-9]*'.'[0-9]+;
@@ -157,3 +168,5 @@ LINE_COMMENT  : '//' ~[\r\n]* -> skip;
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';
+POINTER       : '*';
+ADDRESS       : '&';

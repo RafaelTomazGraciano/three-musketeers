@@ -9,6 +9,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Logical;
 using Three_Musketeers.Visitors.CodeGeneration.Equality;
 using Three_Musketeers.Visitors.CodeGeneration.Comparison;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
+using Three_Musketeers.Visitors.CodeGeneration.Pointer;
 using Three_Musketeers.Utils;
 using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
@@ -33,6 +34,8 @@ namespace Three_Musketeers.Visitors
         private readonly EqualityCodeGenerator equalityCodeGenerator;
         private readonly ComparisonCodeGenerator comparisonCodeGenerator;
         private readonly FunctionCallCodeGenerator functionCallCodeGenerator;
+        private readonly PointerCodeGenerator pointerCodeGenerator;
+        private readonly DynamicMemoryCodeGenerator dynamicMemoryCodeGenerator;
         private readonly VariableResolver variableResolver;
         private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
         private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
@@ -47,7 +50,9 @@ namespace Three_Musketeers.Visitors
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
                 variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
-            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables, 
+            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
+                NextRegister, GetLLVMType, Visit, Visit);
+            base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
                 NextRegister, GetLLVMType, Visit, Visit);
             functionCallCodeGenerator = new FunctionCallCodeGenerator(registerTypes, declaredFunctions, NextRegister,
                 GetLLVMType, Visit, () => base.functionCodeGenerator!.IsInsideFunction()
@@ -55,8 +60,8 @@ namespace Three_Musketeers.Visitors
 
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
-                mainDefinition, declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
-                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody);
+                declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
+                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
@@ -88,6 +93,10 @@ namespace Three_Musketeers.Visitors
             //comparison
             comparisonCodeGenerator = new ComparisonCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit);
+            //pointers & dynamic memory
+            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, variables, registerTypes, NextRegister, Visit);
+            dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister, Visit, GetAlignment, GetLLVMType);
+
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variables);
@@ -96,19 +105,10 @@ namespace Three_Musketeers.Visitors
                 GetCurrentBody, registerTypes, NextRegister, variables, Visit);
         }
 
-        public override string? VisitAttRegular([NotNull] ExprParser.AttRegularContext context)
+        public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
-            return variableAssignmentCodeGenerator.VisitAttRegular(context);
-        }
+            return variableAssignmentCodeGenerator.VisitGenericAtt(context);
 
-        public override string? VisitAttPlusEquals([NotNull] ExprParser.AttPlusEqualsContext context)
-        {
-            return compoundAssignmentCodeGenerator.VisitAttPlusEquals(context);
-        }
-
-        public override string? VisitAttMinusEquals([NotNull] ExprParser.AttMinusEqualsContext context)
-        {
-            return compoundAssignmentCodeGenerator.VisitAttMinusEquals(context);
         }
 
         public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
@@ -116,6 +116,10 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitSingleAtt(context);
         }
 
+        public override string? VisitDerrefAtt([NotNull] ExprParser.DerrefAttContext context)
+        {
+            return pointerCodeGenerator.VisitDerrefAtt(context);
+        }
         public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
         {
             return compoundAssignmentCodeGenerator.VisitSingleAttPlusEquals(context);
@@ -124,16 +128,6 @@ namespace Three_Musketeers.Visitors
         public override string? VisitSingleAttMinusEquals([NotNull] ExprParser.SingleAttMinusEqualsContext context)
         {
             return compoundAssignmentCodeGenerator.VisitSingleAttMinusEquals(context);
-        }
-
-        public override string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
-        {
-            return compoundAssignmentCodeGenerator.VisitAttMultiplyEquals(context);
-        }
-
-        public override string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
-        {
-            return compoundAssignmentCodeGenerator.VisitAttDivideEquals(context);
         }
 
         public override string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)
@@ -176,7 +170,6 @@ namespace Three_Musketeers.Visitors
             registerTypes["false"] = "i1";
             return "0";
         }
-
         public override string VisitVar([NotNull] ExprParser.VarContext context)
         {
             return variableAssignmentCodeGenerator.VisitVar(context);
@@ -187,7 +180,22 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitVarArray(context);
         }
 
-        public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        public override string? VisitDerref([NotNull] ExprParser.DerrefContext context)
+        {
+            return pointerCodeGenerator.VisitDerref(context);
+        }
+
+        public override string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
+        {
+            return pointerCodeGenerator.VisitExprAddress(context);
+        }
+
+        public override string? VisitBaseDec([NotNull] ExprParser.BaseDecContext context)
+        {
+            return variableAssignmentCodeGenerator.VisitDec(context);
+        }
+
+        public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
@@ -318,10 +326,20 @@ namespace Three_Musketeers.Visitors
             
             return base.VisitStm(context);
         }
-        
+
         public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
         {
             return functionCallCodeGenerator.VisitFunctionCall(context);
+        }
+
+        public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
+        {
+            return dynamicMemoryCodeGenerator.VisitMallocAtt(context);
+        }
+
+        public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
+        {
+            return dynamicMemoryCodeGenerator.VisitFreeStatment(context);
         }
 
 

@@ -40,6 +40,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             };
         }
 
+        protected int GetAlignment(string type)
+        {
+            return type switch
+            {
+                var t when t.Contains('*') => 8,
+                "i32" => 4,
+                "double" => 8,
+                "i1" or "i8" => 1,
+                _ => 4
+            };
+        }
+
         public override string? VisitStart(ExprParser.StartContext context)
         {
             // collect SIgnatures

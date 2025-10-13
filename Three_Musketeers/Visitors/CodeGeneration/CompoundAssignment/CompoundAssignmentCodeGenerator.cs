@@ -28,48 +28,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             this.visitExpression = visitExpression;
         }
 
-        // Simple variable +=
-        public string? VisitAttPlusEquals([NotNull] ExprParser.AttPlusEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            Variable variable = variables[varName];
-            
-            // Load current value
-            string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
-            
-            // Evaluate expression
-            string exprValue = visitExpression(context.expr());
-            
-            // Perform addition
-            string resultValue = PerformCompoundOperation(currentValue, exprValue, "+=", variable.LLVMType);
-            
-            // Store result
-            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
-            
-            return null;
-        }
-
-        // Simple variable -=
-        public string? VisitAttMinusEquals([NotNull] ExprParser.AttMinusEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            Variable variable = variables[varName];
-            
-            // Load current value
-            string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
-            
-            // Evaluate expression
-            string exprValue = visitExpression(context.expr());
-            
-            // Perform subtraction
-            string resultValue = PerformCompoundOperation(currentValue, exprValue, "-=", variable.LLVMType);
-            
-            // Store result
-            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
-            
-            return null;
-        }
-
         // Array element +=
         public string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
         {
@@ -124,48 +82,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             
             // Store result
             getCurrentBody().AppendLine($"  store {arrayVar.innerType} {resultValue}, {arrayVar.innerType}* {elementPtr}, align {GetAlignment(arrayVar.innerType)}");
-            
-            return null;
-        }
-
-        // Simple variable *=
-        public string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            Variable variable = variables[varName];
-            
-            // Load current value
-            string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
-            
-            // Evaluate expression
-            string exprValue = visitExpression(context.expr());
-            
-            // Perform multiplication
-            string resultValue = PerformCompoundOperation(currentValue, exprValue, "*=", variable.LLVMType);
-            
-            // Store result
-            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
-            
-            return null;
-        }
-
-        // Simple variable /=
-        public string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            Variable variable = variables[varName];
-            
-            // Load current value
-            string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
-            
-            // Evaluate expression
-            string exprValue = visitExpression(context.expr());
-            
-            // Perform division
-            string resultValue = PerformCompoundOperation(currentValue, exprValue, "/=", variable.LLVMType);
-            
-            // Store result
-            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
             
             return null;
         }

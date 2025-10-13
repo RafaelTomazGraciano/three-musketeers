@@ -24,24 +24,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             this.getExpressionType = getExpressionType;
         }
 
-        // Simple variable +=
-        public string? VisitAttPlusEquals([NotNull] ExprParser.AttPlusEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            int line = context.Start.Line;
-
-            return ValidateCompoundAssignment(varName, context.expr(), line);
-        }
-
-        // Simple variable -=
-        public string? VisitAttMinusEquals([NotNull] ExprParser.AttMinusEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            int line = context.Start.Line;
-
-            return ValidateCompoundAssignment(varName, context.expr(), line);
-        }
-
         // Array element +=
         public string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
         {
@@ -62,23 +44,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
         }
 
-        // Simple variable *=
-        public string? VisitAttMultiplyEquals([NotNull] ExprParser.AttMultiplyEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            int line = context.Start.Line;
-
-            return ValidateCompoundAssignment(varName, context.expr(), line);
-        }
-
-        // Simple variable /=
-        public string? VisitAttDivideEquals([NotNull] ExprParser.AttDivideEqualsContext context)
-        {
-            string varName = context.ID().GetText();
-            int line = context.Start.Line;
-
-            return ValidateCompoundAssignment(varName, context.expr(), line);
-        }
 
         // Array element *=
         public string? VisitSingleAttMultiplyEquals([NotNull] ExprParser.SingleAttMultiplyEqualsContext context)

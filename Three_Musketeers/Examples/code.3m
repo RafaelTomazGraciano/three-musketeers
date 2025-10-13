@@ -13,6 +13,8 @@ int main(int argc, char argv[]) {
     printf("\n=== Test Addition ===\n");
     int sum = add(10, 20);
     printf("10 + 20 = %d\n", sum);
+    sum++;
+    printf("Incremented sum: %d\n", sum);
 
     printf("\n=== Test Multiplication ===\n");
     int product = multiply(2, 3, 4);
@@ -41,7 +43,27 @@ int main(int argc, char argv[]) {
     printf("add(5,3) * multiply(2,2,2) = %d\n", result);
     
     printf("\n=== Test Recursion ===\n");
-    recursionPrint("Recursion implemented");
+    //recursionPrint("Recursion implemented");
+
+    printf("\n=== Test Pointers ===\n");
+    int *pointer;
+    int *saved_pointer;
+    int **other_pointer;
+    int test = 5;
+    pointer = malloc(5);
+    saved_pointer = pointer;
+    pointer[1] = 5;
+    printf("Pointer[1] = %d\n", pointer[1]);
+    printf("Trying semantic warning\n");
+    pointer = malloc(test);
+    free(pointer);
+    pointer = &test;
+    printf("Test before pointer derref: %d\n", test);
+    (*pointer) = 12;
+    printf("Test after pointer derref: %d\n", test);
+    other_pointer = &pointer;
+    (*(*other_pointer)) = 26;
+    printf("Test after pointer derref of derref: %d\n", test);
 
     printf("\n=== All Function Tests Completed ===\n");
 
