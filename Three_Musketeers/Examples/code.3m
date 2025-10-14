@@ -46,26 +46,16 @@ int main(int argc, char argv[]) {
     //recursionPrint("Recursion implemented");
 
     printf("\n=== Test Pointers ===\n");
-    int *pointer;
-    int *saved_pointer;
-    int **other_pointer;
-    int test = 5;
-    pointer = malloc(5);
-    saved_pointer = pointer;
-    pointer[1] = 5;
-    printf("Pointer[1] = %d\n", pointer[1]);
-    printf("Trying semantic warning\n");
-    pointer = malloc(test);
-    free(pointer);
-    pointer = &test;
-    printf("Test before pointer derref: %d\n", test);
-    (*pointer) = 12;
-    printf("Test after pointer derref: %d\n", test);
-    other_pointer = &pointer;
-    (*(*other_pointer)) = 26;
-    printf("Test after pointer derref of derref: %d\n", test);
+    int *ptrResult;
+    int original;
+    int pointer;
 
-    printf("\n=== All Function Tests Completed ===\n");
+    pointer = 5;
+    original = 10;
+
+    ptrResult = testPointers(&original, 3);
+    printf("Return pointer[1]: %d\n", ptrResult[1]);
+    free(ptrResult);
 
     return 0;
 }
@@ -111,4 +101,33 @@ void recursionPrint(string message) {
     recursionPrint(message);
 }
 
-// === MAIN TESTS ===
+int *testPointers(int *inputPtr, int size) {
+    int *pointer;
+    int *saved_pointer;
+    int **other_pointer;
+    int temp;
+
+    temp = 5;
+    pointer = malloc(size);
+    saved_pointer = inputPtr;
+
+    pointer[0] = 10;
+    pointer[1] = 20;
+
+    printf("Pointer[0] = %d\n", pointer[0]);
+    printf("Pointer[1] = %d\n", pointer[1]);
+
+    ( *inputPtr ) = 99;
+    printf("After deref inputPtr: %d\n", ( *inputPtr ));
+
+    other_pointer = &pointer;
+    ( * ( *other_pointer ) ) = 77;
+    printf("Pointer[0] after double deref: %d\n", pointer[0]);
+
+    pointer = malloc(5);
+    pointer[1] = 33;
+    printf("Pointer[1] after reallocation: %d\n", pointer[1]);
+
+    free(pointer);
+    return saved_pointer;
+}

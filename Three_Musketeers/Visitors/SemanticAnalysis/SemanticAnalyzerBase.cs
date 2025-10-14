@@ -38,6 +38,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             // Get return type
             var returnTypeCtx = context.function_return();
             string returnType = "";
+            int returnPointerLevel = returnTypeCtx.POINTER()?.Length ?? 0;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -67,7 +68,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             var functionInfo = new FunctionInfo
             {
                 returnType = returnType,
-                parameters = new List<(string, string)>(),
+                returnPointerLevel = returnPointerLevel,
+                parameters = new List<(string, string, int)>(),
                 hasReturnStatement = false
             };
 
@@ -77,22 +79,36 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 var types = argsCtx.type();
                 var ids = argsCtx.ID();
+                var allPointers = argsCtx.POINTER();
 
                 HashSet<string> paramNames = new HashSet<string>();
+                int pointerIndex = 0;
 
                 for (int i = 0; i < types.Length; i++)
                 {
                     string paramType = GetTypeStringFromContext(types[i]);
                     string paramName = ids[i].GetText();
 
+                    int pointerLevel = 0;
+                    int typeEndPos = types[i].Stop.StopIndex;
+                    int idStartPos = ids[i].Symbol.StartIndex;
+
+                    while (pointerIndex < allPointers.Length && 
+                    allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                    allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                    {
+                        pointerLevel++;
+                        pointerIndex++;
+                    }
+                    
                     if (paramNames.Contains(paramName))
                     {
                         ReportError(line, $"Parameter '{paramName}' duplicated in function '{functionName}'");
                         continue;
                     }
-
+                    
                     paramNames.Add(paramName);
-                    functionInfo.parameters?.Add((paramType, paramName));
+                    functionInfo.parameters?.Add((paramType, paramName, pointerLevel));
                 }
             }
 
