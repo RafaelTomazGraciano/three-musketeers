@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Visitors.SemanticAnalysis;
@@ -13,11 +12,8 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
 using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
-<<<<<<< HEAD
 using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
-=======
 using Three_Musketeers.Utils;
->>>>>>> origin/three-musketeers-dev
 
 namespace Three_Musketeers.Visitors
 {
