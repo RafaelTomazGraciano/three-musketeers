@@ -1,4 +1,20 @@
+// Global variables for testing
+int globalCounter = 0;
+double globalValue = 3.14;
+string globalMessage = "Global variable test";
+int *ptest;
+
 int main(int argc, char argv[]) {
+    ptest = malloc(5);
+    ptest[1] = 27;
+    printf("\n=== Test Global Variables ===\n");
+    printf("Global counter: %d\n", globalCounter);
+    printf("Global value: %.2f\n", globalValue);
+    printf("Global Pointer[1] = %d\n", ptest[1]);
+    puts(globalMessage);
+    globalCounter = 42;
+    printf("Modified global counter: %d\n", globalCounter);
+
     printf("\n=== Test Arguments ===\n");
     printf("Argument count: %d\n", argc);
     puts("Arguments list:");
@@ -41,34 +57,17 @@ int main(int argc, char argv[]) {
     printf("\n=== Test Expression with Function ===\n");
     int result = add(5, 3) * multiply(2, 2, 2);
     printf("add(5,3) * multiply(2,2,2) = %d\n", result);
-    
+
     printf("\n=== Test Recursion ===\n");
-    //recursionPrint("Recursion implemented");
+    // recursionPrint("Recursion implemented");
 
     printf("\n=== Test Pointers ===\n");
-    int *pointer;
-    int *saved_pointer;
-    int **other_pointer;
-    int test = 5;
-    pointer = malloc(5);
-    saved_pointer = pointer;
-    pointer[1] = 5;
-    printf("Pointer[1] = %d\n", pointer[1]);
-    printf("Trying semantic warning\n");
-    pointer = malloc(test);
-    free(pointer);
-    pointer = &test;
-    printf("Test before pointer derref: %d\n", test);
-    (*pointer) = 12;
-    printf("Test after pointer derref: %d\n", test);
-    other_pointer = &pointer;
-    (*(*other_pointer)) = 26;
-    printf("Test after pointer derref of derref: %d\n", test);
+    testPointers();
 
     printf("\n=== All Function Tests Completed ===\n");
-
     return 0;
 }
+
 // Test Simple void function
 void printWelcome() {
     puts("=== Three Musketeers Function Tests ===");
@@ -105,10 +104,33 @@ char getFirstLetter(int code) {
     return letter;
 }
 
-//recursion
 void recursionPrint(string message) {
     puts(message);
     recursionPrint(message);
 }
 
-// === MAIN TESTS ===
+//pointer tests function
+void testPointers() {
+    int *pointer;
+    int *saved_pointer;
+    int **other_pointer;
+    int test = 5;
+    
+    pointer = malloc(5);
+    saved_pointer = pointer;
+    pointer[1] = 5;
+    printf("Pointer[1] = %d\n", pointer[1]);
+    
+    printf("Trying semantic warning\n");
+    pointer = malloc(test);
+    free(pointer);
+    
+    pointer = &test;
+    printf("Test before pointer derref: %d\n", test);
+    (*pointer) = 12;
+    printf("Test after pointer derref: %d\n", test);
+    
+    other_pointer = &pointer;
+    (*(*other_pointer)) = 26;
+    printf("Test after pointer derref of derref: %d\n", test);
+}

@@ -15,10 +15,22 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         private Func<ExprParser.ExprContext, string> visitExpression;
         private Func<string, int> getAlignment;
         private Func<string, string> getLLVMType;
+        private Func<string?> getCurrentFunctionName;
+        private Func<string, Variable?> getVariableWithScope;
 
         private bool isDeclared;
 
-        public DynamicMemoryCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, Variable> variables, StringBuilder declarations, Dictionary<string, string> registerTypes, Func<string> nextRegister, Func<ExprParser.ExprContext, string> visitExpression, Func<string, int> getAlignment, Func<string, string> getLLVMType)
+        public DynamicMemoryCodeGenerator(
+            Func<StringBuilder> getCurrentBody, 
+            Dictionary<string, Variable> variables, 
+            StringBuilder declarations, 
+            Dictionary<string, string> registerTypes, 
+            Func<string> nextRegister, 
+            Func<ExprParser.ExprContext, string> visitExpression, 
+            Func<string, int> getAlignment, 
+            Func<string, string> getLLVMType, 
+            Func<string?> getCurrentFunctionName,
+            Func<string, Variable?> getVariableWithScope)
         {
             this.getCurrentBody = getCurrentBody;
             this.variables = variables;
@@ -28,6 +40,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             this.visitExpression = visitExpression;
             this.getAlignment = getAlignment;
             this.getLLVMType = getLLVMType;
+            this.getCurrentFunctionName = getCurrentFunctionName;
+            this.getVariableWithScope = getVariableWithScope;
             isDeclared = false;
         }
 
@@ -47,32 +61,33 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string mallocReg = nextRegister();
             int size = 0;
 
-            // Caso 1: Declaração com tipo (int *pointer = malloc(5))
+            // Declaration with type (int *pointer = malloc(5))
             if (type != null)
             {
                 varType = type.GetText();
                 llvmType = getLLVMType(varType);
                 size = getAlignment(llvmType);
                 register = nextRegister();
-                
-                // Constrói o tipo LLVM com os ponteiros
+
+                // Build LLVM type with pointers
                 llvmType = $"{llvmType}{context.POINTER().Aggregate("", (a, b) => a + b.GetText())}";
-                
+
                 mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
                 mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
                 mainBody.AppendLine($"  {register} = bitcast i8* {mallocReg} to {llvmType}");
-                
+
                 registerTypes[register] = llvmType;
                 variables[varName] = new Variable(varName, varType, llvmType, register);
                 return null;
             }
-            
-            // Caso 2: Atribuição a variável existente (pointer = malloc(5))
-            Variable variable = variables[varName];
+
+            // Case 2: Assignment to existing variable (pointer = malloc(5))
+
+            Variable? variable = getVariableWithScope(varName)!;
             register = variable.register;
             llvmType = variable.LLVMType;
             
-            // Remove os '*' para calcular o tamanho do tipo base
+            // Remove the '*' to calculate the base type size
             string baseType = llvmType.TrimEnd('*');
             size = getAlignment(baseType);
             
@@ -89,14 +104,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         {
             var mainBody = getCurrentBody();
             Declare();
+
+            string varName = context.ID().GetText();
+
+            Variable? variable = getVariableWithScope(varName)!;
             
-            Variable variable = variables[context.ID().GetText()];
-            
-            // CORREÇÃO: Primeiro carrega o valor do ponteiro
+            // load the pointer value first
             string loadReg = nextRegister();
             mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}");
             
-            // Depois faz bitcast do valor carregado
+            // bitcast the loaded value
             string bitcastReg = nextRegister();
             mainBody.AppendLine($"  {bitcastReg} = bitcast {variable.LLVMType} {loadReg} to i8*");
             mainBody.AppendLine($"  call void @free(i8* {bitcastReg})");
