@@ -10,26 +10,23 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class PutsCodeGenerator
     {
         private readonly StringBuilder declarations;
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Func<StringBuilder?> getCurrentBody;
         private readonly VariableResolver variableResolver;
         private bool putsInitialized = false;
 
         public PutsCodeGenerator(
             StringBuilder declarations,
-            StringBuilder mainBody,
+            Func<StringBuilder> getCurrentBody, 
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
-            Func<StringBuilder?> getCurrentBody,
             VariableResolver variableResolver)
         {
             this.declarations = declarations;
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody; 
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
-            this.getCurrentBody = getCurrentBody;
             this.variableResolver = variableResolver;
         }
 
@@ -37,7 +34,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         {
             InitializePuts();
 
-            StringBuilder body = getCurrentBody() ?? mainBody;
+            StringBuilder body = getCurrentBody();
 
             //puts(ID) or puts(ID[index])
             if (context.ID() != null)

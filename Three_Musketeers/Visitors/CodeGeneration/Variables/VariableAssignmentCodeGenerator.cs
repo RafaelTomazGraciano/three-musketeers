@@ -59,31 +59,40 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 {
                     string globalReg = $"@{varName}";
 
-                    if (!variables.ContainsKey(varName))
-                    {
-                        return null;
-                    }
-                    
                     if (context.expr() != null)
                     {
-                        // For global variables with initialization expression
-                        // We need to evaluate the expression and store the result
+                        // Evaluate expression first to get the value
                         string initValue = visitExpression(context.expr());
                         
                         if (varType == "string")
                         {
-                            // String assignment to global
-                            if (registerTypes.TryGetValue(initValue, out string? valueType) && valueType == "i8*")
-                            {
-                                getCurrentBody().AppendLine($"  store i8* {initValue}, i8** {globalReg}, align 8");
-                            }
+                            // String: store pointer directly in declaration
+                            declarations.AppendLine($"{globalReg} = global i8* {initValue}, align 8");
+                            variables[varName] = new Variable(varName, varType, "i8*", globalReg);
                         }
                         else
                         {
-                            // Other types: store the value
-                            getCurrentBody().AppendLine($"  store {llvmType} {initValue}, {llvmType}* {globalReg}, align {GetAlignment(llvmType)}");
+                            // Other types: store value directly
+                            string valueType = registerTypes[initValue];
+                            declarations.AppendLine($"{globalReg} = global {valueType} {initValue}, align {GetAlignment(valueType)}");
+                            variables[varName] = new Variable(varName, varType, valueType, globalReg);
                         }
                     }
+                    else
+                    {
+                        // No initialization - use zeroinitializer
+                        if (varType == "string")
+                        {
+                            declarations.AppendLine($"{globalReg} = global i8* null, align 8");
+                            variables[varName] = new Variable(varName, varType, "i8*", globalReg);
+                        }
+                        else
+                        {
+                            declarations.AppendLine($"{globalReg} = global {llvmType} zeroinitializer, align {GetAlignment(llvmType)}");
+                            variables[varName] = new Variable(varName, varType, llvmType, globalReg);
+                        }
+                    }
+
                     return null;
                 }
                 
@@ -302,12 +311,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string llvmType = getLLVMType(varType) + pointers;
             
             string? currentFunc = getCurrentFunctionName();
-            
-            Console.WriteLine($"=== VisitDec (PointerDec) ===");
-            Console.WriteLine($"Variable name: {varName}");
-            Console.WriteLine($"Variable type: {varType}");
-            Console.WriteLine($"LLVM type: {llvmType}");
-            Console.WriteLine($"Current function: {currentFunc ?? "NULL (global scope)"}");
 
             if (currentFunc == null)
             {
@@ -315,8 +318,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 string globalReg = $"@{varName}";
                 declarations.AppendLine($"{globalReg} = global {llvmType} null, align 8");
                 variables[varName] = new Variable(varName, varType, llvmType, globalReg);
-                Console.WriteLine($"Registered global variable: {varName} with register {globalReg}");
-                Console.WriteLine($"Variables count: {variables.Count}");
             }
             else
             {
@@ -327,7 +328,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 variables[actualVarName] = new Variable(varName, varType, llvmType, register);
                 WriteAlloca(register, llvmType, GetAlignment(llvmType));
                 registerTypes[register] = llvmType + "*";
-                Console.WriteLine($"Registered local variable: {actualVarName}");
             }
             
             return null;

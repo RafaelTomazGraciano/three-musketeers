@@ -2,13 +2,13 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 {
-    class DynamicMemoryCodeGenerator
+    public class DynamicMemoryCodeGenerator
     {
         private Func<StringBuilder> getCurrentBody;
-        private Dictionary<string, Variable> variables;
         private StringBuilder declarations;
         private Dictionary<string, string> registerTypes;
         private Func<string> nextRegister;
@@ -16,24 +16,23 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         private Func<string, int> getAlignment;
         private Func<string, string> getLLVMType;
         private Func<string?> getCurrentFunctionName;
-        private Func<string, Variable?> getVariableWithScope;
-
+        private VariableResolver variableResolver;
+        private Dictionary<string, Variable> variables; 
         private bool isDeclared;
 
         public DynamicMemoryCodeGenerator(
-            Func<StringBuilder> getCurrentBody, 
-            Dictionary<string, Variable> variables, 
-            StringBuilder declarations, 
-            Dictionary<string, string> registerTypes, 
-            Func<string> nextRegister, 
-            Func<ExprParser.ExprContext, string> visitExpression, 
-            Func<string, int> getAlignment, 
-            Func<string, string> getLLVMType, 
+            Func<StringBuilder> getCurrentBody,
+            StringBuilder declarations,
+            Dictionary<string, string> registerTypes,
+            Func<string> nextRegister,
+            Func<ExprParser.ExprContext, string> visitExpression,
+            Func<string, int> getAlignment,
+            Func<string, string> getLLVMType,
             Func<string?> getCurrentFunctionName,
-            Func<string, Variable?> getVariableWithScope)
+            VariableResolver variableResolver,
+            Dictionary<string, Variable> variables) 
         {
             this.getCurrentBody = getCurrentBody;
-            this.variables = variables;
             this.declarations = declarations;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
@@ -41,7 +40,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             this.getAlignment = getAlignment;
             this.getLLVMType = getLLVMType;
             this.getCurrentFunctionName = getCurrentFunctionName;
-            this.getVariableWithScope = getVariableWithScope;
+            this.variableResolver = variableResolver;
+            this.variables = variables; // ✅ Adicionar
             isDeclared = false;
         }
 
@@ -90,7 +90,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 
             // Case 2: Assignment to existing variable (pointer = malloc(5))
 
-             Variable? variable = getVariableWithScope(varName);
+             Variable? variable = variableResolver.GetVariable(varName);
     
             if (variable == null)
             {
@@ -119,7 +119,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 
             string varName = context.ID().GetText();
 
-            Variable? variable = getVariableWithScope(varName)!;
+            Variable? variable = variableResolver.GetVariable(varName)!;
             
             // load the pointer value first
             string loadReg = nextRegister();
