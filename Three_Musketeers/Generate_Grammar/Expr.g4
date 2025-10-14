@@ -48,7 +48,7 @@ function
     ;
 
 function_return
-    : type
+    : type POINTER*
     | VOID
     ;
 
@@ -87,7 +87,7 @@ attVar
     ;
 
 args
-    : type ID (',' type ID)*
+    : type POINTER* ID (',' type POINTER* ID)*
     ;
 
 index

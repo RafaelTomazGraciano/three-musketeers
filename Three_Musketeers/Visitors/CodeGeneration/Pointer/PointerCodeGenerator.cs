@@ -43,6 +43,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 string pointerType = baseType + "*";
 
                 registerTypes[var.register] = pointerType;
+
                 return var.register;
             }
 

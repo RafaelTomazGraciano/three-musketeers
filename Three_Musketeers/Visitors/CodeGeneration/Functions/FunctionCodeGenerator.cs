@@ -50,6 +50,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
         {
             var returnTypeCtx = context.function_return();
             string llvmReturnType;
+            int returnPointerLevel = returnTypeCtx.POINTER()?.Length ?? 0;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -59,10 +60,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 string basetype = GetTypeString(returnTypeCtx.type());
                 llvmReturnType = getLLVMType(basetype);
-                
+
                 if (basetype == "string")
                 {
                     llvmReturnType = "i8*";
+                }
+                //add * for each pointer level
+                for (int i = 0; i < returnPointerLevel; i++)
+                {
+                    llvmReturnType += "*";
                 }
             }
             else
@@ -78,7 +84,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 var funcInfo = new FunctionInfo
                 {
                     returnType = GetTypeString(returnTypeCtx.type()),
-                    parameters = new List<(string, string)>()
+                    returnPointerLevel = returnPointerLevel,
+                    parameters = new List<(string, string, int)>()
                 };
 
                 // Process parameters
@@ -87,12 +94,27 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 {
                     var types = argsCtx.type();
                     var ids = argsCtx.ID();
+                    var allPointers = argsCtx.POINTER();
+                    int pointerIndex = 0;
 
                     for (int i = 0; i < types.Length; i++)
                     {
                         string paramType = GetTypeString(types[i]);
                         string paramName = ids[i].GetText();
-                        funcInfo.parameters.Add((paramType, paramName));
+                        //pointers
+                        int pointerLevel = 0;
+                        int typeEndPos = types[i].Stop.StopIndex;
+                        int idStartPos = ids[i].Symbol.StartIndex;
+                        
+                        while (pointerIndex < allPointers.Length && 
+                            allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                            allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                        {
+                            pointerLevel++;
+                            pointerIndex++;
+                        }
+                        
+                        funcInfo.parameters.Add((paramType, paramName, pointerLevel));
                     }
                 }
 
@@ -105,6 +127,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             //get return type
             var returnTypeCtx = context.function_return();
             string llvmReturnType;
+            int returnPointerLevel = returnTypeCtx.POINTER()?.Length ?? 0;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -114,6 +137,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 string basetype = GetTypeString(returnTypeCtx.type());
                 llvmReturnType = getLLVMType(basetype);
+                
+                if (basetype == "string")
+                {
+                    llvmReturnType = "i8*";
+                }
+                
+                // Add * for pointer levels
+                for (int i = 0; i < returnPointerLevel; i++)
+                {
+                    llvmReturnType += "*";
+                }
             }
             else
             {
@@ -129,7 +163,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 var funcInfo = new FunctionInfo
                 {
                     returnType = GetTypeString(returnTypeCtx.type()),
-                    parameters = new List<(string, string)>()
+                    returnPointerLevel = returnPointerLevel,
+                    parameters = new List<(string, string, int)>()
                 };
                 declaredFunctions[functionName] = funcInfo;
             }
@@ -149,12 +184,37 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 var types = argsCtx.type();
                 var ids = argsCtx.ID();
+                var allPointers = argsCtx.POINTER();
+                int pointerIndex = 0;
 
                 for (int i = 0; i < types.Length; i++)
                 {
                     string paramType = GetTypeString(types[i]);
                     string llvmParamType = getLLVMType(paramType);
                     string paramName = ids[i].GetText();
+
+                    //count pointers
+                    int pointerLevel = 0;
+                    int typeEndPos = types[i].Stop.StopIndex;
+                    int idStartPos = ids[i].Symbol.StartIndex;
+
+                    while (pointerIndex < allPointers.Length &&
+                        allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                        allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                    {
+                        pointerLevel++;
+                        pointerIndex++;
+                    }
+                    
+                    if (paramType == "string")
+                    {
+                        llvmParamType = "i8*";
+                    }
+                    
+                    for (int j = 0; j < pointerLevel; j++)
+                    {
+                        llvmParamType += "*";
+                    }
 
                     //register parameter
                     string paramReg = $"%param.{paramName}";
@@ -173,6 +233,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 var ids = argsCtx.ID();
                 var types = argsCtx.type();
+                var allPointers = argsCtx.POINTER();
+                int pointerIndex = 0;
 
                 for (int i = 0; i < ids.Length; i++)
                 {
@@ -180,9 +242,28 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                     string paramType = GetTypeString(types[i]);
                     string llvmParamType = getLLVMType(paramType);
 
+                    // Count pointers 
+                    int pointerLevel = 0;
+                    int typeEndPos = types[i].Stop.StopIndex;
+                    int idStartPos = ids[i].Symbol.StartIndex;
+
+                    while (pointerIndex < allPointers.Length &&
+                        allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                        allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                    {
+                        pointerLevel++;
+                        pointerIndex++;
+                    }
+
                     if (paramType == "string")
                     {
                         llvmParamType = "i8*";
+                    }
+
+                    // Add * for each pointer level
+                    for (int j = 0; j < pointerLevel; j++)
+                    {
+                        llvmParamType += "*";
                     }
 
                     string allocaReg = NextFunctionRegister();

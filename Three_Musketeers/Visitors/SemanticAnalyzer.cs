@@ -13,7 +13,11 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
 using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
+<<<<<<< HEAD
 using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
+=======
+using Three_Musketeers.Utils;
+>>>>>>> origin/three-musketeers-dev
 
 namespace Three_Musketeers.Visitors
 {
@@ -72,13 +76,15 @@ namespace Three_Musketeers.Visitors
             mainFunctionSemanticAnalyzer = new MainFunctionSemanticAnalyzer(symbolTable, ReportError, Visit);
             functionSemanticAnalyzer = new FunctionSemanticAnalyzer(symbolTable, declaredFunctions, ReportError, ReportWarning,
                 GetExpressionType, Visit);
-            functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType, Visit);
+            functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType,
+                Visit, symbolTable);
             //Dynamic memory
             dynamicMemorySemanticAnalyzer = new DynamicMemorySemanticAnalyzer(symbolTable, ReportError, ReportWarning, Visit);
             // increment/decrement
             incrementDecrementSemanticAnalyzer = new IncrementDecrementSemanticAnalyzer(ReportError, ReportWarning, symbolTable);
             // compound assignment
-            compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable, GetExpressionType);
+            compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable,
+                GetExpressionType);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -102,7 +108,7 @@ namespace Three_Musketeers.Visitors
             string? exprType = Visit(context.expr());
             if (type == null || exprType == null) return null;
 
-            if (!TwoTypesArePermitedToCast(type, exprType))
+            if (!CastTypes.TwoTypesArePermitedToCast(type, exprType))
             {
                 ReportError(context.Start.Line,
                     $"Cannot assign value of type '{exprType}' to variable of type '{type}'");
@@ -122,7 +128,7 @@ namespace Three_Musketeers.Visitors
             string? arrayType = variableAssignmentSemanticAnalyzer.VisitSingleAtt(context);
             string? exprType = Visit(context.expr());
             if (arrayType == null || exprType == null) return null;
-            if (!TwoTypesArePermitedToCast(arrayType, exprType))
+            if (!CastTypes.TwoTypesArePermitedToCast(arrayType, exprType))
             {
                 ReportError(context.Start.Line,
                     $"Cannot assign value of type '{exprType}' to array element of type '{arrayType}'");
@@ -309,20 +315,6 @@ namespace Three_Musketeers.Visitors
         public override string VisitPostfixDecrementArray([NotNull] ExprParser.PostfixDecrementArrayContext context)
         {
             return incrementDecrementSemanticAnalyzer.VisitPostfixDecrementArray(context) ?? "int";
-        }
-        
-        private static bool TwoTypesArePermitedToCast(string type1, string type2)
-        {
-            bool anyIsDouble = type1 == "double" || type2 == "double";
-            bool anyIsChar = type1 == "char" || type2 == "char";
-            bool anyIsInt = type1 == "int" || type2 == "int";
-            bool anyIsBool = type1 == "bool" || type2 == "bool";
-            bool anyIsString = type1 == "string" || type2 == "string";
-            if (type1 == type2) return true;
-            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
-            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
-            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
-            return false;
         }
 
         public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)

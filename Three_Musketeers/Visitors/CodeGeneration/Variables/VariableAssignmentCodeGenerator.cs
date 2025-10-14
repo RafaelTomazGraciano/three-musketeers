@@ -173,7 +173,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                     registerTypes[ptrReg] = "i8*";
                     return ptrReg;
                 }
-                // Se é i8* (parâmetro de string), apenas faz load
+                // if is parameter string, load
                 else if (variable.LLVMType == "i8*")
                 {
                     string loadRegStr = nextRegister();
@@ -184,7 +184,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
 
             string loadReg = nextRegister();
-            getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+
+            //pinter handling
+            if (variable.LLVMType.EndsWith("*"))
+            {
+                int alignment = GetAlignment(variable.LLVMType);
+                getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {alignment}");
+            }
+            //regular types
+            else
+            {
+                getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            }
+            
             registerTypes[loadReg] = variable.LLVMType;
             return loadReg;
         }
@@ -271,37 +283,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
             return null;
         }
-
-        // public string? VisitDec(ExprParser.PointerDecContext context)
-        // {
-        //     string varType = context.type().GetText();
-        //     string varName = context.ID().GetText();
-        //     string pointers = context.POINTER().Aggregate("", (a, b) => a + b.GetText());
-        //     string llvmType = getLLVMType(varType) + pointers;
-        //     string register = nextRegister();
-
-        //     string? currentFunc = getCurrentFunctionName();
-        //     string actualVarName = currentFunc != null ? $"@{currentFunc}.{varName}" : varName;
-
-        //     if (currentFunc == null)
-        //     {
-        //         // global pointer
-        //         string globalReg = $"@{varName}";
-        //         declarations.AppendLine($"{globalReg} = global {llvmType} null, align 8");
-        //         variables[varName] = new Variable(varName, varType, llvmType, globalReg);
-        //     }
-        //     else
-        //     {
-        //         // local pointer
-        //         register = nextRegister();
-        //         actualVarName = $"@{currentFunc}.{varName}";
-        
-        //         variables[actualVarName] = new Variable(varName, varType, llvmType, register);
-        //         WriteAlloca(register, llvmType, GetAlignment(llvmType));
-        //         registerTypes[register] = llvmType + "*";
-        //     }
-        //     return null;
-        // }
 
         public string? VisitDec(ExprParser.PointerDecContext context)
         {

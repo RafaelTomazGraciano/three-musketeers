@@ -194,11 +194,6 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
 
-        // public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
-        // {
-        //     return variableAssignmentCodeGenerator.VisitDec(context);
-        // }
-
         public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
             return variableAssignmentCodeGenerator.VisitDec(context);
