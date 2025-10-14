@@ -196,9 +196,18 @@ namespace Three_Musketeers.Visitors
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
 
+        // public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
+        // {
+        //     return variableAssignmentCodeGenerator.VisitDec(context);
+        // }
+
         public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
-            return variableAssignmentCodeGenerator.VisitDec(context);
+            Console.WriteLine($"VisitPointerDec called for: {context.GetText()}");
+            string? result = variableAssignmentCodeGenerator.VisitDec(context);
+            Console.WriteLine($"Variable registered: {context.ID().GetText()}");
+            Console.WriteLine($"Variables in dictionary: {string.Join(", ", variables.Keys)}");
+            return result;
         }
 
         public override string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)

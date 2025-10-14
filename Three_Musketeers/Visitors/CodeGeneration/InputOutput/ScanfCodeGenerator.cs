@@ -59,7 +59,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             {
                 string varName = idToken.GetText();
 
-                Variable variable = variableResolver.GetVariable(varName);
+                Variable variable = variableResolver.GetVariable(varName)!;
                 string llvmType = getLLVMType(variable.type);
 
                 string formatSpec = GetFormatSpecifier(variable.type);

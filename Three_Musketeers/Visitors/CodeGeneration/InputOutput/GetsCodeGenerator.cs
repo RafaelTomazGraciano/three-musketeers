@@ -31,7 +31,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         {
             string varName = context.ID().GetText();
 
-            Variable variable = variableResolver.GetVariable(varName);
+            Variable variable = variableResolver.GetVariable(varName)!;
 
             InitializeFgets();
 

@@ -59,6 +59,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string i64ToUse = CastToI64(expr, registerTypes[expr]);
             string mulReg = nextRegister();
             string mallocReg = nextRegister();
+            string bitcastReg = nextRegister();
             int size = 0;
 
             // Declaration with type (int *pointer = malloc(5))
@@ -72,30 +73,41 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 // Build LLVM type with pointers
                 llvmType = $"{llvmType}{context.POINTER().Aggregate("", (a, b) => a + b.GetText())}";
 
+                string? currentFunc = getCurrentFunctionName();
+                string actualVarName = currentFunc != null ? $"@{currentFunc}.{varName}" : varName;
+
+                mainBody.AppendLine($"  {register} = alloca {llvmType}, align 8");
                 mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
                 mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
-                mainBody.AppendLine($"  {register} = bitcast i8* {mallocReg} to {llvmType}");
+                
+                mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
+                mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}, align 8");
 
-                registerTypes[register] = llvmType;
-                variables[varName] = new Variable(varName, varType, llvmType, register);
+                registerTypes[register] = llvmType + "*";
+                variables[actualVarName] = new Variable(varName, varType, llvmType, register);
                 return null;
             }
 
             // Case 2: Assignment to existing variable (pointer = malloc(5))
 
-            Variable? variable = getVariableWithScope(varName)!;
+             Variable? variable = getVariableWithScope(varName);
+    
+            if (variable == null)
+            {
+                throw new Exception($"Variable '{varName}' not found in current scope");
+            }
+            
             register = variable.register;
             llvmType = variable.LLVMType;
             
             // Remove the '*' to calculate the base type size
             string baseType = llvmType.TrimEnd('*');
             size = getAlignment(baseType);
-            
-            string bitcastReg = nextRegister();
+
             mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
             mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
             mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
-            mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}");
+            mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}, align 8");
             
             return null;
         }
