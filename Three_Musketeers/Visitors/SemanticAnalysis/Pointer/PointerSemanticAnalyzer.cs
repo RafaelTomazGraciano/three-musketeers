@@ -25,29 +25,21 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
         {
             var exprContext = context.expr();
             int line = context.Start.Line;
-
             if (exprContext is ExprParser.VarContext varContext)
             {
                 string name = varContext.ID().GetText();
                 Symbol? symbol = symbolTable.GetSymbol(varContext.ID().GetText());
-
                 if (symbol == null)
                 {
                     reportError(line, $"Variable '{name}' was not declared");
                     return null;
                 }
 
-                if (symbol is not PointerSymbol || symbol.type != "array")
+                if (symbol.type != "pointer" || symbol.type != "array")
                 {
                     reportError(line, $"Cannot derref a variable of type {symbol.type}");
                     return null;
                 }
-
-                if (symbol is PointerSymbol pointerSymbol)
-                {
-                    return pointerSymbol.innerType;
-                }
-
                 return symbol.type;
             }
             
@@ -57,29 +49,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
         public string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
         {
             var exprContext = context.expr();
-            int line = context.Start.Line;
-
-            if (exprContext is ExprParser.VarContext varContext)
-            {
-                string varName = varContext.ID().GetText();
-                Symbol? symbol = symbolTable.GetSymbol(varName);
-                
-                if (symbol == null)
-                {
-                    reportError(line, $"Variable '{varName}' was not declared");
-                    return null;
-                }
-
-                return "pointer";
-            }
-            
             if (exprContext is ExprParser.ExprAddressContext)
             {
                 reportError(context.Start.Line, "Cannot get an address of an andress");
                 return null;
             }
 
-            return Visit(context.expr());
+            return "pointer";
         }
         
         public string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
@@ -87,7 +63,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
             string varName = context.ID().GetText();
             int line = context.Start.Line;
             Symbol? symbol = symbolTable.GetSymbol(varName);
-
             if (symbol == null)
             {
                 reportError(line, $"Variable '{varName}' was not declared");
@@ -98,14 +73,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 reportError(line, $"Variable '{varName}' is not a pointer");
                 return null;
             }
-
             PointerSymbol pointer = (PointerSymbol)symbol;
-
-            if (!pointer.isDynamic)
-            {
-                reportWarning(line, $"Freeing pointer '{varName}' that was not allocated with malloc");
-            }
-
             pointer.isDynamic = false;
             pointer.isInitializated = false;
             return null;

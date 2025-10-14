@@ -12,23 +12,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Func<ExprParser.ExprContext, string> visitExpression;
-        private readonly Func<string, Variable?> getVariableWithScope;
 
-        public PointerCodeGenerator(
-            Func<StringBuilder> getCurrentBody, 
-            Dictionary<string, Variable> variables, 
-            Dictionary<string, string> registerTypes, 
-            Func<string> nextRegister, 
-            Func<ExprParser.ExprContext, string> visitExpression,
-            Func<string, Variable?> getVariableWithScope)
+        private readonly Func<ExprParser.ExprContext, string> visitExpression;
+
+        public PointerCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, Variable> variables, Dictionary<string, string> registerTypes, Func<string> nextRegister, Func<ExprParser.ExprContext, string> visitExpression)
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.variables = variables;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
-            this.getVariableWithScope = getVariableWithScope;
         }
 
         public string VisitExprAddress(ExprParser.ExprAddressContext context)
@@ -39,7 +32,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             if (exprCtx is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
-                Variable? var = getVariableWithScope(varName)!;
+                Variable var = variables[varName];
 
                 string baseType = var.LLVMType;
                 string pointerType = baseType + "*";

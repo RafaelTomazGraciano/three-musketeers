@@ -24,64 +24,35 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
         {
             var typeToken = context.type();
             string varName = context.ID().GetText();
-            int amountOfPointers = context.POINTER().Length;
+            int amountOfPointer = context.POINTER().Length;
             int line = context.Start.Line;
-            string sizeExprType = VisitExpr(context.expr());
-
-             if (sizeExprType == "string" || sizeExprType == "double")
-            {
-                reportError(line, $"Expected integer type for malloc size, not '{sizeExprType}'");
-                return null;
-            }
 
             if (VisitExpr(context.expr()) == "string")
             {
                 reportError(line, $"Expected char, int or double not string");
             }
 
-            // Case 1: Malloc with type declaration (int *pointer = malloc(5))
-            if (typeToken != null)
+            if (typeToken == null)
             {
-                string varType = typeToken.GetText();
-                
-                // Create and register the pointer symbol
-                var pointerSymbol = new PointerSymbol(varName, varType, line, amountOfPointers, isDynamic: true);
-                pointerSymbol.isInitializated = true;
-                
-                if (!symbolTable.AddSymbol(pointerSymbol))
+                var entry = symbolTable.GetSymbol(varName);
+                if (entry == null)
                 {
-                    reportError(line, $"Variable '{varName}' has already been declared");
+                    reportError(line, $"Variable '{varName}' was no declared");
                     return null;
                 }
-
+                var symbol = (PointerSymbol)entry;
+                if (symbol.isDynamic)
+                {
+                    reportWarning(line, $"Possible memory leak on line {line}");
+                }
+                symbol.isInitializated = true;
+                symbol.isDynamic = true;
                 return "pointer";
             }
 
-            // Case 2: Malloc assignment to existing variable (pointer = malloc(5))
-            Symbol? symbol = symbolTable.GetSymbol(varName);
-            
-            if (symbol == null)
-            {
-                reportError(line, $"Variable '{varName}' was not declared");
-                return null;
-            }
-
-            if (symbol is not PointerSymbol)
-            {
-                reportError(line, $"Variable '{varName}' is not a pointer type, cannot assign malloc result");
-                return null;
-            }
-
-            PointerSymbol pointerVar = (PointerSymbol)symbol;
-            
-            // Warn about potential memory leak if reallocating
-            if (pointerVar.isDynamic)
-            {
-                reportWarning(line, $"Possible memory leak: pointer '{varName}' is being reallocated without freeing previous allocation");
-            }
-
-            pointerVar.isDynamic = true;
-            pointerVar.isInitializated = true;
+            var pointer = new PointerSymbol(varName, typeToken.GetText(), amountOfPointer, line, true);
+            pointer.isInitializated = true;
+            symbolTable.AddSymbol(pointer);
 
             return "pointer";
         }

@@ -6,9 +6,8 @@ start
 
 prog
     : stm
+    | newType
     | function
-    | declaration EOL
-    | att  EOL
     ;
 
 mainFunction
@@ -79,6 +78,10 @@ attVar
     | ID index* '-=' expr                   # SingleAttMinusEquals
     | ID index* '*=' expr                   # SingleAttMultiplyEquals
     | ID index* '/=' expr                   # SingleAttDivideEquals
+    ;
+
+newType
+    : 'type' ID 'as' type EOL
     ;
 
 args

@@ -15,20 +15,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         {
             CollectFunctionSignatures(context);
 
-            // global declarations
-            var allProgs = context.prog();
-            foreach (var prog in allProgs)
-            {
-                if (prog.declaration() != null)
-                {
-                    Visit(prog.declaration());
-                }
-                else if (prog.att() != null)
-                {
-                    Visit(prog.att());
-                }
-            }
-
             return base.VisitStart(context);
         }
 

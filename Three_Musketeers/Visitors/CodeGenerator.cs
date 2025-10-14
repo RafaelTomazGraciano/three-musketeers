@@ -94,9 +94,8 @@ namespace Three_Musketeers.Visitors
             comparisonCodeGenerator = new ComparisonCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit);
             //pointers & dynamic memory
-            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, variables, registerTypes, NextRegister, Visit, variableAssignmentCodeGenerator.GetVariableWithScope);
-            dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister,
-            Visit, GetAlignment, GetLLVMType, () => functionCodeGenerator?.GetCurrentFunctionName(), variableAssignmentCodeGenerator.GetVariableWithScope);
+            pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, variables, registerTypes, NextRegister, Visit);
+            dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister, Visit, GetAlignment, GetLLVMType);
 
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(

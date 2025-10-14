@@ -54,7 +54,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         public override string? VisitStart(ExprParser.StartContext context)
         {
-            // collect Signatures
+            // collect SIgnatures
             var functions = context.prog().Where(p => p.function() != null).Select(p => p.function()).ToList();
             foreach (var func in functions)
             {
@@ -67,20 +67,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                 functionCodeGenerator!.VisitFunction(func);
             }
 
-            // Process global declarations and functions before main
             foreach (var prog in context.prog())
             {
                 if (prog.function() == null)
                 {
                     Visit(prog);
-                }
-                else if (prog.declaration() != null)
-                {
-                    Visit(prog.declaration());
-                }
-                else if (prog.att() != null)
-                {
-                    Visit(prog.att());
                 }
             }
 
