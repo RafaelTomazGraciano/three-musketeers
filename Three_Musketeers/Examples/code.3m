@@ -54,7 +54,9 @@ int main(int argc, char argv[]) {
     original = 10;
 
     ptrResult = testPointers(&original, 3);
-    printf("Return pointer[1]: %d\n", ptrResult[1]);
+    printf("Pointer[0]: %d\n", ptrResult[0]);  // 77
+    printf("Pointer[1]: %d\n", ptrResult[1]);  // 20
+    printf("Original value: %d\n", original);  // 99
     free(ptrResult);
 
     return 0;
@@ -103,17 +105,12 @@ void recursionPrint(string message) {
 
 int *testPointers(int *inputPtr, int size) {
     int *pointer;
-    int *saved_pointer;
     int **other_pointer;
-    int temp;
-
-    temp = 5;
+    
     pointer = malloc(size);
-    saved_pointer = inputPtr;
-
+    
     pointer[0] = 10;
     pointer[1] = 20;
-
     printf("Pointer[0] = %d\n", pointer[0]);
     printf("Pointer[1] = %d\n", pointer[1]);
 
@@ -124,10 +121,5 @@ int *testPointers(int *inputPtr, int size) {
     ( * ( *other_pointer ) ) = 77;
     printf("Pointer[0] after double deref: %d\n", pointer[0]);
 
-    pointer = malloc(5);
-    pointer[1] = 33;
-    printf("Pointer[1] after reallocation: %d\n", pointer[1]);
-
-    free(pointer);
-    return saved_pointer;
+    return pointer;
 }

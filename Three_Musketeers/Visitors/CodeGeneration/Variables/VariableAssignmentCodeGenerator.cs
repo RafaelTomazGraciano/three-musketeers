@@ -113,25 +113,37 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             if (variable.type == "string")
             {
                 // Se é [256 x i8] (string local), faz getelementptr
-        if (variable.LLVMType == "[256 x i8]")
-        {
-            string ptrReg = nextRegister();
-            getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
-            registerTypes[ptrReg] = "i8*";
-            return ptrReg;
-        }
-        // Se é i8* (parâmetro de string), apenas faz load
-        else if (variable.LLVMType == "i8*")
-        {
-            string loadRegStr = nextRegister();
-            getCurrentBody().AppendLine($"  {loadRegStr} = load i8*, i8** {variable.register}, align 8");
-            registerTypes[loadRegStr] = "i8*";
-            return loadRegStr;
-        }
+                if (variable.LLVMType == "[256 x i8]")
+                {
+                    string ptrReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
+                    registerTypes[ptrReg] = "i8*";
+                    return ptrReg;
+                }
+                // Se é i8* (parâmetro de string), apenas faz load
+                else if (variable.LLVMType == "i8*")
+                {
+                    string loadRegStr = nextRegister();
+                    getCurrentBody().AppendLine($"  {loadRegStr} = load i8*, i8** {variable.register}, align 8");
+                    registerTypes[loadRegStr] = "i8*";
+                    return loadRegStr;
+                }
             }
 
             string loadReg = nextRegister();
-            getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+
+            //pinter handling
+            if (variable.LLVMType.EndsWith("*"))
+            {
+                int alignment = GetAlignment(variable.LLVMType);
+                getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {alignment}");
+            }
+            //regular types
+            else
+            {
+                getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            }
+            
             registerTypes[loadReg] = variable.LLVMType;
             return loadReg;
         }

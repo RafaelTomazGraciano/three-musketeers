@@ -12,16 +12,24 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
+        private readonly Func<string?> getCurrentFunctionName;
 
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
-        public PointerCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, Variable> variables, Dictionary<string, string> registerTypes, Func<string> nextRegister, Func<ExprParser.ExprContext, string> visitExpression)
+        public PointerCodeGenerator(
+        Func<StringBuilder> getCurrentBody, 
+        Dictionary<string, Variable> variables, 
+        Dictionary<string, string> registerTypes, 
+        Func<string> nextRegister, 
+        Func<ExprParser.ExprContext, string> visitExpression,
+        Func<string?> getCurrentFunctionName)
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.variables = variables;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
+            this.getCurrentFunctionName = getCurrentFunctionName;
         }
 
         public string VisitExprAddress(ExprParser.ExprAddressContext context)
@@ -32,12 +40,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             if (exprCtx is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
-                Variable var = variables[varName];
+                Variable var = GetVariableWithScope(varName)!;
 
-                string baseType = var.LLVMType;
-                string pointerType = baseType + "*";
-
+                string pointerType = var.LLVMType + "*";
                 registerTypes[var.register] = pointerType;
+
                 return var.register;
             }
 
@@ -77,11 +84,32 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string pointerType = registerTypes[pointerReg];
 
             string baseType = pointerType.EndsWith('*')
-            ? pointerType.Substring(0, pointerReg.Length - 1)
+            ? pointerType.Substring(0, pointerType.Length - 1)
             : pointerType;
 
             getCurrentBody().AppendLine($"  store {baseType} {expr}, {pointerType} {pointerReg}");
-    
+
+            return null;
+        }
+        
+        private Variable? GetVariableWithScope(string varName)
+        {
+            string? currentFunc = getCurrentFunctionName();
+            
+            if (currentFunc != null)
+            {
+                string scopedName = $"@{currentFunc}.{varName}";
+                if (variables.ContainsKey(scopedName))
+                {
+                    return variables[scopedName];
+                }
+            }
+            
+            if (variables.ContainsKey(varName))
+            {
+                return variables[varName];
+            }
+            
             return null;
         }
     }
