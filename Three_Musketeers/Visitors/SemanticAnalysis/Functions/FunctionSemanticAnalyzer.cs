@@ -50,6 +50,22 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
 
             var functionInfo = declaredFunctions[functionName];
 
+            // var funcReturnCtx = context.function_return();
+            // if (funcReturnCtx.type() != null)
+            // {
+            //     string baseType = funcReturnCtx.type().GetText();
+            //     int pointerCount = funcReturnCtx.POINTER().Length;
+            //     string finalReturnType = baseType + new string('*', pointerCount);
+
+            //     functionInfo.returnType = finalReturnType;
+            //     functionInfo.returnPointerLevel = pointerCount;
+            // }
+            // else if (funcReturnCtx.VOID() != null)
+            // {
+            //     functionInfo.returnType = "void";
+            //     functionInfo.returnPointerLevel = 0;
+            // }
+
             // enter new scope for function body
             symbolTable.EnterScope();
 
@@ -60,11 +76,21 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             // add parameters to function scope
             if (functionInfo.parameters != null)
             {
-                foreach (var (type, name) in functionInfo.parameters)
+                foreach (var (type, name, pointerLevel) in functionInfo.parameters)
                 {
-                    var paramSymbol = new Symbol(name, type, line);
-                    paramSymbol.isInitializated = true; // Parameters are always initialized
+                    Symbol paramSymbol;
 
+                    if (pointerLevel > 0)
+                    {
+                        paramSymbol = new PointerSymbol(name, type, line, pointerLevel, isDynamic: false);
+                    }
+                    else
+                    {
+                        paramSymbol = new Symbol(name, type, line);
+                    }
+
+                    paramSymbol.isInitializated = true;
+                    
                     if (!symbolTable.AddSymbol(paramSymbol))
                     {
                         reportError(line, $"Parameter '{name}' conflicts with existing symbol in function scope");

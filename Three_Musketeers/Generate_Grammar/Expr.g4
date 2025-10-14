@@ -42,7 +42,7 @@ function
     ;
 
 function_return
-    : type
+    : type POINTER*
     | VOID
     ;
 
@@ -85,7 +85,7 @@ newType
     ;
 
 args
-    : type ID (',' type ID)*
+    : type POINTER* ID (',' type POINTER* ID)*
     ;
 
 index
