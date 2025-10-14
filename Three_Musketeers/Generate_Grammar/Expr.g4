@@ -1,7 +1,13 @@
 grammar Expr;
 
 start
-    : prog* mainFunction prog* EOF
+    : define* prog* mainFunction prog* EOF
+    ;
+
+define
+    : DEFINE ID INT                    #DefineInt
+    | DEFINE ID DOUBLE                 #DefineDouble
+    | DEFINE ID STRING_LITERAL         #DefineString
     ;
 
 prog
@@ -36,7 +42,6 @@ declaration
     : type ID index*    #BaseDec
     | type POINTER+ ID  #PointerDec
     ;
-
 
 function
     : function_return ID '(' args? ')' '{' func_body '}'
@@ -141,6 +146,7 @@ type
     ;
 
 /* -------- TOKENS -------- */   
+DEFINE        : '#define';
 RETURN        : 'return';
 IF            : 'if';
 ELSE          : 'else';

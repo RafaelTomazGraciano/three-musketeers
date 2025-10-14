@@ -13,6 +13,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
         {
+            // Process all #define directives first
+             var defines = context.define();
+            foreach (var define in defines)
+            {
+                Visit(define);
+            }
+    
             CollectFunctionSignatures(context);
 
             // global declarations
@@ -29,7 +36,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 }
             }
 
-            return base.VisitStart(context);
+            return null;
         }
 
         private void CollectFunctionSignatures([NotNull] ExprParser.StartContext context)

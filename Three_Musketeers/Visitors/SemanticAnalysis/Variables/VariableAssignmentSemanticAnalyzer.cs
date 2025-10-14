@@ -14,8 +14,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
         public VariableAssignmentSemanticAnalyzer(
             SymbolTable symbolTable,
             Action<int, string> reportError,
-            Action<int, string> reportWarning
-            )
+            Action<int, string> reportWarning)
         {
             this.symbolTable = symbolTable;
             this.reportError = reportError;

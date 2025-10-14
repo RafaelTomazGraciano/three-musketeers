@@ -11,9 +11,9 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Equality;
 using Three_Musketeers.Visitors.SemanticAnalysis.Comparison;
 using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
 using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
-using Three_Musketeers.Models;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
+using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
 
 namespace Three_Musketeers.Visitors
 {
@@ -40,11 +40,15 @@ namespace Three_Musketeers.Visitors
         private readonly IncrementDecrementSemanticAnalyzer incrementDecrementSemanticAnalyzer;
         private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
 
+        private readonly DefineSemanticAnalyzer defineSemanticAnalyzer;
+
         public SemanticAnalyzer()
         {
+            //compiler directives
+            defineSemanticAnalyzer = new DefineSemanticAnalyzer(symbolTable, ReportError, ReportWarning);
+
             //variables
-            variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
-                ReportError, ReportWarning);
+            variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable, ReportError, ReportWarning);
             pointerSemanticAnalyzer = new PointerSemanticAnalyzer(ReportError, ReportWarning, Visit, symbolTable);
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
@@ -352,6 +356,21 @@ namespace Three_Musketeers.Visitors
         public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
+        }
+
+        public override string? VisitDefineInt([NotNull] ExprParser.DefineIntContext context)
+        {
+            return defineSemanticAnalyzer.VisitDefineInt(context);
+        }
+
+        public override string? VisitDefineDouble([NotNull] ExprParser.DefineDoubleContext context)
+        {
+            return defineSemanticAnalyzer.VisitDefineDouble(context);
+        }
+
+        public override string? VisitDefineString([NotNull] ExprParser.DefineStringContext context)
+        {
+            return defineSemanticAnalyzer.VisitDefineString(context);
         }
     }
 }
