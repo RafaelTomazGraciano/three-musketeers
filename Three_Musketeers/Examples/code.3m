@@ -4,7 +4,7 @@
 #define MESSAGE "Hello, Three Musketeers!"
 
 // Global variables for testing
-int globalCounter = 1;
+int globalCounter;
 double globalValue = 3.14;
 string globalMessage = "Global variable test";
 int *ptest;
@@ -13,7 +13,6 @@ int *ptest;
 int main(int argc, char argv[]) {
     printf("\n=== Test Define ===\n");
     puts(MESSAGE);
-    //scanf(MAX_SIZE);
     int size = MAX_SIZE;
     double pi_value = PI;
     printf("MINIMUM: %d\n", MINIMUM);
@@ -23,6 +22,7 @@ int main(int argc, char argv[]) {
     printf("\n=== Test Global Variables ===\n");
     ptest = malloc(5);
     ptest[1] = 27;
+    globalCounter = 1;
     printf("Global counter: %d\n", globalCounter);
     printf("Global value: %.2f\n", globalValue);
     printf("Global Pointer[1] = %d\n", ptest[1]);

@@ -136,7 +136,10 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
         {
-            return dynamicMemorySemanticAnalyzer.VisitMallocAtt(context);
+            string? type = variableAssignmentSemanticAnalyzer.VisitMallocAtt(context);
+            // Then validate the malloc call
+            dynamicMemorySemanticAnalyzer.VisitMallocAtt(context);            
+            return type;
         }
 
         public override string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
@@ -315,13 +318,17 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
         {
+            symbolTable.EnterScope();
             mainFunctionSemanticAnalyzer.AnalyzeMainFunction(context);
+            symbolTable.ExitScope();
             return null;
         }
 
         public override string? VisitFunction([NotNull] ExprParser.FunctionContext context)
         {
+            symbolTable.EnterScope();
             functionSemanticAnalyzer.AnalyzeFunction(context);
+            symbolTable.ExitScope();
             return null;
         }
 

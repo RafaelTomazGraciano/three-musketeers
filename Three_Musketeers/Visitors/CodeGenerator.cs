@@ -13,6 +13,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Pointer;
 using Three_Musketeers.Utils;
 using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
+using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 
 namespace Three_Musketeers.Visitors
 {
@@ -42,6 +43,8 @@ namespace Three_Musketeers.Visitors
 
         public CodeGenerator()
         {
+            defineCodeGenerator = new DefineCodeGenerator(globalStrings, defineValues, registerTypes, NextStringLabel);
+
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
                 variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
@@ -71,7 +74,8 @@ namespace Three_Musketeers.Visitors
             scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, declarations, GetCurrentBody, variables,
                 registerTypes, NextRegister, NextStringLabel, GetLLVMType, variableResolver);
             getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, NextRegister, variableResolver);
-            putsCodeGenerator = new PutsCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, variableResolver);
+            putsCodeGenerator = new PutsCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister,
+                variableResolver, defineCodeGenerator);
 
             //string conversion
             atoiCodeGenerator = new AtoiCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
@@ -171,6 +175,15 @@ namespace Three_Musketeers.Visitors
         }
         public override string VisitVar([NotNull] ExprParser.VarContext context)
         {
+            string varName = context.ID().GetText();
+    
+            // Check if it's a #define first
+            string? defineResult = defineCodeGenerator!.ResolveDefine(varName);
+            if (defineResult != null)
+            {
+                return defineResult;
+            }
+
             return variableAssignmentCodeGenerator.VisitVar(context);
         }
 

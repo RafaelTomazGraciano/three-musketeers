@@ -13,29 +13,65 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
         {
-            // Process all #define directives first
-             var defines = context.define();
+            // Process all #define 
+            var defines = context.define();
             foreach (var define in defines)
             {
                 Visit(define);
             }
-    
+
             CollectFunctionSignatures(context);
 
             // global declarations
             var allProgs = context.prog();
             foreach (var prog in allProgs)
             {
-                if (prog.declaration() != null)
+                // Skip functions - they'll be processed later
+                if (prog.function() != null)
                 {
-                    Visit(prog.declaration());
+                    continue;
                 }
-                else if (prog.att() != null)
+
+                // Visit declarations and assignments
+                Visit(prog);
+            }
+
+            // Visit functions
+            foreach (var prog in allProgs)
+            {
+                if (prog.function() != null)
                 {
-                    Visit(prog.att());
+                    Visit(prog.function());
                 }
             }
 
+            //visit main
+            if (context.mainFunction() != null)
+            {
+                Visit(context.mainFunction());
+            }
+
+            return null;
+        }
+        
+        public override string? VisitProg([NotNull] ExprParser.ProgContext context)
+        {
+            if (context.declaration() != null)
+            {
+                return Visit(context.declaration());
+            }
+            
+            if (context.att() != null)
+            {
+                return Visit(context.att());
+            }
+            
+            if (context.stm() != null)
+            {
+                return Visit(context.stm());
+            }
+            
+            // Functions are handled separately in VisitStart
             return null;
         }
 

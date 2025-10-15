@@ -4,6 +4,7 @@ using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Utils;
+using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 {
@@ -15,19 +16,22 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Func<string> nextRegister;
         private readonly VariableResolver variableResolver;
         private bool putsInitialized = false;
+        private readonly DefineCodeGenerator defineCodeGenerator;
 
         public PutsCodeGenerator(
             StringBuilder declarations,
-            Func<StringBuilder> getCurrentBody, 
+            Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
-            VariableResolver variableResolver)
+            VariableResolver variableResolver,
+            DefineCodeGenerator defineCodeGenerator)
         {
             this.declarations = declarations;
             this.getCurrentBody = getCurrentBody; 
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.variableResolver = variableResolver;
+            this.defineCodeGenerator = defineCodeGenerator;
         }
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
@@ -40,6 +44,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             if (context.ID() != null)
             {
                 string varName = context.ID().GetText();
+
+                if (defineCodeGenerator.IsDefine(varName))
+                {
+                    string? defineValue = defineCodeGenerator.GetDefineValue(varName);
+                    
+                    if (defineValue != null && defineValue.StartsWith("\"") && defineValue.EndsWith("\""))
+                    {
+                        GenerateStringLiteralPuts(defineValue, body);
+                        return null;
+                    }
+                }
 
                 Variable variable = variableResolver.GetVariable(varName)!;
                 bool hasIndexAccess = context.index() != null;

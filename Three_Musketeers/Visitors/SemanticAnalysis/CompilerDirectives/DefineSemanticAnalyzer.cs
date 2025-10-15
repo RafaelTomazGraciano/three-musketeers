@@ -31,7 +31,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
                 reportWarning(line, $"#define '{defineName}' shadows an existing variable");
             }
 
-            // Cria símbolo como constante e adiciona à SymbolTable
+            // crete as symbol and add to Symbol Table
             var symbol = new Symbol(defineName, "int", line, value);
             symbolTable.AddSymbol(symbol);
             
@@ -49,7 +49,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
                 reportWarning(line, $"#define '{defineName}' shadows an existing variable");
             }
 
-            // Cria símbolo como constante e adiciona à SymbolTable
+            // crete as symbol and add to Symbol Table
             var symbol = new Symbol(defineName, "double", line, value);
             symbolTable.AddSymbol(symbol);
             
@@ -67,7 +67,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
                 reportWarning(line, $"#define '{defineName}' shadows an existing variable");
             }
 
-            // Cria símbolo como constante e adiciona à SymbolTable
+            // crete as symbol and add to Symbol Table
             var symbol = new Symbol(defineName, "string", line, value);
             symbolTable.AddSymbol(symbol);
             
