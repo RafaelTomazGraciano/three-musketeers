@@ -29,6 +29,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
                 return null;
             }
 
+            if (symbol.isConstant)
+            {
+                reportError(context.Start.Line,
+                    $"Cannot use #define constant '{varName}' in gets(). Constants are read-only");
+                return null;
+            }
+
             if (symbol.type != "string")
             {
                 reportError(context.Start.Line,

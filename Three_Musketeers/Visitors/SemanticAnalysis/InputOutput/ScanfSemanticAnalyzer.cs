@@ -44,6 +44,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
                     continue;
                 }
 
+                if (symbol.isConstant)
+                {
+                    reportError(context.Start.Line,
+                        $"Cannot use #define constant '{varName}' in scanf(). Constants are read-only");
+                    continue;
+                }
+
                 if (symbol.type == "string")
                 {
                     reportError(context.Start.Line,

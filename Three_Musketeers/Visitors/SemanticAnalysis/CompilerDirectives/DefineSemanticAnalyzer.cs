@@ -35,7 +35,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
             var symbol = new Symbol(defineName, "int", line, value);
             symbolTable.AddSymbol(symbol);
             
-            Console.WriteLine($"Defined constant: {defineName} = {value} (int)");
             return defineName;
         }
 
@@ -54,7 +53,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
             var symbol = new Symbol(defineName, "double", line, value);
             symbolTable.AddSymbol(symbol);
             
-            Console.WriteLine($"Defined constant: {defineName} = {value} (double)");
             return defineName;
         }
 
@@ -73,7 +71,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
             var symbol = new Symbol(defineName, "string", line, value);
             symbolTable.AddSymbol(symbol);
             
-            Console.WriteLine($"Defined constant: {defineName} = {value} (string)");
             return defineName;
         }
     }
