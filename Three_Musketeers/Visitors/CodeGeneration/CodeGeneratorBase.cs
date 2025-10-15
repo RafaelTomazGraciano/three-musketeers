@@ -57,6 +57,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         public override string? VisitStart(ExprParser.StartContext context)
         {   
+            // Process all #include directives first
+            var includes = context.include();
+            foreach (var include in includes)
+            {
+                Visit(include);
+            }
+            
             // Process all #define directives first
             var defines = context.define();
             foreach (var define in defines)

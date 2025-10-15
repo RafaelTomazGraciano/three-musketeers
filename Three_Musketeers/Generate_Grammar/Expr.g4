@@ -1,7 +1,12 @@
 grammar Expr;
 
 start
-    : define* prog* mainFunction prog* EOF
+    : include* define* prog* mainFunction prog* EOF
+    ;
+
+include
+    : INCLUDE ANGLE_STRING    #IncludeSystem
+    | INCLUDE STRING_LITERAL  #IncludeUser
     ;
 
 define
@@ -145,7 +150,8 @@ type
     | ID
     ;
 
-/* -------- TOKENS -------- */   
+/* -------- TOKENS -------- */
+INCLUDE       : '#include';
 DEFINE        : '#define';
 RETURN        : 'return';
 IF            : 'if';
@@ -168,6 +174,7 @@ DOUBLE        : [0-9]+'.'[0-9]* | [0-9]*'.'[0-9]+;
 EOL           : ';';
 WS            : [ \t\r\n]+ -> skip;
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
+ANGLE_STRING  : '<' (~[>\r\n])+ '>';
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';

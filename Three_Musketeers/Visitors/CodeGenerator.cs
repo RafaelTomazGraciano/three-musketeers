@@ -40,9 +40,12 @@ namespace Three_Musketeers.Visitors
         private readonly VariableResolver variableResolver;
         private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
         private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
+        private readonly IncludeCodeGenerator includeCodeGenerator;
 
         public CodeGenerator()
         {
+            //compiler directives
+            includeCodeGenerator = new IncludeCodeGenerator(declarations);
             defineCodeGenerator = new DefineCodeGenerator(globalStrings, defineValues, registerTypes, NextStringLabel);
 
             //functions
@@ -69,19 +72,19 @@ namespace Three_Musketeers.Visitors
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
-            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, declarations, GetCurrentBody, registerTypes,
+            printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
                 NextRegister, NextStringLabel, Visit);
-            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, declarations, GetCurrentBody, variables,
-                registerTypes, NextRegister, NextStringLabel, GetLLVMType, variableResolver);
-            getsCodeGenerator = new GetsCodeGenerator(declarations, GetCurrentBody, NextRegister, variableResolver);
+            scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
+                NextRegister, NextStringLabel, GetLLVMType, variableResolver);
+            getsCodeGenerator = new GetsCodeGenerator(GetCurrentBody, NextRegister, variableResolver);
             putsCodeGenerator = new PutsCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister,
                 variableResolver, defineCodeGenerator);
 
             //string conversion
-            atoiCodeGenerator = new AtoiCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
-            atodCodeGenerator = new AtodCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
-            itoaCodeGenerator = new ItoaCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
-            dtoaCodeGenerator = new DtoaCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister, Visit);
+            atoiCodeGenerator = new AtoiCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit);
+            atodCodeGenerator = new AtodCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit);
+            itoaCodeGenerator = new ItoaCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit);
+            dtoaCodeGenerator = new DtoaCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit);
 
             //arithmetic
             arithmeticCodeGenerator = new ArithmeticCodeGenerator(
@@ -97,7 +100,7 @@ namespace Three_Musketeers.Visitors
                 GetCurrentBody, registerTypes, NextRegister, Visit);
             //pointers & dynamic memory
             pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, variableResolver);
-            dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, declarations, registerTypes, NextRegister,
+            dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, registerTypes, NextRegister,
                 Visit, GetAlignment, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables);
 
             //increment/decrement
@@ -404,6 +407,16 @@ namespace Three_Musketeers.Visitors
             if (mainFunctionCodeGenerator?.IsInsideMain() == true)
                 return "main";
             return null;
+        }
+
+        public override string? VisitIncludeSystem([NotNull] ExprParser.IncludeSystemContext context)
+        {
+            return includeCodeGenerator.VisitIncludeSystem(context);
+        }
+
+        public override string? VisitIncludeUser([NotNull] ExprParser.IncludeUserContext context)
+        {
+            return includeCodeGenerator.VisitIncludeUser(context);
         }
     }
 }

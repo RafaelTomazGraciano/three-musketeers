@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
 {
@@ -9,10 +10,22 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     {
         protected SymbolTable symbolTable = new SymbolTable();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
+        protected LibraryDependencyTracker libraryTracker;
         public bool hasErrors { get; protected set; } = false;
+
+        public SemanticAnalyzerBase()
+        {
+            libraryTracker = new LibraryDependencyTracker(ReportError);
+        }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
         {
+            var includes = context.include();
+            foreach (var include in includes)
+            {
+                Visit(include);
+            }
+    
             // Process all #define 
             var defines = context.define();
             foreach (var define in defines)

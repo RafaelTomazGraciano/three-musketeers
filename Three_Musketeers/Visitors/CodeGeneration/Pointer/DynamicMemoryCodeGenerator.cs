@@ -9,7 +9,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
     public class DynamicMemoryCodeGenerator
     {
         private Func<StringBuilder> getCurrentBody;
-        private StringBuilder declarations;
         private Dictionary<string, string> registerTypes;
         private Func<string> nextRegister;
         private Func<ExprParser.ExprContext, string> visitExpression;
@@ -18,11 +17,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         private Func<string?> getCurrentFunctionName;
         private VariableResolver variableResolver;
         private Dictionary<string, Variable> variables; 
-        private bool isDeclared;
 
         public DynamicMemoryCodeGenerator(
             Func<StringBuilder> getCurrentBody,
-            StringBuilder declarations,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string> visitExpression,
@@ -33,7 +30,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             Dictionary<string, Variable> variables) 
         {
             this.getCurrentBody = getCurrentBody;
-            this.declarations = declarations;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
@@ -41,14 +37,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             this.getLLVMType = getLLVMType;
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.variableResolver = variableResolver;
-            this.variables = variables; // ✅ Adicionar
-            isDeclared = false;
+            this.variables = variables; 
         }
 
         public string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
         {
             var mainBody = getCurrentBody();
-            Declare();
 
             string varName = context.ID().GetText();
             string expr = visitExpression(context.expr());
@@ -115,7 +109,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         public string? VisitFreeStatment([NotNull] ExprParser.FreeStatementContext context)
         {
             var mainBody = getCurrentBody();
-            Declare();
 
             string varName = context.ID().GetText();
 
@@ -131,16 +124,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             mainBody.AppendLine($"  call void @free(i8* {bitcastReg})");
             
             return null;
-        }
-
-        private void Declare()
-        {
-            if (!isDeclared)
-            {
-                isDeclared = true;
-                declarations.AppendLine("declare i8* @malloc(i64)");
-                declarations.AppendLine("declare void @free(i8*)");
-            }
         }
         
         private string CastToI64(string expr, string exprType)

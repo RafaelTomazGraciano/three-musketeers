@@ -13,17 +13,25 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 
         private readonly Action<int, string> reportError;
         private readonly SymbolTable symbolTable;
+        private readonly LibraryDependencyTracker libraryTracker;
 
         public ScanfSemanticAnalyzer(
             Action<int, string> reportError,
-            SymbolTable symbolTable)
+            SymbolTable symbolTable,
+            LibraryDependencyTracker libraryTracker)
         {
             this.reportError = reportError;
             this.symbolTable = symbolTable;
+            this.libraryTracker = libraryTracker;
         }
 
         public string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
         {
+            if (!libraryTracker.CheckFunctionDependency("scanf", context.Start.Line))
+            {
+                return null;
+            }
+    
             var ids = context.ID();
 
             if (ids.Length == 0)

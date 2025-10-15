@@ -15,7 +15,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly VariableResolver variableResolver;
-        private bool putsInitialized = false;
         private readonly DefineCodeGenerator defineCodeGenerator;
 
         public PutsCodeGenerator(
@@ -36,8 +35,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
         {
-            InitializePuts();
-
             StringBuilder body = getCurrentBody();
 
             //puts(ID) or puts(ID[index])
@@ -158,15 +155,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
             string resultReg = nextRegister();
             body.AppendLine($"  {resultReg} = call i32 @puts(i8* {strPtr})");
-        }
-
-        private void InitializePuts()
-        {
-            if (putsInitialized)
-                return;
-
-            declarations.AppendLine("declare i32 @puts(i8*)");
-            putsInitialized = true;
         }
     }
 } 

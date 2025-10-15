@@ -103,11 +103,5 @@ namespace Three_Musketeers.Models{
 
             return allSymbols;
         }
-        
-        public void Clear()
-        {
-            globalScope = new Scope();
-            currentScope = globalScope;
-        }
     }
 }
