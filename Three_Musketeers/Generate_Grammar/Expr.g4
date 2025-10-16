@@ -1,13 +1,25 @@
 grammar Expr;
 
 start
-    : prog* mainFunction prog* EOF
+    : include* define* prog* mainFunction prog* EOF
+    ;
+
+include
+    : INCLUDE ANGLE_STRING    #IncludeSystem
+    | INCLUDE STRING_LITERAL  #IncludeUser
+    ;
+
+define
+    : DEFINE ID INT                    #DefineInt
+    | DEFINE ID DOUBLE                 #DefineDouble
+    | DEFINE ID STRING_LITERAL         #DefineString
     ;
 
 prog
     : stm
-    | newType
     | function
+    | declaration EOL
+    | att  EOL
     ;
 
 mainFunction
@@ -35,7 +47,6 @@ declaration
     : type ID index*    #BaseDec
     | type POINTER+ ID  #PointerDec
     ;
-
 
 function
     : function_return ID '(' args? ')' '{' func_body '}'
@@ -78,10 +89,6 @@ attVar
     | ID index* '-=' expr                   # SingleAttMinusEquals
     | ID index* '*=' expr                   # SingleAttMultiplyEquals
     | ID index* '/=' expr                   # SingleAttDivideEquals
-    ;
-
-newType
-    : 'type' ID 'as' type EOL
     ;
 
 args
@@ -143,7 +150,9 @@ type
     | ID
     ;
 
-/* -------- TOKENS -------- */   
+/* -------- TOKENS -------- */
+INCLUDE       : '#include';
+DEFINE        : '#define';
 RETURN        : 'return';
 IF            : 'if';
 ELSE          : 'else';
@@ -165,6 +174,7 @@ DOUBLE        : [0-9]+'.'[0-9]* | [0-9]*'.'[0-9]+;
 EOL           : ';';
 WS            : [ \t\r\n]+ -> skip;
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
+ANGLE_STRING  : '<' (~[>\r\n])+ '>';
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';

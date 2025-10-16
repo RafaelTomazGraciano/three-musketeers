@@ -2,6 +2,7 @@ using System.Text;
 using LLVMSharp;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 {
@@ -9,27 +10,23 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
     public class PointerCodeGenerator
     {
         private readonly Func<StringBuilder> getCurrentBody;
-        private readonly Dictionary<string, Variable> variables;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Func<string?> getCurrentFunctionName;
-
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
+        private readonly VariableResolver variableResolver;
 
         public PointerCodeGenerator(
-        Func<StringBuilder> getCurrentBody, 
-        Dictionary<string, Variable> variables, 
-        Dictionary<string, string> registerTypes, 
-        Func<string> nextRegister, 
+        Func<StringBuilder> getCurrentBody,
+        Dictionary<string, string> registerTypes,
+        Func<string> nextRegister,
         Func<ExprParser.ExprContext, string> visitExpression,
-        Func<string?> getCurrentFunctionName)
+        VariableResolver variableResolver) 
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
-            this.variables = variables;
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
-            this.getCurrentFunctionName = getCurrentFunctionName;
+            this.variableResolver = variableResolver;
         }
 
         public string VisitExprAddress(ExprParser.ExprAddressContext context)
@@ -40,9 +37,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             if (exprCtx is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
-                Variable var = GetVariableWithScope(varName)!;
+                Variable? var = variableResolver.GetVariable(varName)!;
 
-                string pointerType = var.LLVMType + "*";
+                string baseType = var.LLVMType;
+                string pointerType = baseType + "*";
+
                 registerTypes[var.register] = pointerType;
 
                 return var.register;
@@ -84,32 +83,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string pointerType = registerTypes[pointerReg];
 
             string baseType = pointerType.EndsWith('*')
-            ? pointerType.Substring(0, pointerType.Length - 1)
-            : pointerType;
+                ? pointerType.Substring(0, pointerType.Length - 1)
+                : pointerType;
 
             getCurrentBody().AppendLine($"  store {baseType} {expr}, {pointerType} {pointerReg}");
 
-            return null;
-        }
-        
-        private Variable? GetVariableWithScope(string varName)
-        {
-            string? currentFunc = getCurrentFunctionName();
-            
-            if (currentFunc != null)
-            {
-                string scopedName = $"@{currentFunc}.{varName}";
-                if (variables.ContainsKey(scopedName))
-                {
-                    return variables[scopedName];
-                }
-            }
-            
-            if (variables.ContainsKey(varName))
-            {
-                return variables[varName];
-            }
-            
             return null;
         }
     }

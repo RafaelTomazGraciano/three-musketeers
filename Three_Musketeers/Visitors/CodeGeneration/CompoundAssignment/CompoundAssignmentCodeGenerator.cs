@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
 {
@@ -11,20 +12,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Dictionary<string, Variable> variables;
+        private readonly VariableResolver variableResolver;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
         public CompoundAssignmentCodeGenerator(
             Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
-            Dictionary<string, Variable> variables,
+            VariableResolver variableResolver,
             Func<ExprParser.ExprContext, string> visitExpression)
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
-            this.variables = variables;
+            this.variableResolver = variableResolver;
             this.visitExpression = visitExpression;
         }
 
@@ -33,7 +34,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
             int pos = CalculateArrayPosition(indexes, arrayVar);
@@ -62,7 +63,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
             int pos = CalculateArrayPosition(indexes, arrayVar);
@@ -91,7 +92,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
             int pos = CalculateArrayPosition(indexes, arrayVar);
@@ -120,7 +121,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
             int pos = CalculateArrayPosition(indexes, arrayVar);

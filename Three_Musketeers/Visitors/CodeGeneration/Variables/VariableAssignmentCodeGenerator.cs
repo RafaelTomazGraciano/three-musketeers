@@ -47,22 +47,69 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string varName = context.ID().GetText();
             string llvmType;
             string register;
+            string? currentFunc = getCurrentFunctionName();
 
             if (context.type() != null)
             {
                 varType = context.type().GetText();
                 llvmType = getLLVMType(varType);
+
+                // Global variable
+                if (currentFunc == null)
+                {
+                    string globalReg = $"@{varName}";
+
+                    if (context.expr() != null)
+                    {
+                        // Evaluate expression first to get the value
+                        string initValue = visitExpression(context.expr());
+                        
+                        if (varType == "string")
+                        {
+                            // String: store pointer directly in declaration
+                            declarations.AppendLine($"{globalReg} = global i8* {initValue}, align 8");
+                            variables[varName] = new Variable(varName, varType, "i8*", globalReg);
+                        }
+                        else
+                        {
+                            // Other types: store value directly
+                            string valueType = registerTypes[initValue];
+                            declarations.AppendLine($"{globalReg} = global {valueType} {initValue}, align {GetAlignment(valueType)}");
+                            variables[varName] = new Variable(varName, varType, valueType, globalReg);
+                        }
+                    }
+                    else
+                    {
+                        // No initialization - use zeroinitializer
+                        if (varType == "string")
+                        {
+                            declarations.AppendLine($"{globalReg} = global i8* null, align 8");
+                            variables[varName] = new Variable(varName, varType, "i8*", globalReg);
+                        }
+                        else
+                        {
+                            declarations.AppendLine($"{globalReg} = global {llvmType} zeroinitializer, align {GetAlignment(llvmType)}");
+                            variables[varName] = new Variable(varName, varType, llvmType, globalReg);
+                        }
+                    }
+
+                    return null;
+                }
+                
+                // Local variable
                 register = nextRegister();
+                string actualVarName = $"@{currentFunc}.{varName}";
+
 
                 if (varType == "string")
                 {
                     WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
-                    variables[varName] = new Variable(varName, varType, "[256 x i8]", register);
+                    variables[actualVarName] = new Variable(varName, varType, "[256 x i8]", register);
                 }
                 else
                 {
                     WriteAlloca(register, llvmType, GetAlignment(llvmType));
-                    variables[varName] = new Variable(varName, varType, llvmType, register);
+                    variables[actualVarName] = new Variable(varName, varType, llvmType, register);
                 }
             }
             else
@@ -77,7 +124,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             {
                 string exprResult = visitExpression(context.expr());
 
-                if (registerTypes.ContainsKey(exprResult) && registerTypes[exprResult] == "i8*")
+                if (registerTypes.TryGetValue(exprResult, out string? exprType) && exprType == "i8*")
                 {
                     WriteStrCopy(register, exprResult);
                 }
@@ -110,9 +157,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             Variable variable = GetVariableWithScope(varName)!;
 
+            if (variable == null)
+            {
+                // Return a default value or throw a more meaningful error
+                return "0";
+            }
+
             if (variable.type == "string")
             {
-                // Se é [256 x i8] (string local), faz getelementptr
+                // If it's [256 x i8] (local string), do getelementptr
                 if (variable.LLVMType == "[256 x i8]")
                 {
                     string ptrReg = nextRegister();
@@ -120,7 +173,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                     registerTypes[ptrReg] = "i8*";
                     return ptrReg;
                 }
-                // Se é i8* (parâmetro de string), apenas faz load
+                // if is parameter string, load
                 else if (variable.LLVMType == "i8*")
                 {
                     string loadRegStr = nextRegister();
@@ -153,8 +206,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string varType = context.type().GetText();
             string varName = context.ID().GetText();
             string llvmType = getLLVMType(varType);
-            string register = nextRegister();
             var indexes = context.index();
+
+            string? currentFunc = getCurrentFunctionName();
+            string actualVarName = currentFunc != null ? $"@{currentFunc}.{varName}" : varName;
+
 
             if (context.index().Length > 0)
             {
@@ -175,20 +231,56 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
                 arrayType = $"[{totalSize} x {llvmType}]";
 
-                WriteAlloca(register, arrayType, GetAlignment(llvmType));
-                variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, dimensions, llvmType);
+                if (currentFunc == null)
+                {
+                    // global array
+                    string globalReg = $"@{varName}";
+                    declarations.AppendLine($"{globalReg} = global {arrayType} zeroinitializer, align {GetAlignment(llvmType)}");
+                    variables[varName] = new ArrayVariable(varName, varType, arrayType, globalReg, totalSize, dimensions, llvmType);
+                }
+                else
+                {
+                    // local array
+                    string register = nextRegister();
+                    WriteAlloca(register, arrayType, GetAlignment(llvmType));
+                    variables[actualVarName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, dimensions, llvmType);
+                }
                 return null;
             }
 
             if (varType == "string")
             {
-                WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
-                variables[varName] = new Variable(varName, varType, "[256 x i8]", register);
+                if (currentFunc == null)
+                {
+                    // global string - use i8* pointer
+                    string globalReg = $"@{varName}";
+                    declarations.AppendLine($"{globalReg} = global i8* null, align 8");
+                    variables[varName] = new Variable(varName, varType, "i8*", globalReg);
+                }
+                else
+                {
+                    // local string
+                    string register = nextRegister();
+                    WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
+                    variables[actualVarName] = new Variable(varName, varType, "[256 x i8]", register);
+                }
                 return null;
             }
 
-            WriteAlloca(register, llvmType, GetAlignment(llvmType));
-            variables[varName] = new Variable(varName, varType, llvmType, register);
+            if (currentFunc == null)
+            {
+                // global variable
+                string globalReg = $"@{varName}";
+                declarations.AppendLine($"{globalReg} = global {llvmType} zeroinitializer, align {GetAlignment(llvmType)}");
+                variables[varName] = new Variable(varName, varType, llvmType, globalReg);
+            }
+            else
+            {
+                // local variable
+                string register = nextRegister();
+                WriteAlloca(register, llvmType, GetAlignment(llvmType));
+                variables[actualVarName] = new Variable(varName, varType, llvmType, register);
+            }
             return null;
         }
 
@@ -198,11 +290,27 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string varName = context.ID().GetText();
             string pointers = context.POINTER().Aggregate("", (a, b) => a + b.GetText());
             string llvmType = getLLVMType(varType) + pointers;
-            string register = nextRegister();
-            variables[varName] = new Variable(varName, varType, llvmType, register);
+            
+            string? currentFunc = getCurrentFunctionName();
 
-            WriteAlloca(register, llvmType, GetAlignment(llvmType));
-            registerTypes[register] = llvmType + "*";
+            if (currentFunc == null)
+            {
+                // global pointer
+                string globalReg = $"@{varName}";
+                declarations.AppendLine($"{globalReg} = global {llvmType} null, align 8");
+                variables[varName] = new Variable(varName, varType, llvmType, globalReg);
+            }
+            else
+            {
+                // local pointer
+                string register = nextRegister();
+                string actualVarName = $"@{currentFunc}.{varName}";
+                
+                variables[actualVarName] = new Variable(varName, varType, llvmType, register);
+                WriteAlloca(register, llvmType, GetAlignment(llvmType));
+                registerTypes[register] = llvmType + "*";
+            }
+            
             return null;
         }
 
@@ -287,7 +395,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
                 if (arrayVar.type == "string")
                 {
-                    if (registerTypes.TryGetValue(expression, out string? value) && value == "i8*")
+                    if (registerTypes.TryGetValue(expression, out string? exprType) && exprType == "i8*")
                     {
                         WriteStrCopy(arrayVar.register, expression, pos * 256);
                     }
@@ -321,7 +429,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         return null;
     }
 
-        private Variable? GetVariableWithScope(string varName)
+        public Variable? GetVariableWithScope(string varName)
         {
             string? currentFunc = getCurrentFunctionName();
 
@@ -346,6 +454,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
         private void WriteAlloca(string register, string type, int alignment)
         {
+            // Only generate alloca for local variables
+            // Global variables are handled in VisitDec directly
             getCurrentBody().AppendLine($"  {register} = alloca {type}, align {alignment}");
         }
     }

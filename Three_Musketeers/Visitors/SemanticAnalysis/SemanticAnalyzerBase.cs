@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
 {
@@ -9,13 +10,82 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     {
         protected SymbolTable symbolTable = new SymbolTable();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
+        protected LibraryDependencyTracker libraryTracker;
         public bool hasErrors { get; protected set; } = false;
+
+        public SemanticAnalyzerBase()
+        {
+            libraryTracker = new LibraryDependencyTracker(ReportError);
+        }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
         {
+            var includes = context.include();
+            foreach (var include in includes)
+            {
+                Visit(include);
+            }
+    
+            // Process all #define 
+            var defines = context.define();
+            foreach (var define in defines)
+            {
+                Visit(define);
+            }
+
             CollectFunctionSignatures(context);
 
-            return base.VisitStart(context);
+            // global declarations
+            var allProgs = context.prog();
+            foreach (var prog in allProgs)
+            {
+                // Skip functions - they'll be processed later
+                if (prog.function() != null)
+                {
+                    continue;
+                }
+
+                // Visit declarations and assignments
+                Visit(prog);
+            }
+
+            // Visit functions
+            foreach (var prog in allProgs)
+            {
+                if (prog.function() != null)
+                {
+                    Visit(prog.function());
+                }
+            }
+
+            //visit main
+            if (context.mainFunction() != null)
+            {
+                Visit(context.mainFunction());
+            }
+
+            return null;
+        }
+        
+        public override string? VisitProg([NotNull] ExprParser.ProgContext context)
+        {
+            if (context.declaration() != null)
+            {
+                return Visit(context.declaration());
+            }
+            
+            if (context.att() != null)
+            {
+                return Visit(context.att());
+            }
+            
+            if (context.stm() != null)
+            {
+                return Visit(context.stm());
+            }
+            
+            // Functions are handled separately in VisitStart
+            return null;
         }
 
         private void CollectFunctionSignatures([NotNull] ExprParser.StartContext context)

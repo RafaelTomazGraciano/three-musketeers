@@ -1,8 +1,8 @@
 ﻿using Antlr4.Runtime;
+using System.Diagnostics;
 using Three_Musketeers.Visitors;
 using Three_Musketeers.Listeners;
 using Three_Musketeers.Grammar;
-using System.Diagnostics;
 using System.CommandLine;
 using System.CommandLine.Parsing;
 
@@ -64,6 +64,7 @@ namespace Three_Musketeers {
 
                 //Semantic Analysis
                 var semanticAnalyzer = new SemanticAnalyzer();
+                Console.WriteLine("SemanticAnalyzer");
                 semanticAnalyzer.Visit(tree);
 
                 if (semanticAnalyzer.hasErrors)
@@ -74,7 +75,7 @@ namespace Three_Musketeers {
                     return 1;
                 }
 
-                //Intermediate Code generation
+                // Intermediate Code generation
                 var codeGenerator = new CodeGenerator();
                 var llvmCode = codeGenerator.Visit(tree);
                 string outputPath = Path.ChangeExtension(filePath, ".ll");

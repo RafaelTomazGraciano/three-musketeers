@@ -1,4 +1,38 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+#define MAX_SIZE 100
+#define PI 3.14159
+#define MINIMUM 57
+#define MESSAGE "Hello, Three Musketeers!"
+
+// Global variables for testing
+int globalCounter;
+double globalValue = 3.14;
+string globalMessage = "Global variable test";
+int *ptest;
+
+
 int main(int argc, char argv[]) {
+    printf("\n=== Test Define ===\n");
+    puts(MESSAGE);
+    int size = MAX_SIZE;
+    double pi_value = PI;
+    printf("MINIMUM: %d\n", MINIMUM);
+    printf("MAX_SIZE: %d\n", size);
+    printf("PI: %f\n", pi_value);
+
+    printf("\n=== Test Global Variables ===\n");
+    ptest = malloc(5);
+    ptest[1] = 27;
+    globalCounter = 1;
+    printf("Global counter: %d\n", globalCounter);
+    printf("Global value: %.2f\n", globalValue);
+    printf("Global Pointer[1] = %d\n", ptest[1]);
+    puts(globalMessage);
+    globalCounter = 42;
+    printf("Modified global counter: %d\n", globalCounter);
+
     printf("\n=== Test Arguments ===\n");
     printf("Argument count: %d\n", argc);
     puts("Arguments list:");
@@ -41,16 +75,14 @@ int main(int argc, char argv[]) {
     printf("\n=== Test Expression with Function ===\n");
     int result = add(5, 3) * multiply(2, 2, 2);
     printf("add(5,3) * multiply(2,2,2) = %d\n", result);
-    
+
     printf("\n=== Test Recursion ===\n");
-    //recursionPrint("Recursion implemented");
+    // recursionPrint("Recursion implemented");
 
     printf("\n=== Test Pointers ===\n");
     int *ptrResult;
     int original;
-    int pointer;
-
-    pointer = 5;
+    
     original = 10;
 
     ptrResult = testPointers(&original, 3);
@@ -61,6 +93,7 @@ int main(int argc, char argv[]) {
 
     return 0;
 }
+
 // Test Simple void function
 void printWelcome() {
     puts("=== Three Musketeers Function Tests ===");
@@ -97,7 +130,6 @@ char getFirstLetter(int code) {
     return letter;
 }
 
-//recursion
 void recursionPrint(string message) {
     puts(message);
     recursionPrint(message);

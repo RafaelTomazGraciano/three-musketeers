@@ -2,6 +2,7 @@ using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
+using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 
 namespace Three_Musketeers.Visitors.CodeGeneration
 {
@@ -13,6 +14,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         protected readonly StringBuilder forwardDeclarations = new StringBuilder();
         protected Dictionary<string, Variable> variables = new Dictionary<string, Variable>();
         protected Dictionary<string, string> registerTypes = new Dictionary<string, string>();
+        protected Dictionary<string, string> defineValues = new Dictionary<string, string>();
 
         //for functions
         protected StringBuilder functionDefinitions = new StringBuilder();
@@ -20,6 +22,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         protected MainFunctionCodeGenerator? mainFunctionCodeGenerator;
         protected FunctionCodeGenerator? functionCodeGenerator;
+        protected DefineCodeGenerator? defineCodeGenerator;
 
         protected int stringCounter = 0;
         protected int registerCount = 0;
@@ -53,31 +56,73 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         }
 
         public override string? VisitStart(ExprParser.StartContext context)
-        {
-            // collect SIgnatures
-            var functions = context.prog().Where(p => p.function() != null).Select(p => p.function()).ToList();
+        {   
+            // Process all #include directives first
+            var includes = context.include();
+            foreach (var include in includes)
+            {
+                Visit(include);
+            }
+            
+            // Process all #define directives first
+            var defines = context.define();
+            foreach (var define in defines)
+            {
+                defineCodeGenerator!.ProcessDefine(define);
+            }
+
+            // Process global declarations and assignments
+            foreach (var prog in context.prog())
+            {
+                // Skip functions - they'll be processed later
+                if (prog.function() != null)
+                {
+                    continue;
+                }
+                Visit(prog);
+            }
+            
+            
+            // collect function signatures
+            var functions = context.prog().Where(p => p.function() != null)
+                                .Select(p => p.function()).ToList();
             foreach (var func in functions)
             {
                 functionCodeGenerator!.CollectFunctionSignature(func);
             }
 
-            // generate all definitios of functions
+            // generate all function definitions
             foreach (var func in functions)
             {
                 functionCodeGenerator!.VisitFunction(func);
             }
 
-            foreach (var prog in context.prog())
-            {
-                if (prog.function() == null)
-                {
-                    Visit(prog);
-                }
-            }
-
+            // Visit main function
             Visit(context.mainFunction());
 
             return GenerateFinalCode();
+        }
+        
+        public override string? VisitProg(ExprParser.ProgContext context)
+        {
+            
+            if (context.declaration() != null)
+            {
+                return Visit(context.declaration());
+            }
+            
+            if (context.att() != null)
+            {
+                return Visit(context.att());
+            }
+            
+            if (context.function() != null)
+            {
+                // Don't visit here - will be visited later
+                return null;
+            }
+            
+            return base.VisitProg(context);
         }
 
         protected virtual string GenerateFinalCode()
@@ -95,7 +140,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             
             output.Append(functionDefinitions);
             output.AppendLine();
-            
+
             output.Append(mainDefinition);
 
             return output.ToString();

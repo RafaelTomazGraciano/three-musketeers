@@ -14,21 +14,29 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
         private readonly Action<int, string> reportWarning;
         private readonly Func<ExprParser.ExprContext, string> getExpressionType;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
+        private readonly LibraryDependencyTracker libraryTracker;
 
         public PrintfSemanticAnalyzer(
             Action<int, string> reportError,
             Action<int, string> reportWarning,
             Func<ExprParser.ExprContext, string> getExpressionType,
-            Func<ExprParser.ExprContext, string?> visitExpression)
+            Func<ExprParser.ExprContext, string?> visitExpression,
+            LibraryDependencyTracker libraryTracker)
         {
             this.reportError = reportError;
             this.reportWarning = reportWarning;
             this.getExpressionType = getExpressionType;
             this.visitExpression = visitExpression;
+            this.libraryTracker = libraryTracker;
         }
 
         public string? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
         {
+            if (!libraryTracker.CheckFunctionDependency("printf", context.Start.Line))
+            {
+                return null;
+            }
+    
             string formatString = context.STRING_LITERAL().GetText();
             formatString = formatString.Substring(1, formatString.Length - 2); // remove quotes
 
