@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
 {
@@ -9,13 +10,36 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     {
         protected SymbolTable symbolTable = new SymbolTable();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
+        protected Dictionary<string, StructInfo> structures = new Dictionary<string, StructInfo>();
+
+        protected StructSemanticAnalyzer structSemanticAnalyzer;
+
+        protected SemanticAnalyzerBase()
+        {
+            structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
+        }
+
         public bool hasErrors { get; protected set; } = false;
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
         {
+            CollectStructs(context);
             CollectFunctionSignatures(context);
 
             return base.VisitStart(context);
+        }
+
+        private void CollectStructs(ExprParser.StartContext context)
+        {
+            var allProgs = context.prog();
+            foreach (var prog in allProgs)
+            {
+                var structStatement = prog.structStatement();
+                if (prog.structStatement() != null)
+                {
+                    structSemanticAnalyzer.VisitStructStatement(structStatement);
+                }
+            }
         }
 
         private void CollectFunctionSignatures([NotNull] ExprParser.StartContext context)
@@ -117,11 +141,10 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             if (id != null)
             {
                 string typeName = id.GetText();
-                var typeSymbol = symbolTable.GetSymbol(typeName);
-
-                if (typeSymbol != null)
+                structures.TryGetValue(typeName, out var structInfo);
+                if (structInfo != null)
                 {
-                    return typeSymbol.type;
+                    return structInfo.name;
                 }
                 ReportError(context.Start.Line, $"type '{typeName}' has not been defined");
                 return "error";
@@ -129,7 +152,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
             return "unknown";
         }
-
 
         protected void ReportError(int line, string message)
         {
@@ -140,7 +162,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             Console.ResetColor();
         }
 
-        protected void ReportWarning(int line, string message)
+        protected static void ReportWarning(int line, string message)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine($"\n[WARNING] Line {line}");
@@ -242,4 +264,3 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         }
     }
 }
-

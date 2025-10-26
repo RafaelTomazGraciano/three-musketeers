@@ -13,6 +13,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Pointer;
 using Three_Musketeers.Utils;
 using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
+using Three_Musketeers.Visitors.CodeGeneration.Struct;
 
 namespace Three_Musketeers.Visitors
 {
@@ -39,7 +40,6 @@ namespace Three_Musketeers.Visitors
         private readonly VariableResolver variableResolver;
         private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
         private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
-
         public CodeGenerator()
         {
             variableResolver = new VariableResolver(
@@ -61,7 +61,7 @@ namespace Three_Musketeers.Visitors
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
                 declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
-                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment);
+                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment, structTypes);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
@@ -96,13 +96,15 @@ namespace Three_Musketeers.Visitors
             //pointers & dynamic memory
             pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, variables, registerTypes, NextRegister, Visit);
             dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, variables, declarations, registerTypes, NextRegister, Visit, GetAlignment, GetLLVMType);
-
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variables);
             //compound assignment
             compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variables, Visit);
+            //struct
+            structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
+                variables, Visit, GetLLVMType, GetAlignment);
         }
 
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -192,11 +194,13 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitBaseDec([NotNull] ExprParser.BaseDecContext context)
         {
+            if (context.Parent is ExprParser.StructStatementContext) return null;
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
 
         public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
+            if (context.Parent is ExprParser.StructStatementContext) return null;
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
 
@@ -342,6 +346,15 @@ namespace Three_Musketeers.Visitors
             return dynamicMemoryCodeGenerator.VisitFreeStatment(context);
         }
 
+        public override string? VisitStructStatement([NotNull] ExprParser.StructStatementContext context)
+        {
+            return structCodeGenerator!.VisitStructStatement(context);
+        }
+
+        public override string? VisitStructAtt([NotNull] ExprParser.StructAttContext context)
+        {
+            return structCodeGenerator!.VisitStructAtt(context);
+        }
 
         // Increment/Decrement operators for simple variables
         public override string VisitPrefixIncrement([NotNull] ExprParser.PrefixIncrementContext context)
@@ -383,6 +396,16 @@ namespace Three_Musketeers.Visitors
         public override string VisitPostfixDecrementArray([NotNull] ExprParser.PostfixDecrementArrayContext context)
         {
             return incrementDecrementCodeGenerator.VisitPostfixDecrementArray(context);
+        }
+
+        public override string VisitStructGet([NotNull] ExprParser.StructGetContext context)
+        {
+            return structCodeGenerator.VisitStructGet(context);
+        }
+
+        public override string VisitVarStruct([NotNull] ExprParser.VarStructContext context)
+        {
+            return structCodeGenerator.VisitVarStruct(context);
         }
     }
 }

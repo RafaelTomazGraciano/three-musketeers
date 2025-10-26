@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Visitors.SemanticAnalysis;
@@ -11,9 +10,9 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Equality;
 using Three_Musketeers.Visitors.SemanticAnalysis.Comparison;
 using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
 using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
-using Three_Musketeers.Models;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
 
 namespace Three_Musketeers.Visitors
 {
@@ -39,12 +38,11 @@ namespace Three_Musketeers.Visitors
         private readonly DynamicMemorySemanticAnalyzer dynamicMemorySemanticAnalyzer;
         private readonly IncrementDecrementSemanticAnalyzer incrementDecrementSemanticAnalyzer;
         private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
-
         public SemanticAnalyzer()
         {
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
-                ReportError, ReportWarning);
+                ReportError, ReportWarning, structures);
             pointerSemanticAnalyzer = new PointerSemanticAnalyzer(ReportError, ReportWarning, Visit, symbolTable);
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
@@ -75,6 +73,7 @@ namespace Three_Musketeers.Visitors
             incrementDecrementSemanticAnalyzer = new IncrementDecrementSemanticAnalyzer(ReportError, ReportWarning, symbolTable);
             // compound assignment
             compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable, GetExpressionType);
+            structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -352,6 +351,42 @@ namespace Three_Musketeers.Visitors
         public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
+        }
+
+        public override string? VisitStructGet([NotNull] ExprParser.StructGetContext context)
+        {
+            return structSemanticAnalyzer.VisitStructGet(context);
+        }
+
+        public override string? VisitVarStruct([NotNull] ExprParser.VarStructContext context)
+        {
+            return structSemanticAnalyzer.VisitStructGet(context.structGet());
+        }
+
+        public override string? VisitStructAtt([NotNull] ExprParser.StructAttContext context)
+        {
+            int line = context.Start.Line;
+            string? fieldType = structSemanticAnalyzer.VisitStructGet(context.structGet());
+            if (fieldType == null)
+            {
+                return null;
+            }
+
+            string? exprType = Visit(context.expr());
+    
+            if (exprType == null)
+            {
+                return null;
+            }
+
+            // Check type compatibility
+            if (!TwoTypesArePermitedToCast(fieldType, exprType))
+            {
+                ReportError(line, $"Cannot assign value of type '{exprType}' to struct field of type '{fieldType}'");
+                return null;
+            }
+    
+            return fieldType;
         }
     }
 }

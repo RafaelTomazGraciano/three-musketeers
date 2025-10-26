@@ -10,16 +10,18 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
         private readonly SymbolTable symbolTable;
         private readonly Action<int, string> reportError;
         private readonly Action<int, string> reportWarning;
+        private readonly Dictionary<string, StructInfo> structs;
 
         public VariableAssignmentSemanticAnalyzer(
             SymbolTable symbolTable,
             Action<int, string> reportError,
-            Action<int, string> reportWarning
-            )
+            Action<int, string> reportWarning,
+            Dictionary<string, StructInfo> structs)
         {
             this.symbolTable = symbolTable;
             this.reportError = reportError;
             this.reportWarning = reportWarning;
+            this.structs = structs;
         }
 
         public string? VisitAtt([NotNull] ExprParser.GenericAttContext context)
@@ -48,6 +50,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
+            // Valida se tipo struct existe
+            if (IsStructType(type) && !structs.ContainsKey(type))
+            {
+                reportError(line, $"Struct type '{type}' is not defined");
+                return null;
+            }
+
             var symbol = new Symbol(varName, type, line);
             symbol.isInitializated = true;
             symbolTable.AddSymbol(symbol);
@@ -67,9 +76,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
+            // Validate if struct type exists
+            if (IsStructType(type) && !structs.ContainsKey(type))
+            {
+                reportError(line, $"Struct type '{type}' is not defined");
+                return null;
+            }
+
             if (indexes.Length > 0)
             {
-                List<int> dimension = new ArrayList<int>();
+                List<int> dimension = new List<int>();
                 bool hasErrors = false;
                 foreach (var index in indexes)
                 {
@@ -85,8 +101,24 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
                 if (hasErrors) return null;
 
+                if (IsStructType(type))
+                {
+                    var arraySymbol = new ArraySymbol(varName, $"struct_{type}", line, dimension);
+                    arraySymbol.isInitializated = true;
+                    symbolTable.AddSymbol(arraySymbol);
+                    return "array";
+                }
+
                 symbolTable.AddSymbol(new ArraySymbol(varName, type, line, dimension));
                 return "array";
+            }
+
+            if (IsStructType(type))
+            {
+                var structSymbol = new StructSymbol(varName, type, line, new Dictionary<string, Symbol>());
+                structSymbol.isInitializated = true;
+                symbolTable.AddSymbol(structSymbol);
+                return $"struct_{type}";
             }
 
             var symbol = new Symbol(varName, type, line);
@@ -94,7 +126,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             return type;
         }
-
         public string? VisitDeclaration([NotNull] ExprParser.PointerDecContext context)
         {
             var typeToken = context.type();
@@ -114,6 +145,15 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             }
 
             string type = typeToken.GetText();
+
+            // Valida se tipo struct existe
+            if (IsStructType(type) && !structs.ContainsKey(type))
+            {
+                reportError(line, $"Struct type '{type}' is not defined");
+                return null;
+            }
+
+            // Ponteiro para struct
             symbolTable.AddSymbol(new PointerSymbol(varName, type, line, pointers));
             return "pointer";
         }
@@ -167,7 +207,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             if (symbol is ArraySymbol arraySymbol)
             {
-                
                 if (indices.Length != arraySymbol.dimensions.Count)
                 {
                     reportError(line, $"Array '{varName}' expects {arraySymbol.dimensions.Count} indices, but got {indices.Length}");
@@ -185,6 +224,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                         return null;
                     }
                 }
+
+                // Retorna o tipo interno do array (pode ser struct)
                 return arraySymbol.innerType;
             }
 
@@ -196,11 +237,34 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
-            
-
+            // Retorna o tipo interno do ponteiro (pode ser struct)
             return pointerSymbol.innerType;
         }
-        
+
+        // Método auxiliar para verificar se um tipo é struct
+        private bool IsStructType(string typeName)
+        {
+            // Verifica se é um tipo struct conhecido
+            // Pode ser "Point" ou já formatado como "struct_Point"
+            if (typeName.StartsWith("struct_"))
+            {
+                string structName = typeName.Substring(7);
+                return structs.ContainsKey(structName);
+            }
+            
+            return structs.ContainsKey(typeName);
+        }
+
+        // Método auxiliar para obter informações de struct
+        public StructInfo? GetStructInfo(string typeName)
+        {
+            if (typeName.StartsWith("struct_"))
+            {
+                string structName = typeName.Substring(7);
+                return structs.ContainsKey(structName) ? structs[structName] : null;
+            }
+            
+            return structs.ContainsKey(typeName) ? structs[typeName] : null;
+        }
     }
 }
-

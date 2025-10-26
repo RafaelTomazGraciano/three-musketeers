@@ -1,7 +1,9 @@
 using System.Text;
+using LLVMSharp;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
+using Three_Musketeers.Visitors.CodeGeneration.Struct;
 
 namespace Three_Musketeers.Visitors.CodeGeneration
 {
@@ -17,9 +19,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         //for functions
         protected StringBuilder functionDefinitions = new StringBuilder();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
-
         protected MainFunctionCodeGenerator? mainFunctionCodeGenerator;
         protected FunctionCodeGenerator? functionCodeGenerator;
+
+        protected StructCodeGenerator? structCodeGenerator;
+
+        //for structs
+        protected Dictionary<string, StructModel> structTypes = [];
+        protected StringBuilder structBuilder = new();
 
         protected int stringCounter = 0;
         protected int registerCount = 0;
@@ -36,6 +43,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                 "bool" => "i1",
                 "char" => "i8",
                 "string" => "i8*",
+                var t when structTypes.TryGetValue(t, out var structModel) => structModel.LLVMTypeName,
                 _ => "i32"
             };
         }
@@ -45,6 +53,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             return type switch
             {
                 var t when t.Contains('*') => 8,
+                var t when structTypes.TryGetValue(t, out var structModel) => structModel.size,
                 "i32" => 4,
                 "double" => 8,
                 "i1" or "i8" => 1,
@@ -54,8 +63,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         public override string? VisitStart(ExprParser.StartContext context)
         {
+            var prog = context.prog();
+            var structs = prog.Where(p => p.structStatement() != null).Select(p => p.structStatement());
+            foreach (var structStm in structs)
+            {
+                structCodeGenerator!.VisitStructStatement(structStm);
+            }
+            
             // collect SIgnatures
-            var functions = context.prog().Where(p => p.function() != null).Select(p => p.function()).ToList();
+            var functions = prog.Where(p => p.function() != null).Select(p => p.function()).ToList();
             foreach (var func in functions)
             {
                 functionCodeGenerator!.CollectFunctionSignature(func);
@@ -67,11 +83,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                 functionCodeGenerator!.VisitFunction(func);
             }
 
-            foreach (var prog in context.prog())
+            foreach (var stm in context.prog())
             {
-                if (prog.function() == null)
+                if (stm.function() == null && stm.structStatement() == null)
                 {
-                    Visit(prog);
+                    Visit(stm);
                 }
             }
 
@@ -90,6 +106,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             output.Append(globalStrings);
             output.AppendLine();
             
+            output.Append(structBuilder);
+            output.AppendLine();
+
             output.Append(declarations);
             output.AppendLine();
             

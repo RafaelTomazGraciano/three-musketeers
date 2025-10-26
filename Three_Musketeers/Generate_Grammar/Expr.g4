@@ -7,6 +7,7 @@ start
 prog
     : stm
     | newType
+    | structStatement
     | function
     ;
 
@@ -28,6 +29,7 @@ stm
     | getsStatement
     | putsStatement
     | freeStatement
+    | unionStatement
     | RETURN expr? EOL
     ;
 
@@ -36,6 +38,13 @@ declaration
     | type POINTER+ ID  #PointerDec
     ;
 
+structStatement
+    : 'struct' ID '{' declaration (',' declaration)* '}' EOL
+    ;
+
+unionStatement
+    : 'union' ID '{' declaration+ '}'
+    ;
 
 function
     : function_return ID '(' args? ')' '{' func_body '}'
@@ -67,13 +76,14 @@ putsStatement
     ;
 
 att
-    : type? POINTER* ID '=' expr                      #GenericAtt
+    : (type POINTER*)? ID '=' expr                    #GenericAtt
     | (type POINTER+)? ID '=' 'malloc' '(' expr ')'   #MallocAtt
     | derref '=' expr                                 #DerrefAtt
+    | structGet '=' expr                              #StructAtt
     ;
 
 attVar 
-    : type? ID index* '=' expr                    # SingleAtt
+    : type? ID index* '=' expr              # SingleAtt
     | ID index* '+=' expr                   # SingleAttPlusEquals
     | ID index* '-=' expr                   # SingleAttMinusEquals
     | ID index* '*=' expr                   # SingleAttMultiplyEquals
@@ -119,6 +129,7 @@ expr
     | 'dtoa' '(' expr ')'            # DtoaConversion
     | ID '(' (expr (',' expr)*)? ')' # FunctionCall
     | ID                             # Var
+    | structGet                      # VarStruct
     | ID index+                      # VarArray
     | derref                         # DerrefExpr
     | ADDRESS expr                   # ExprAddress
@@ -128,6 +139,16 @@ expr
     | CHAR_LITERAL                   # CharLiteral
     | TRUE                           # TrueLiteral
     | FALSE                          # FalseLiteral
+    ;
+
+structGet
+    : ID index* '.' structContinue
+    | ID index* '->' structContinue
+    ;
+
+structContinue
+    : ID index*
+    | structGet
     ;
 
 derref

@@ -18,8 +18,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<string?> getCurrentFunctionName;
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Func<string, int> GetAlignment;
+        private readonly Dictionary<string, StructModel> structs;
 
-        public VariableAssignmentCodeGenerator(
+        public VariableAssignmentCodeGenerator (
             StringBuilder declarations,
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
@@ -28,7 +29,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Func<ExprParser.ExprContext, string> visitExpression,
             Func<string?> getCurrentFunctionName,
             Func<StringBuilder> getCurrentBody,
-            Func<string, int> GetAlignment)
+            Func<string, int> GetAlignment,
+            Dictionary<string, StructModel> structs)
         {
             this.declarations = declarations;
             this.variables = variables;
@@ -39,6 +41,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.getCurrentBody = getCurrentBody;
             this.GetAlignment = GetAlignment;
+            this.structs = structs;
         }
 
         public string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -51,7 +54,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             if (context.type() != null)
             {
                 varType = context.type().GetText();
-                llvmType = getLLVMType(varType);
+                string pointer = new string('*', context.POINTER().Length);
+                llvmType = getLLVMType(varType) + pointer;
                 register = nextRegister();
 
                 if (varType == "string")
@@ -113,21 +117,21 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             if (variable.type == "string")
             {
                 // Se é [256 x i8] (string local), faz getelementptr
-        if (variable.LLVMType == "[256 x i8]")
-        {
-            string ptrReg = nextRegister();
-            getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
-            registerTypes[ptrReg] = "i8*";
-            return ptrReg;
-        }
-        // Se é i8* (parâmetro de string), apenas faz load
-        else if (variable.LLVMType == "i8*")
-        {
-            string loadRegStr = nextRegister();
-            getCurrentBody().AppendLine($"  {loadRegStr} = load i8*, i8** {variable.register}, align 8");
-            registerTypes[loadRegStr] = "i8*";
-            return loadRegStr;
-        }
+                if (variable.LLVMType == "[256 x i8]")
+                {
+                    string ptrReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
+                    registerTypes[ptrReg] = "i8*";
+                    return ptrReg;
+                }
+                // Se é i8* (parâmetro de string), apenas faz load
+                else if (variable.LLVMType == "i8*")
+                {
+                    string loadRegStr = nextRegister();
+                    getCurrentBody().AppendLine($"  {loadRegStr} = load i8*, i8** {variable.register}, align 8");
+                    registerTypes[loadRegStr] = "i8*";
+                    return loadRegStr;
+                }
             }
 
             string loadReg = nextRegister();
@@ -143,6 +147,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string llvmType = getLLVMType(varType);
             string register = nextRegister();
             var indexes = context.index();
+
+            if (structs.TryGetValue(varType, out StructModel? value)) llvmType = value.LLVMTypeName;
 
             if (context.index().Length > 0)
             {
@@ -187,6 +193,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string pointers = context.POINTER().Aggregate("", (a, b) => a + b.GetText());
             string llvmType = getLLVMType(varType) + pointers;
             string register = nextRegister();
+
             variables[varName] = new Variable(varName, varType, llvmType, register);
 
             WriteAlloca(register, llvmType, GetAlignment(llvmType));

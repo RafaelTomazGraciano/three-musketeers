@@ -1,3 +1,12 @@
+struct myStruct {
+    int a,
+    int b[5]
+};
+
+struct otherStruct {
+    myStruct c
+};
+
 int main(int argc, char argv[]) {
     printf("\n=== Test Arguments ===\n");
     printf("Argument count: %d\n", argc);
@@ -65,6 +74,16 @@ int main(int argc, char argv[]) {
     (*(*other_pointer)) = 26;
     printf("Test after pointer derref of derref: %d\n", test);
 
+    printf("\n=== Test Structs ===\n");
+    myStruct iDo;
+    iDo.a = 2;
+    iDo.b[1] = iDo.a + 8;
+    
+    printf("iDo.a = %d\n", iDo.a);
+    printf("iDo.b[1] = %d\n", iDo.b[1]);
+    myStruct recieved = structFunc();
+    printf("recieved.a = %d\n", recieved.a);
+    
     printf("\n=== All Function Tests Completed ===\n");
 
     return 0;
@@ -111,4 +130,9 @@ void recursionPrint(string message) {
     recursionPrint(message);
 }
 
+myStruct structFunc() {
+    myStruct structers;
+    structers.a = 0;
+    return structers;
+}
 // === MAIN TESTS ===
