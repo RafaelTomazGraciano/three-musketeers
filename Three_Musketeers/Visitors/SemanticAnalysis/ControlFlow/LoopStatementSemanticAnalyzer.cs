@@ -13,6 +13,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
         private readonly Func<ExprParser.StmContext, string?> visitStatement;
         private readonly Func<IParseTree, string?> visitContext;
+        private readonly Action enterLoopContext;
+        private readonly Action exitLoopContext;
 
         public LoopStatementSemanticAnalyzer(
             SymbolTable symbolTable,
@@ -20,7 +22,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             Func<ExprParser.ExprContext, string?> getExpressionType,
             Func<ExprParser.ExprContext, string?> visitExpression,
             Func<ExprParser.StmContext, string?> visitStatement,
-            Func<IParseTree, string?> visitContext)
+            Func<IParseTree, string?> visitContext,
+            Action enterLoopContext,
+            Action exitLoopContext)
         {
             this.symbolTable = symbolTable;
             this.reportError = reportError;
@@ -28,6 +32,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             this.visitExpression = visitExpression;
             this.visitStatement = visitStatement;
             this.visitContext = visitContext;
+            this.enterLoopContext = enterLoopContext;
+            this.exitLoopContext = exitLoopContext;
         }
 
         public string? VisitForStatement([NotNull] ExprParser.ForStatementContext context)
@@ -66,6 +72,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                 visitContext(forIncrement);
             }
 
+            // Enter loop context for break/continue validation
+            enterLoopContext();
+
             // Enter scope for loop body
             symbolTable.EnterScope();
             AnalyzeBlock(body);
@@ -73,6 +82,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
 
             // Exit loop scope
             symbolTable.ExitScope();
+
+            // Exit loop context
+            exitLoopContext();
 
             return null;
         }
@@ -93,10 +105,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                     $"While loop condition must be a boolean-compatible type, got '{conditionType}'");
             }
 
+            // Enter loop context for break/continue validation
+            enterLoopContext();
+
             // Enter scope for loop body
             symbolTable.EnterScope();
             AnalyzeBlock(body);
             symbolTable.ExitScope();
+
+            // Exit loop context
+            exitLoopContext();
 
             return null;
         }
@@ -106,6 +124,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             int line = context.Start.Line;
             var condition = context.expr();
             var body = context.func_body();
+
+            // Enter loop context for break/continue validation
+            enterLoopContext();
 
             // Enter scope for loop body
             symbolTable.EnterScope();
@@ -121,6 +142,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                 reportError(condition.Start.Line,
                     $"Do-while loop condition must be a boolean-compatible type, got '{conditionType}'");
             }
+
+            // Exit loop context
+            exitLoopContext();
 
             return null;
         }

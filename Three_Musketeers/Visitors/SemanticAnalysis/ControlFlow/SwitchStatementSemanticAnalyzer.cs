@@ -12,19 +12,25 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
         private readonly Func<ExprParser.ExprContext, string?> getExpressionType;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
         private readonly Func<ExprParser.StmContext, string?> visitStatement;
+        private readonly Action enterSwitchContext;
+        private readonly Action exitSwitchContext;
 
         public SwitchStatementSemanticAnalyzer(
             SymbolTable symbolTable,
             Action<int, string> reportError,
             Func<ExprParser.ExprContext, string?> getExpressionType,
             Func<ExprParser.ExprContext, string?> visitExpression,
-            Func<ExprParser.StmContext, string?> visitStatement)
+            Func<ExprParser.StmContext, string?> visitStatement,
+            Action enterSwitchContext,
+            Action exitSwitchContext)
         {
             this.symbolTable = symbolTable;
             this.reportError = reportError;
             this.getExpressionType = getExpressionType;
             this.visitExpression = visitExpression;
             this.visitStatement = visitStatement;
+            this.enterSwitchContext = enterSwitchContext;
+            this.exitSwitchContext = exitSwitchContext;
         }
 
         public string? VisitSwitchStatement([NotNull] ExprParser.SwitchStatementContext context)
@@ -33,6 +39,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             var switchExpr = context.expr();
             var caseLabels = context.caseLabel();
             var defaultLabel = context.defaultLabel();
+
+            // Enter switch context for break statement validation
+            enterSwitchContext();
 
             // Validate switch expression type
             string? switchExprType = getExpressionType(switchExpr);
@@ -58,6 +67,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             {
                 AnalyzeDefaultLabel(defaultLabel);
             }
+
+            // Exit switch context
+            exitSwitchContext();
 
             return null;
         }
