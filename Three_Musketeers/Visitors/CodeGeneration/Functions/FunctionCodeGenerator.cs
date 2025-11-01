@@ -359,11 +359,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
 
             var exprCtx = context.expr();
 
+            // Check if we're inside a control flow structure (if/switch/loop)
+            // by checking if the last line in the body is a label (indicating we're in a control flow block)
+            bool isInControlFlow = IsInsideControlFlow();
+
             // Void return
             if (currentFunction.isVoid)
             {
                 currentFunctionBody.AppendLine("  ret void");
-                hasReturnedInCurrentBlock = true;
+                // Only set flag for unconditional returns (not inside control flow)
+                if (!isInControlFlow)
+                {
+                    hasReturnedInCurrentBlock = true;
+                }
                 return;
             }
 
@@ -378,9 +386,69 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                         : getLLVMType(currentFunction.returnType ?? "i32");
 
                     currentFunctionBody.AppendLine($"  ret {returnType} {returnValue}");
-                    hasReturnedInCurrentBlock = true;
+                    // Only set flag for unconditional returns (not inside control flow)
+                    if (!isInControlFlow)
+                    {
+                        hasReturnedInCurrentBlock = true;
+                    }
                 }
             }
+        }
+
+        private bool IsInsideControlFlow()
+        {
+            if (currentFunctionBody == null || currentFunctionBody.Length == 0)
+            {
+                return false;
+            }
+
+            // Check recent lines to see if we're inside a control flow structure
+            // We're inside control flow if we just branched TO a control flow label,
+            // not if we're AT a merge label (merge labels mark the end of control flow)
+            string bodyText = currentFunctionBody.ToString();
+            string[] lines = bodyText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            
+            if (lines.Length == 0)
+            {
+                return false;
+            }
+
+            // Check the last few non-empty lines
+            int checkedLines = 0;
+            for (int i = lines.Length - 1; i >= 0 && checkedLines < 3; i--)
+            {
+                string line = lines[i].Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+                
+                checkedLines++;
+                
+                // If the line is a merge label, we're past control flow
+                if (line.StartsWith("merge_") && line.EndsWith(":"))
+                {
+                    return false; // We're at a merge point, past the control flow
+                }
+                
+                // If the line is a control flow block label (if_, case_, while_, etc.) but not merge_,
+                // we're inside control flow
+                if ((line.StartsWith("if_") || line.StartsWith("case_") || line.StartsWith("while_") || 
+                     line.StartsWith("for_") || line.StartsWith("dowhile_") || line.StartsWith("else_")) 
+                    && line.EndsWith(":"))
+                {
+                    return true; // We're in a control flow block
+                }
+                
+                // If it's a branch TO a control flow label (but not merge), we're entering control flow
+                if ((line.Contains("br i1") || line.Contains("br label %")) && 
+                    !line.Contains("merge_"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
         
         private string GetTypeString(ExprParser.TypeContext context)

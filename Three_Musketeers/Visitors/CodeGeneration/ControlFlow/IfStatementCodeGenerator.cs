@@ -139,6 +139,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             var statements = context.stm();
             bool foundControlFlow = false;
+            bool foundReturn = false;
             
             foreach (var stm in statements)
             {
@@ -149,9 +150,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
                     // Let VisitStm handle it, but mark that we found control flow
                     visitStatement(stm);
                     foundControlFlow = true;
-                    // Don't break - VisitStm will generate the branch
-                    // But we won't generate the if's merge branch
-                    break;
+                    break; // Exit - control flow statement ends the block
+                }
+                
+                // Check if this is a return statement
+                if (stm.RETURN() != null)
+                {
+                    visitStatement(stm);
+                    foundReturn = true;
+                    foundControlFlow = true; // Return also prevents merge branch
+                    break; // Exit - return ends the block
                 }
                 
                 visitStatement(stm);
