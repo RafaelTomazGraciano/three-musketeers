@@ -43,6 +43,7 @@ namespace Three_Musketeers.Visitors
         private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
         private readonly IncludeCodeGenerator includeCodeGenerator;
         private readonly IfStatementCodeGenerator ifStatementCodeGenerator;
+        private readonly SwitchStatementCodeGenerator switchStatementCodeGenerator;
 
         public CodeGenerator()
         {
@@ -113,6 +114,8 @@ namespace Three_Musketeers.Visitors
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit);
             //control flow
             ifStatementCodeGenerator = new IfStatementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
+            switchStatementCodeGenerator = new SwitchStatementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
         }
 
@@ -347,6 +350,30 @@ namespace Three_Musketeers.Visitors
             if (context.ifStatement() != null)
             {
                 return ifStatementCodeGenerator.VisitIfStatement(context.ifStatement());
+            }
+
+            if (context.switchStatement() != null)
+            {
+                return switchStatementCodeGenerator.VisitSwitchStatement(context.switchStatement());
+            }
+
+            if (context.BREAK() != null)
+            {
+                // Handle break statement
+                if (switchStatementCodeGenerator.IsInSwitch())
+                {
+                    string? mergeLabel = switchStatementCodeGenerator.GetCurrentSwitchMergeLabel();
+                    if (mergeLabel != null)
+                    {
+                        GetCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                    }
+                }
+                else
+                {
+                    // Break outside switch - this will be caught by semantic analyzer
+                    // For now, just continue (semantic analyzer will report error)
+                }
+                return null;
             }
             
             return base.VisitStm(context);

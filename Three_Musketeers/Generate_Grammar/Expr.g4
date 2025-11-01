@@ -42,6 +42,8 @@ stm
     | freeStatement
     | RETURN expr? EOL
     | ifStatement
+    | switchStatement
+    | BREAK EOL
     ;
 
 declaration
@@ -108,6 +110,18 @@ ifStatement
     : IF '(' expr ')' '{' func_body '}' (ELSE IF '(' expr ')' '{' func_body '}')* (ELSE '{' func_body '}')?
     ;
 
+switchStatement
+    : SWITCH '(' expr ')' '{' caseLabel* defaultLabel? '}'
+    ;
+
+caseLabel
+    : CASE (INT | CHAR_LITERAL) ':' func_body
+    ;
+
+defaultLabel
+    : DEFAULT ':' func_body
+    ;
+
 expr
     : '++' ID                      # PrefixIncrement
     | '--' ID                      # PrefixDecrement
@@ -161,6 +175,10 @@ DEFINE        : '#define';
 RETURN        : 'return';
 IF            : 'if';
 ELSE          : 'else';
+SWITCH        : 'switch';
+CASE          : 'case';
+DEFAULT       : 'default';
+BREAK         : 'break';
 GR            : '>';
 GRT           : '>=';
 LE            : '<';

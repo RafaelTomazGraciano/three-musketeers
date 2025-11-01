@@ -41,6 +41,7 @@ namespace Three_Musketeers.Visitors
         private readonly IncrementDecrementSemanticAnalyzer incrementDecrementSemanticAnalyzer;
         private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
         private readonly IfStatementSemanticAnalyzer ifStatementSemanticAnalyzer;
+        private readonly SwitchStatementSemanticAnalyzer switchStatementSemanticAnalyzer;
 
         private readonly DefineSemanticAnalyzer defineSemanticAnalyzer;
         private readonly IncludeSemanticAnalyzer includeSemanticAnalyzer;
@@ -87,6 +88,7 @@ namespace Three_Musketeers.Visitors
                 GetExpressionType);
             // control flow
             ifStatementSemanticAnalyzer = new IfStatementSemanticAnalyzer(symbolTable, ReportError, GetExpressionType, Visit, Visit);
+            switchStatementSemanticAnalyzer = new SwitchStatementSemanticAnalyzer(symbolTable, ReportError, GetExpressionType, Visit, Visit);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -349,6 +351,19 @@ namespace Three_Musketeers.Visitors
             if (context.ifStatement() != null)
             {
                 return ifStatementSemanticAnalyzer.VisitIfStatement(context.ifStatement());
+            }
+
+            if (context.switchStatement() != null)
+            {
+                return switchStatementSemanticAnalyzer.VisitSwitchStatement(context.switchStatement());
+            }
+
+            if (context.BREAK() != null)
+            {
+                // Break statement semantic check - should be inside a switch or loop
+                // For now, we'll just allow it (semantic checking could be added later)
+                // The code generator will handle it appropriately
+                return null;
             }
 
             return base.VisitStm(context);
