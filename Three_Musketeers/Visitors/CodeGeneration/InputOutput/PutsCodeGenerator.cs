@@ -16,6 +16,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Func<StringBuilder?> getCurrentBody;
         private readonly VariableResolver variableResolver;
         private bool putsInitialized = false;
+        private readonly Func<ExprParser.IndexContext, string> calculateArrayPosition;
 
         public PutsCodeGenerator(
             StringBuilder declarations,
@@ -23,14 +24,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<StringBuilder?> getCurrentBody,
-            VariableResolver variableResolver)
+            VariableResolver variableResolver,
+            Func<ExprParser.IndexContext, string> calculateArrayPosition
+            )
         {
             this.declarations = declarations;
             this.mainBody = mainBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.getCurrentBody = getCurrentBody;
-            this.variableResolver = variableResolver;
+            this.calculateArrayPosition = calculateArrayPosition;
         }
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
@@ -71,7 +74,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         
         private void GenerateArrayElementPuts(Variable variable, ExprParser.IndexContext indexContext, StringBuilder body)
         {
-            string indexValue = indexContext.INT().GetText();
+            string indexValue = calculateArrayPosition(indexContext);
 
             if (registerTypes.ContainsKey(variable.register) && 
                 registerTypes[variable.register] == "i8***")

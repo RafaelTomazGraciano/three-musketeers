@@ -12,17 +12,23 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Dictionary<string, Variable> variables;
-
+        private readonly Func<ExprParser.ExprContext, string> visitExpresion;
+        private readonly Func<ExprParser.IndexContext[], string> calculateArrayPosition;
         public IncrementDecrementCodeGenerator(
             Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
-            Dictionary<string, Variable> variables)
+            Dictionary<string, Variable> variables,
+            Func<ExprParser.ExprContext, string> visitExpresion,
+            Func<ExprParser.IndexContext[], string> calculateArrayPosition
+            )
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.variables = variables;
+            this.visitExpresion = visitExpresion;
+            this.calculateArrayPosition = calculateArrayPosition;
         }
 
         // Prefix increment: ++x
@@ -149,7 +155,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             ArrayVariable arrayVar = (ArrayVariable)variables[varName];
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
@@ -177,11 +183,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             ArrayVariable arrayVar = (ArrayVariable)variables[varName];
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"{elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, i32 0, {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -205,11 +211,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             ArrayVariable arrayVar = (ArrayVariable)variables[varName];
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"{elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, i32 0, {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -251,11 +257,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             ArrayVariable arrayVar = (ArrayVariable)variables[varName];
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, i32 0, {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -303,19 +309,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             getCurrentBody().AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {elementPtr}, align {GetAlignment(llvmType)}");
             registerTypes[loadReg] = llvmType;
             return loadReg;
-        }
-
-        private int CalculateArrayPosition(ExprParser.IndexContext[] indexes, ArrayVariable arrayVar)
-        {
-            int pos = 0;
-            int i = 0;
-            foreach (var dim in arrayVar.dimensions)
-            {
-                int index = int.Parse(indexes[i].INT().GetText());
-                pos = pos * dim + index;
-                i++;
-            }
-            return pos;
         }
 
         private string PerformIncrementDecrement(string value, string llvmType, bool isIncrement)

@@ -2,33 +2,37 @@ using Antlr4.Runtime.Misc;
 
 namespace Three_Musketeers.Models
 {
-    public class StructModel
+    public class StructModel : HeterogenousType
     {
-        public string LLVMTypeName;
-        public List<Variable> args;
 
-        public int size;
-
-        public StructModel(string LLVMTypeName)
+        public StructModel(string LLVMName, List<Variable> members, Func<string, int> GetSize) : base(LLVMName, members)
         {
-            this.LLVMTypeName = LLVMTypeName;
-            args = [];
-            size = 0;
+            totalSize = 0;
+            foreach (var member in members)
+            {
+                totalSize += GetSize(member.type);
+            }
         }
 
         public int GetFieldIndex(string fieldName)
         {
-            return args.FindIndex(x => x.name == fieldName);
+            return members.FindIndex(x => x.name == fieldName);
         }
 
         public string GetFieldType(string fieldName)
         {
-            return args.Find(x => x.name == fieldName)!.LLVMType;
+            return members.Find(x => x.name == fieldName)!.LLVMType;
         }
 
         public void AddSize(int v)
         {
-            size += v;
+            totalSize += v;
+        }
+
+        public override string GetLLVMVar(string name, string ptr)
+        {
+            int index = GetFieldIndex(name);
+            return $"getelement {LLVMName}, {LLVMName}* {ptr}, i32 0, i32 {index}";
         }
     }
 }

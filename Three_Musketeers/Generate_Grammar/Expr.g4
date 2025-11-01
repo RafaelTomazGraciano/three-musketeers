@@ -6,7 +6,6 @@ start
 
 prog
     : stm
-    | newType
     | structStatement
     | function
     ;
@@ -34,8 +33,7 @@ stm
     ;
 
 declaration
-    : type ID index*    #BaseDec
-    | type POINTER+ ID  #PointerDec
+    : type POINTER* ID intIndex*
     ;
 
 structStatement
@@ -43,7 +41,7 @@ structStatement
     ;
 
 unionStatement
-    : 'union' ID '{' declaration+ '}'
+    : 'union' ID '{' declaration (',' declaration)* '}' EOL
     ;
 
 function
@@ -82,16 +80,12 @@ att
     | structGet '=' expr                              #StructAtt
     ;
 
-attVar 
-    : type? ID index* '=' expr              # SingleAtt
+attVar
+    : ID index* '=' expr                    # SingleArrayAtt
     | ID index* '+=' expr                   # SingleAttPlusEquals
     | ID index* '-=' expr                   # SingleAttMinusEquals
     | ID index* '*=' expr                   # SingleAttMultiplyEquals
     | ID index* '/=' expr                   # SingleAttDivideEquals
-    ;
-
-newType
-    : 'type' ID 'as' type EOL
     ;
 
 args
@@ -99,7 +93,11 @@ args
     ;
 
 index
-    : '[' INT ']'
+    : '[' expr ']'
+    ;
+
+intIndex
+    :   '[' INT ']'
     ;
 
 freeStatement

@@ -18,7 +18,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<string?> getCurrentFunctionName;
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Func<string, int> GetAlignment;
-        private readonly Dictionary<string, StructModel> structs;
+        private readonly Dictionary<string, HeterogenousType> structs;
 
         public VariableAssignmentCodeGenerator (
             StringBuilder declarations,
@@ -30,7 +30,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Func<string?> getCurrentFunctionName,
             Func<StringBuilder> getCurrentBody,
             Func<string, int> GetAlignment,
-            Dictionary<string, StructModel> structs)
+            Dictionary<string, HeterogenousType> structs)
         {
             this.declarations = declarations;
             this.variables = variables;
@@ -54,7 +54,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             if (context.type() != null)
             {
                 varType = context.type().GetText();
-                string pointer = new string('*', context.POINTER().Length);
+                string pointer = new('*', context.POINTER().Length);
                 llvmType = getLLVMType(varType) + pointer;
                 register = nextRegister();
 
@@ -140,181 +140,66 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             return loadReg;
         }
 
-        public string? VisitDec([NotNull] ExprParser.BaseDecContext context)
+        public string? VisitDec([NotNull] ExprParser.DeclarationContext context)
         {
             string varType = context.type().GetText();
             string varName = context.ID().GetText();
             string llvmType = getLLVMType(varType);
             string register = nextRegister();
-            var indexes = context.index();
+            string pointers = new('*', context.POINTER().Length);
+            var indexes = context.intIndex();
 
-            if (structs.TryGetValue(varType, out StructModel? value)) llvmType = value.LLVMTypeName;
-
-            if (context.index().Length > 0)
+            if (indexes.Length > 0)
             {
-                List<int> dimensions = new ArrayList<int>();
-                int totalSize = 1;
-                string arrayType;
-                foreach (var index in indexes)
-                {
-                    int size = int.Parse(index.INT().GetText());
-                    totalSize *= size;
-                    dimensions.Add(size);
-                }
-
-                if (varType == "string")
-                {
-                    totalSize *= 256;
-                }
-
-                arrayType = $"[{totalSize} x {llvmType}]";
-
+                (var arrayType, var totalSize) = GetArrayDimensions(indexes, varType, llvmType);
                 WriteAlloca(register, arrayType, GetAlignment(llvmType));
-                variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, dimensions, llvmType);
+                variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType);
                 return null;
             }
 
             if (varType == "string")
             {
-                WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
-                variables[varName] = new Variable(varName, varType, "[256 x i8]", register);
+                llvmType = "[256 x i8]" + pointers;
+                WriteAlloca(register, llvmType, GetAlignment("i8*"));
+                variables[varName] = new Variable(varName, varType, llvmType, register);
                 return null;
             }
 
-            WriteAlloca(register, llvmType, GetAlignment(llvmType));
+            WriteAlloca(register, llvmType+pointers, GetAlignment(llvmType));
             variables[varName] = new Variable(varName, varType, llvmType, register);
             return null;
         }
 
-        public string? VisitDec(ExprParser.PointerDecContext context)
+        private (string dimension, int totalSize) GetArrayDimensions(ExprParser.IntIndexContext[] indexes, string varType, string llvmType)
         {
-            string varType = context.type().GetText();
-            string varName = context.ID().GetText();
-            string pointers = context.POINTER().Aggregate("", (a, b) => a + b.GetText());
-            string llvmType = getLLVMType(varType) + pointers;
-            string register = nextRegister();
+            List<int> dimensions = new ArrayList<int>();
+            int totalSize = 1;
+            int i;
+            string arrayType = new('[', 1);
+            int dimension;
 
-            variables[varName] = new Variable(varName, varType, llvmType, register);
-
-            WriteAlloca(register, llvmType, GetAlignment(llvmType));
-            registerTypes[register] = llvmType + "*";
-            return null;
-        }
-
-        public string VisitVarArray(ExprParser.VarArrayContext context)
-        {
-            string varName = context.ID().GetText();
-            var mainBody = getCurrentBody();
-            var indexes = context.index();
-            int i = 0;
-            int pos = 0;
-            Variable variable = GetVariableWithScope(varName)!;
-            string llvmType;
-            string loadReg;
-            if (variable is ArrayVariable arrayVar)
+            for (i = 0; i < indexes.Length; i++)
             {
-                foreach (var dim in arrayVar.dimensions)
-                {
-                    int index = int.Parse(indexes[i].INT().GetText());
-                    pos = pos * dim + index;
-                    i++;
-                }
-
-                string elementPtrReg = nextRegister();
-
-                llvmType = arrayVar.type == "string" ? "i8" : arrayVar.innerType;
-
-                mainBody.AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {pos}");
-
-                if (arrayVar.type == "string")
-                {
-                    registerTypes[elementPtrReg] = "i8*";
-                    return elementPtrReg;
-                }
-
-                loadReg = nextRegister();
-                getCurrentBody().AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {elementPtrReg}, align {GetAlignment(arrayVar.innerType)}");
-                registerTypes[loadReg] = arrayVar.innerType;
-                return loadReg;
+                dimension = int.Parse(indexes[i].GetText());
+                totalSize *= dimension;
+                arrayType += $"{dimension} x [";
             }
 
-            string currentPtr = nextRegister();
-            llvmType = variable.LLVMType;
-    
-            mainBody.AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
-    
-            string elementType = llvmType.TrimEnd('*');
-            string resultPtr = currentPtr;
-            foreach (var index in indexes)
-            {
-                int value = int.Parse(index.INT().GetText());
-                string gepReg = nextRegister();
+            dimension = int.Parse(indexes[i].GetText());
+            arrayType += $"{dimension}";
 
-                mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
-                resultPtr = gepReg;
+            if (varType == "string")
+            {
+                arrayType += "[256 x i8]";
+                totalSize *= 256;
             }
-    
-            loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {elementType}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
-            registerTypes[loadReg] = elementType;
-    
-            return loadReg;
-        }
-
-        public string? VisitSingleAtt(ExprParser.SingleAttContext context)
-        {
-            string varName = context.ID().GetText();
-            string expression = visitExpression(context.expr());
-            var indexes = context.index();
-            var mainBody = getCurrentBody();
-            int pos = 0;
-            int i = 0;
-            Variable variable = GetVariableWithScope(varName)!;
-
-            if (variable is ArrayVariable arrayVar)
+            else
             {
-                foreach (var dim in arrayVar.dimensions)
-                {
-                    int index = int.Parse(indexes[i].INT().GetText());
-                    pos = pos * dim + index;
-                    i++;
-                }
-
-                if (arrayVar.type == "string")
-                {
-                    if (registerTypes.TryGetValue(expression, out string? value) && value == "i8*")
-                    {
-                        WriteStrCopy(arrayVar.register, expression, pos * 256);
-                    }
-                    return null;
-                }
-
-            string regElementPtr = nextRegister();
-            mainBody.AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
-            mainBody.AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
-            return null;
+                arrayType += $" x {llvmType}";
+            }
+            arrayType += new string(']', indexes.Length);
+            return (arrayType, totalSize);
         }
-
-        string currentPtr = nextRegister();
-        string llvmType = variable.LLVMType;
-    
-        mainBody.AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
-
-        string elementType = llvmType.TrimEnd('*');
-        string resultPtr = currentPtr;
-
-        foreach (var index in indexes)
-        {
-            int value = int.Parse(index.INT().GetText());
-            string gepReg = nextRegister();
-            mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
-            resultPtr = gepReg;
-        }
-    
-        mainBody.AppendLine($"  store {elementType} {expression}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
-    
-        return null;
-    }
 
         private Variable? GetVariableWithScope(string varName)
         {
@@ -342,6 +227,33 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private void WriteAlloca(string register, string type, int alignment)
         {
             getCurrentBody().AppendLine($"  {register} = alloca {type}, align {alignment}");
+        }
+
+        public string VisitVarArray(ExprParser.VarArrayContext context)
+        {
+            string name = context.ID().GetText();
+            var indexes = context.index();
+            var currentBody = getCurrentBody();
+            var register = nextRegister();
+            Variable variable = GetVariableWithScope(name)!;
+            string expr;
+            var llvmType = variable.LLVMType;
+            int i;
+            currentBody.Append($"    {register} = getelementptr inbounds {llvmType}, {llvmType}* {register}, i32 0, ");
+            for (i = 0; i < indexes.Length-1; i++)
+            {
+                expr = visitExpression(indexes[i].expr());
+                currentBody.Append($"i32 {expr}, ");
+            }
+            expr = visitExpression(indexes[i].expr());
+            currentBody.AppendLine($"i32 {expr}");
+
+            if (variable is ArrayVariable arrayVariable)
+            {
+                llvmType = arrayVariable.innerType;
+            }
+            registerTypes[register] = llvmType;
+            return register;
         }
     }
 }

@@ -25,7 +25,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         protected StructCodeGenerator? structCodeGenerator;
 
         //for structs
-        protected Dictionary<string, StructModel> structTypes = [];
+        protected Dictionary<string, HeterogenousType> structTypes = [];
         protected StringBuilder structBuilder = new();
 
         protected int stringCounter = 0;
@@ -43,7 +43,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                 "bool" => "i1",
                 "char" => "i8",
                 "string" => "i8*",
-                var t when structTypes.TryGetValue(t, out var structModel) => structModel.LLVMTypeName,
+                var t when structTypes.TryGetValue(t, out var structModel) => structModel.GetLLVMName(),
                 _ => "i32"
             };
         }
@@ -53,12 +53,45 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             return type switch
             {
                 var t when t.Contains('*') => 8,
-                var t when structTypes.TryGetValue(t, out var structModel) => structModel.size,
+                var t when structTypes.ContainsKey(t) => 4,
                 "i32" => 4,
                 "double" => 8,
                 "i1" or "i8" => 1,
                 _ => 4
             };
+        }
+
+        private int GetSize(string type)
+        {
+            return type switch
+            {
+                var t when t.Contains('*') => 8,
+                var t when structTypes.TryGetValue(t, out var structFound) => structFound.GetTotalSize(),
+                "i32" => 4,
+                "double" => 8,
+                "i1" or "i8" => 1,
+                _ => 4
+            };
+        }
+
+        protected string CalculateArrayPosition(ExprParser.IndexContext[] indexes)
+        {
+            int i;
+            string expr = Visit(indexes[0].expr());
+            string result = $" i32 {expr}";
+
+            for (i = 1; i < indexes.Length; i++)
+            {
+                expr = Visit(indexes[i].expr());
+                result += $", i32 {expr}";
+            }
+            return result;
+        }
+
+        protected string CalculateArrayPosition(ExprParser.IndexContext index)
+        {
+            string expr = Visit(index);
+            return $" i32 {expr}";
         }
 
         public override string? VisitStart(ExprParser.StartContext context)

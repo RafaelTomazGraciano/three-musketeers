@@ -5,7 +5,7 @@ namespace Three_Musketeers.Models
         public string name { get; set; }
         public string type { get; set; }
         public bool isInitializated { get; set; }
-        public int line { get; set; } //line declarated
+        public int line { get; set; }
 
         public Symbol(string name, string type, int line)
         {
@@ -23,14 +23,14 @@ namespace Three_Musketeers.Models
 
     public class ArraySymbol : Symbol
     {
-        public string innerType { get; }
+        public string elementType { get; }  // Changed from innerType for clarity
         public List<int> dimensions { get; }
-        public int pointerLevel { get; } // Nível de indireção para arrays de ponteiros
+        public int pointerLevel { get; }  // How many * after the element type
 
-        public ArraySymbol(string name, string innerType, int line, List<int> dimensions, int pointerLevel = 0)
+        public ArraySymbol(string name, string elementType, int line, List<int> dimensions, int pointerLevel = 0)
             : base(name, "array", line)
         {
-            this.innerType = innerType;
+            this.elementType = elementType;
             this.dimensions = dimensions;
             this.pointerLevel = pointerLevel;
         }
@@ -39,58 +39,82 @@ namespace Three_Musketeers.Models
         {
             string dims = string.Join("][", dimensions);
             string pointers = new string('*', pointerLevel);
-            return $"{type} {name}[{dims}] of {innerType}{pointers} (line {line})";
+            return $"{type} {name}[{dims}] of {elementType}{pointers} (line {line})";
         }
 
-        // Verifica se é um array de ponteiros
+        // Returns the LLVM type for the element (with pointers)
+        public string GetElementLLVMType(Func<string, string> getLLVMType)
+        {
+            string baseType = getLLVMType(elementType);
+            return baseType + new string('*', pointerLevel);
+        }
+
+        // Returns the full array LLVM type
+        // Example: int*[10][5] -> [10 x [5 x i32*]]
+        public string GetArrayLLVMType(Func<string, string> getLLVMType)
+        {
+            string elementLLVM = GetElementLLVMType(getLLVMType);
+            string arrayType = elementLLVM;
+            
+            // Build from innermost to outermost dimension
+            for (int i = dimensions.Count - 1; i >= 0; i--)
+            {
+                arrayType = $"[{dimensions[i]} x {arrayType}]";
+            }
+            
+            return arrayType;
+        }
+
         public bool IsPointerArray()
         {
             return pointerLevel > 0;
         }
 
-        // Verifica se é um array de structs
         public bool IsStructArray()
         {
-            return innerType.StartsWith("struct_") || innerType == "struct";
+            return elementType.StartsWith("struct_") || elementType == "struct";
+        }
+
+        public bool IsStringArray()
+        {
+            return elementType == "string";
         }
     }
 
     public class PointerSymbol : Symbol
     {
-        public string innerType { get; set; }
+        public string pointeeType { get; set; }  // What the pointer points to
+        public int pointerLevel { get; set; }    // Number of * (indirection level)
         public bool isDynamic { get; set; }
-        public int amountOfPointers { get; set; }
-        public List<int>? arrayDimensions { get; set; } // Para ponteiros que são arrays
 
-        public PointerSymbol(string name, string innerType, int line, int amountOfPointers,
-                           bool isDynamic = false, List<int>? arrayDimensions = null)
+        public PointerSymbol(string name, string pointeeType, int line, int pointerLevel = 1, bool isDynamic = false)
             : base(name, "pointer", line)
         {
-            this.innerType = innerType;
-            this.amountOfPointers = amountOfPointers;
+            this.pointeeType = pointeeType;
+            this.pointerLevel = pointerLevel;
             this.isDynamic = isDynamic;
-            this.arrayDimensions = arrayDimensions;
         }
 
         public override string ToString()
         {
-            string pointers = new string('*', amountOfPointers);
-            string dims = arrayDimensions != null ? $"[{string.Join("][", arrayDimensions)}]" : "";
+            string pointers = new string('*', pointerLevel);
             string dynamic = isDynamic ? " (dynamic)" : "";
-            return $"{type} {innerType}{pointers} {name}{dims}{dynamic} (line {line})";
+            return $"{pointeeType}{pointers} {name}{dynamic} (line {line})";
         }
 
-        // Verifica se é um array de ponteiros
-        public bool IsPointerArray()
+        // Returns the LLVM type
+        // Example: int** -> i32**
+        public string GetLLVMType(Func<string, string> getLLVMType)
         {
-            return arrayDimensions != null && arrayDimensions.Count > 0;
+            string baseType = getLLVMType(pointeeType);
+            return baseType + new string('*', pointerLevel);
         }
     }
 
     public class StructSymbol : Symbol
     {
         private readonly Dictionary<string, Symbol> symbols;
-        public string structName { get; set; } // Nome do tipo struct
+        public string structName { get; set; }
 
         public Symbol? GetSymbol(string name)
         {

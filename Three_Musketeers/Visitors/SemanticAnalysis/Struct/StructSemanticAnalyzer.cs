@@ -58,62 +58,54 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
         {
             int line = declarationContext.Start.Line;
 
-            if (declarationContext is ExprParser.BaseDecContext baseDecContext)
-            {
-                return ProcessBaseDeclaration(baseDecContext, line);
-            }
-            
-            if (declarationContext is ExprParser.PointerDecContext pointerDecContext)
-            {
-                return ProcessPointerDeclaration(pointerDecContext, line);
-            }
-
-            return null;
+            return ProcessDeclaration(declarationContext, line);
         }
 
-        private Symbol ProcessBaseDeclaration(ExprParser.BaseDecContext context, int line)
+        private Symbol? ProcessDeclaration(ExprParser.DeclarationContext context, int line)
         {
             string type = context.type().GetText();
             string id = context.ID().GetText();
-            var indexes = context.index();
-
-            // No indexes - simple variable or simple struct
-            if (indexes.Length == 0)
-            {
-                // Check if it's a struct type
-                if (structInfo.ContainsKey(type))
-                {
-                    return new StructSymbol(id, type, line, new Dictionary<string, Symbol>());
-                }
-                
-                return new Symbol(id, type, line);
-            }
-
-            // With indexes - array
-            List<int> dimensions = new List<int>();
-            foreach (var index in indexes)
-            {
-                int intIndex = int.Parse(index.INT().GetText());
-                dimensions.Add(intIndex);
-            }
-
-            // Struct array
-            if (structInfo.ContainsKey(type))
-            {
-                return new ArraySymbol(id, $"struct_{type}", line, dimensions);
-            }
-
-            // Normal array
-            return new ArraySymbol(id, type, line, dimensions);
-        }
-
-        private static PointerSymbol ProcessPointerDeclaration(ExprParser.PointerDecContext context, int line)
-        {
-            string type = context.type().GetText();
-            string id = context.ID().GetText();
+            var indexes = context.intIndex();
             int pointerCount = context.POINTER().Length;
 
-            return new PointerSymbol(id, type, line, pointerCount);
+            string elementType = structInfo.ContainsKey(type) ? $"struct_{type}" : type;
+
+            if (indexes.Length > 0)
+            {
+                List<int> dimensions = [];
+                foreach (var index in indexes)
+                {
+                    int intIndex = int.Parse(index.INT().GetText());
+                    if (intIndex < 1)
+                    {
+                        reportError(line, $"Array dimension must be greater than 0 at line {index.Start.Line}");
+                        return null;
+                    }
+                    dimensions.Add(intIndex);
+                }
+
+                // Create array symbol with pointer level
+                // Examples: int[10], int*[10], struct MyStruct**[5][3]
+                return new ArraySymbol(id, elementType, line, dimensions, pointerCount);
+            }
+
+            // Handle standalone pointers (non-array)
+            if (pointerCount > 0)
+            {
+                // Examples: int*, struct MyStruct**, char***
+                return new PointerSymbol(id, elementType, line, pointerCount);
+            }
+
+            // Handle struct members (non-pointer, non-array)
+            if (structInfo.ContainsKey(type))
+            {
+                // Nested struct member
+                return new StructSymbol(id, type, line, new Dictionary<string, Symbol>());
+            }
+
+            // Handle simple variable members
+            // Examples: int, float, char
+            return new Symbol(id, type, line);
         }
 
         public string? VisitStructGet(ExprParser.StructGetContext context)
@@ -152,7 +144,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     }
                     
                     // After indexing, the type is the inner type
-                    currentType = arraySymbol.innerType;
+                    currentType = arraySymbol.elementType;
                 }
                 else
                 {
@@ -167,7 +159,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             {
                 if (symbol is PointerSymbol pointerSymbol)
                 {
-                    currentType = pointerSymbol.innerType;
+                    currentType = pointerSymbol.pointeeType;
                 }
                 else
                 {
@@ -235,7 +227,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     }
                     
                     // After indexing, type is the inner type
-                    fieldType = arrayField.innerType;
+                    fieldType = arrayField.elementType;
                 }
                 else
                 {
@@ -256,7 +248,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     // Field should be a pointer to struct
                     if (fieldSymbol is PointerSymbol pointerField)
                     {
-                        fieldType = pointerField.innerType;
+                        fieldType = pointerField.pointeeType;
                     }
                     else
                     {

@@ -86,11 +86,6 @@ namespace Three_Musketeers.Visitors
             return base.VisitProg(context);
         }
 
-        public override string? VisitBaseDec([NotNull] ExprParser.BaseDecContext context)
-        {
-            return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
-        }
-
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
             string? type = variableAssignmentSemanticAnalyzer.VisitAtt(context);
@@ -107,24 +102,14 @@ namespace Three_Musketeers.Visitors
             return type;
         }
 
+        public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
+        {
+            return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
+        }
+
         public override string? VisitVar([NotNull] ExprParser.VarContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitVar(context);
-        }
-
-        public override string? VisitSingleAtt([NotNull] ExprParser.SingleAttContext context)
-        {
-            string? arrayType = variableAssignmentSemanticAnalyzer.VisitSingleAtt(context);
-            string? exprType = Visit(context.expr());
-            if (arrayType == null || exprType == null) return null;
-            if (!TwoTypesArePermitedToCast(arrayType, exprType))
-            {
-                ReportError(context.Start.Line,
-                    $"Cannot assign value of type '{exprType}' to array element of type '{arrayType}'");
-                return null;
-            }
-
-            return arrayType;
         }
 
         public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
@@ -346,11 +331,6 @@ namespace Three_Musketeers.Visitors
         public override string? VisitFunctionCall([NotNull] ExprParser.FunctionCallContext context)
         {
             return functionCallSemanticAnalyzer.VisitFunctionCall(context);
-        }
-
-        public override string? VisitPointerDec([NotNull] ExprParser.PointerDecContext context)
-        {
-            return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
         }
 
         public override string? VisitStructGet([NotNull] ExprParser.StructGetContext context)

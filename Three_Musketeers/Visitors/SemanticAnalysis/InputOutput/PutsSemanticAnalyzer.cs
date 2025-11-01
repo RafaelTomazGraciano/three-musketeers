@@ -65,10 +65,10 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
         {
             if (symbol is ArraySymbol arraySymbol)
             {
-                if (arraySymbol.innerType != "string" && arraySymbol.innerType != "char")
+                if (arraySymbol.elementType != "string" && arraySymbol.elementType != "char")
                 {
                     reportError(line,
-                        $"puts() can only print string or char array elements, but '{varName}' is '{arraySymbol.innerType}[]'");
+                        $"puts() can only print string or char array elements, but '{varName}' is '{arraySymbol.elementType}[]'");
                 }
             }
             else
@@ -82,12 +82,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
         {
             if (symbol is ArraySymbol arraySymbol)
             {
-                if (arraySymbol.innerType == "char")
+                if (arraySymbol.elementType == "char")
                 {
                     // char array can be printed as a whole (it's a string)
                     return;
                 }
-                else if (arraySymbol.innerType == "string")
+                else if (arraySymbol.elementType == "string")
                 {
                     // string array without index - not allowed
                     reportError(line,
@@ -97,7 +97,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
                 else
                 {
                     reportError(line,
-                        $"puts() cannot print array of type '{arraySymbol.innerType}'");
+                        $"puts() cannot print array of type '{arraySymbol.elementType}'");
                     return;
                 }
             }
