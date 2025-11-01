@@ -104,7 +104,7 @@ namespace Three_Musketeers.Visitors
                 GetCurrentBody, registerTypes, NextRegister, variables, Visit, CalculateArrayPosition);
             //struct
             structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
-                variables, Visit, GetLLVMType, GetAlignment);
+                variables, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
         }
 
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -393,7 +393,7 @@ namespace Three_Musketeers.Visitors
 
         public override string VisitVarStruct([NotNull] ExprParser.VarStructContext context)
         {
-            return structCodeGenerator!.VisitVarStruct(context);
+            return structCodeGenerator!.VisitVarStruct(context.structGet());
         }
     }
 }

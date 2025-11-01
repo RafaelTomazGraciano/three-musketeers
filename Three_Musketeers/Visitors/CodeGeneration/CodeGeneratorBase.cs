@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using LLVMSharp;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
@@ -61,37 +62,45 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             };
         }
 
-        private int GetSize(string type)
+        protected int GetSize(string type)
         {
-            return type switch
+            if (type.Contains('*') || type == "double") return 8;
+            if (type == "i1" || type == "i8") return 1;
+            if (type == "i32") return 4;
+            int total = 1;
+            var splits = Regex.Split(type, @"[\[\]x]+");
+            foreach (var split in splits)
             {
-                var t when t.Contains('*') => 8,
-                var t when structTypes.TryGetValue(t, out var structFound) => structFound.GetTotalSize(),
-                "i32" => 4,
-                "double" => 8,
-                "i1" or "i8" => 1,
-                _ => 4
-            };
-        }
-
-        protected string CalculateArrayPosition(ExprParser.IndexContext[] indexes)
-        {
-            int i;
-            string expr = Visit(indexes[0].expr());
-            string result = $" i32 {expr}";
-
-            for (i = 1; i < indexes.Length; i++)
-            {
-                expr = Visit(indexes[i].expr());
-                result += $", i32 {expr}";
+                if (int.TryParse(split.Trim(), out int dim))
+                {
+                    total *= dim;
+                    continue;
+                }
+                if (split.Contains('i'))
+                {
+                    total *= GetSize(split.Trim());
+                }
             }
-            return result;
+            return total;
         }
 
         protected string CalculateArrayPosition(ExprParser.IndexContext index)
         {
-            string expr = Visit(index);
-            return $" i32 {expr}";
+            string expr = Visit(index.expr())!;
+            return "i32 "+expr;
+        }
+
+        protected string? CalculateArrayPosition(ExprParser.IndexContext[] indexes)
+        {
+            string expr = Visit(indexes[0].expr())!;
+            string result = "i32 " + expr;
+
+            for (int i = 1; i < indexes.Length; i++)
+            {
+                expr = Visit(indexes[i].expr())!;
+                result += $", i32 {expr}";
+            }
+            return result;
         }
 
         public override string? VisitStart(ExprParser.StartContext context)

@@ -33,6 +33,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
             this.getCurrentBody = getCurrentBody;
+            this.variableResolver = variableResolver;
             this.calculateArrayPosition = calculateArrayPosition;
         }
 
@@ -83,7 +84,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 body.AppendLine($"  {argvLoaded} = load i8**, i8*** {variable.register}");
 
                 string argvElementPtr = nextRegister();
-                body.AppendLine($"  {argvElementPtr} = getelementptr inbounds i8*, i8** {argvLoaded}, i32 {indexValue}");
+                body.AppendLine($"  {argvElementPtr} = getelementptr inbounds i8*, i8** {argvLoaded}, {indexValue}");
 
                 string stringPtr = nextRegister();
                 body.AppendLine($"  {stringPtr} = load i8*, i8** {argvElementPtr}");

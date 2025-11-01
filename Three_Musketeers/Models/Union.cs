@@ -3,12 +3,12 @@ namespace Three_Musketeers.Models
 {
     public class Union : HeterogenousType
     {
-        public Union(string LLVMName, List<Variable> members, Func<string, int> getSize) : base(LLVMName, members)
+        public Union(string LLVMName, List<HeterogenousMember> members, Func<string, int> getSize) : base(LLVMName, members)
         {
             totalSize = 0;
             foreach (var member in members)
             {
-                int size = getSize(member.type);
+                int size = getSize(member.LLVMType);
                 if (size > totalSize) {
                     totalSize = size;
                     LLVMName = member.name;

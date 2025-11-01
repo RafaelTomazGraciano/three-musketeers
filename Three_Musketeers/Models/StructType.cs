@@ -1,16 +1,14 @@
-using Antlr4.Runtime.Misc;
-
 namespace Three_Musketeers.Models
 {
-    public class StructModel : HeterogenousType
+    public class StructType : HeterogenousType
     {
 
-        public StructModel(string LLVMName, List<Variable> members, Func<string, int> GetSize) : base(LLVMName, members)
+        public StructType(string LLVMName, List<HeterogenousMember> members, Func<string, int> GetSize) : base(LLVMName, members)
         {
             totalSize = 0;
             foreach (var member in members)
             {
-                totalSize += GetSize(member.type);
+                totalSize += GetSize(member.LLVMType);
             }
         }
 

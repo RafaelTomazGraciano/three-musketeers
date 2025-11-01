@@ -45,6 +45,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string i64ToUse = CastToI64(expr, registerTypes[expr]);
             string mulReg = nextRegister();
             string mallocReg = nextRegister();
+            string bitcastReg;
             int size = 0;
 
             // Caso 1: Declaração com tipo (int *pointer = malloc(5))
@@ -53,35 +54,41 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 varType = type.GetText();
                 llvmType = getLLVMType(varType);
                 size = getAlignment(llvmType);
-                register = nextRegister();
-                
+            
                 // Constrói o tipo LLVM com os ponteiros
-                llvmType = $"{llvmType}{context.POINTER().Aggregate("", (a, b) => a + b.GetText())}";
-                
+                string pointerSuffix = context.POINTER().Aggregate("", (a, b) => a + b.GetText());
+                llvmType = $"{llvmType}{pointerSuffix}";
+                varType = $"{varType}{pointerSuffix}";  // ADD THIS LINE - include pointers in varType too!
+            
+                // Aloca espaço para o ponteiro
+                register = nextRegister();
+                mainBody.AppendLine($"  {register} = alloca {llvmType}, align {getAlignment(llvmType)}");
+            
                 mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
                 mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
-                mainBody.AppendLine($"  {register} = bitcast i8* {mallocReg} to {llvmType}");
-                
+            
+                bitcastReg = nextRegister();
+                mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
+                mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}");
+            
                 registerTypes[register] = llvmType;
                 variables[varName] = new Variable(varName, varType, llvmType, register);
                 return null;
             }
-            
+
             // Caso 2: Atribuição a variável existente (pointer = malloc(5))
             Variable variable = variables[varName];
             register = variable.register;
-            llvmType = variable.LLVMType;
-            
-            // Remove os '*' para calcular o tamanho do tipo base
-            string baseType = llvmType.TrimEnd('*');
+            string baseType = variable.LLVMType.TrimEnd('*');
+            llvmType = variable.LLVMType;  // Use the stored LLVM type directly
             size = getAlignment(baseType);
-            
-            string bitcastReg = nextRegister();
+
+            bitcastReg = nextRegister();
             mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
             mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
-            mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
+            mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");  // FIX: no extra *
             mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}");
-            
+
             return null;
         }
 
@@ -92,7 +99,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             
             Variable variable = variables[context.ID().GetText()];
             
-            // CORREÇÃO: Primeiro carrega o valor do ponteiro
             string loadReg = nextRegister();
             mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}");
             

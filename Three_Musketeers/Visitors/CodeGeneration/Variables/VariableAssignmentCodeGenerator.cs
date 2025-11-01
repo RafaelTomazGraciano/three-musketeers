@@ -20,7 +20,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<string, int> GetAlignment;
         private readonly Dictionary<string, HeterogenousType> structs;
 
-        public VariableAssignmentCodeGenerator (
+        public VariableAssignmentCodeGenerator(
             StringBuilder declarations,
             Dictionary<string, Variable> variables,
             Dictionary<string, string> registerTypes,
@@ -66,7 +66,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 else
                 {
                     WriteAlloca(register, llvmType, GetAlignment(llvmType));
-                    variables[varName] = new Variable(varName, varType, llvmType, register);
+                    string fullVarType = varType + pointer;
+                    variables[varName] = new Variable(varName, fullVarType, llvmType, register);
                 }
             }
             else
@@ -153,7 +154,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             {
                 (var arrayType, var totalSize) = GetArrayDimensions(indexes, varType, llvmType);
                 WriteAlloca(register, arrayType, GetAlignment(llvmType));
-                variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType);
+                variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType + pointers);
+                registerTypes[register] = arrayType;
                 return null;
             }
 
@@ -162,11 +164,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 llvmType = "[256 x i8]" + pointers;
                 WriteAlloca(register, llvmType, GetAlignment("i8*"));
                 variables[varName] = new Variable(varName, varType, llvmType, register);
+                registerTypes[register] = llvmType;
                 return null;
             }
 
-            WriteAlloca(register, llvmType+pointers, GetAlignment(llvmType));
-            variables[varName] = new Variable(varName, varType, llvmType, register);
+            WriteAlloca(register, llvmType + pointers, GetAlignment(llvmType));
+            registerTypes[register] = llvmType + pointers;
+            variables[varName] = new Variable(varName, varType, llvmType + pointers, register);
             return null;
         }
 
@@ -234,26 +238,50 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string name = context.ID().GetText();
             var indexes = context.index();
             var currentBody = getCurrentBody();
-            var register = nextRegister();
             Variable variable = GetVariableWithScope(name)!;
             string expr;
             var llvmType = variable.LLVMType;
-            int i;
-            currentBody.Append($"    {register} = getelementptr inbounds {llvmType}, {llvmType}* {register}, i32 0, ");
-            for (i = 0; i < indexes.Length-1; i++)
-            {
-                expr = visitExpression(indexes[i].expr());
-                currentBody.Append($"i32 {expr}, ");
-            }
-            expr = visitExpression(indexes[i].expr());
-            currentBody.AppendLine($"i32 {expr}");
 
-            if (variable is ArrayVariable arrayVariable)
+            // Check if this is a pointer variable (not an array)
+            bool isPointer = !(variable is ArrayVariable) && llvmType.Contains('*');
+
+            if (isPointer)
             {
-                llvmType = arrayVariable.innerType;
+                // For pointer variables: load the pointer first, then use single index
+                string loadedPointer = nextRegister();
+                currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+
+                // Get element address with single index (no i32 0)
+                string gepReg = nextRegister();
+                expr = visitExpression(indexes[0].expr());
+                string elementType = llvmType.TrimEnd('*');
+                currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
+
+                // Return pointer to element (will be loaded by caller if needed)
+                registerTypes[gepReg] = elementType + "*";
+                return gepReg;
             }
-            registerTypes[register] = llvmType;
-            return register;
+            else
+            {
+                // For arrays: use getelementptr with i32 0 as first index
+                var register = nextRegister();
+                int i;
+                currentBody.Append($"  {register} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, ");
+                for (i = 0; i < indexes.Length - 1; i++)
+                {
+                    expr = visitExpression(indexes[i].expr());
+                    currentBody.Append($"i32 {expr}, ");
+                }
+                expr = visitExpression(indexes[i].expr());
+                currentBody.AppendLine($"i32 {expr}");
+
+                if (variable is ArrayVariable arrayVariable)
+                {
+                    llvmType = arrayVariable.innerType;
+                }
+                registerTypes[register] = llvmType + "*";
+                return register;
+            }
         }
     }
 }
