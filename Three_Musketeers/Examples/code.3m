@@ -76,8 +76,31 @@ int main(int argc, char argv[]) {
     int result = add(5, 3) * multiply(2, 2, 2);
     printf("add(5,3) * multiply(2,2,2) = %d\n", result);
 
+    printf("\n=== Test If/Else ===\n");
+    testIfElse(5);
+    testIfElse(0);
+    testIfElse(-3);
+
+    printf("\n=== Test Switch Case ===\n");
+    testSwitchCase(1);
+    testSwitchCase(2);
+    testSwitchCase(3);
+    testSwitchCase(4);
+
+    printf("\n=== Test For Loop ===\n");
+    testForLoop(5);
+
+    printf("\n=== Test While Loop ===\n");
+    testWhileLoop(5);
+
+    printf("\n=== Test Do-While Loop ===\n");
+    testDoWhileLoop(5);
+
+    printf("\n=== Test Break and Continue ===\n");
+    testBreakContinue();
+
     printf("\n=== Test Recursion ===\n");
-    // recursionPrint("Recursion implemented");
+    recursionPrint("Recursion test", 3);
 
     printf("\n=== Test Pointers ===\n");
     int *ptrResult;
@@ -130,9 +153,106 @@ char getFirstLetter(int code) {
     return letter;
 }
 
-void recursionPrint(string message) {
-    puts(message);
-    recursionPrint(message);
+// Test Recursion with base case
+void recursionPrint(string message, int count) {
+    if (count <= 0) {
+        return;
+    }
+    printf("%s - count: %d\n", message, count);
+    recursionPrint(message, count - 1);
+}
+
+// Test If/Else statements
+void testIfElse(int value) {
+    if (value > 0) {
+        printf("Value %d is positive\n", value);
+    } else if (value < 0) {
+        printf("Value %d is negative\n", value);
+    } else {
+        printf("Value %d is zero\n", value);
+    }
+}
+
+// Test Switch/Case statements
+void testSwitchCase(int option) {
+    switch (option) {
+        case 1:
+            printf("Option 1 selected\n");
+            break;
+        case 2:
+            printf("Option 2 selected\n");
+            break;
+        case 3:
+            printf("Option 3 selected\n");
+            break;
+        default:
+            printf("Unknown option: %d\n", option);
+            break;
+    }
+}
+
+// Test For loop
+void testForLoop(int max) {
+    int i;
+    int sum = 0;
+    for (i = 1; i <= max; i++) {
+        sum = sum + i;
+        printf("Iteration %d, sum: %d\n", i, sum);
+    }
+    printf("Final sum: %d\n", sum);
+}
+
+// Test While loop
+void testWhileLoop(int max) {
+    int count = 1;
+    while (count <= max) {
+        printf("While loop iteration: %d\n", count);
+        count = count + 1;
+    }
+}
+
+// Test Do-While loop
+void testDoWhileLoop(int max) {
+    int count = 1;
+    do {
+        printf("Do-While loop iteration: %d\n", count);
+        count = count + 1;
+    } while (count <= max);
+}
+
+// Test Break and Continue statements
+void testBreakContinue() {
+    int i;
+    printf("Testing continue (skip 3):\n");
+    for (i = 1; i <= 5; i++) {
+        if (i == 3) {
+            continue;
+        }
+        printf("Continue test: %d\n", i);
+    }
+    
+    printf("Testing break (stop at 3):\n");
+    for (i = 1; i <= 5; i++) {
+        if (i == 3) {
+            break;
+        }
+        printf("Break test: %d\n", i);
+    }
+    
+    printf("Testing break in switch:\n");
+    int val = 2;
+    switch (val) {
+        case 1:
+            printf("Case 1\n");
+            break;
+        case 2:
+            printf("Case 2 (will break)\n");
+            break;
+        case 3:
+            printf("Case 3\n");
+            break;
+    }
+    printf("After switch\n");
 }
 
 int *testPointers(int *inputPtr, int size) {
