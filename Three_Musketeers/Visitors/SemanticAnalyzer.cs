@@ -13,6 +13,7 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
+using Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow;
 using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors
@@ -39,6 +40,7 @@ namespace Three_Musketeers.Visitors
         private readonly DynamicMemorySemanticAnalyzer dynamicMemorySemanticAnalyzer;
         private readonly IncrementDecrementSemanticAnalyzer incrementDecrementSemanticAnalyzer;
         private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
+        private readonly IfStatementSemanticAnalyzer ifStatementSemanticAnalyzer;
 
         private readonly DefineSemanticAnalyzer defineSemanticAnalyzer;
         private readonly IncludeSemanticAnalyzer includeSemanticAnalyzer;
@@ -83,6 +85,8 @@ namespace Three_Musketeers.Visitors
             // compound assignment
             compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable,
                 GetExpressionType);
+            // control flow
+            ifStatementSemanticAnalyzer = new IfStatementSemanticAnalyzer(symbolTable, ReportError, GetExpressionType, Visit, Visit);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -340,6 +344,11 @@ namespace Three_Musketeers.Visitors
             {
                 functionSemanticAnalyzer.AnalyzeReturnStatement(context);
                 return null;
+            }
+
+            if (context.ifStatement() != null)
+            {
+                return ifStatementSemanticAnalyzer.VisitIfStatement(context.ifStatement());
             }
 
             return base.VisitStm(context);

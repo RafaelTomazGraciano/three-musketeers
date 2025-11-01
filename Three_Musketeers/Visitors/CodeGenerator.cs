@@ -14,6 +14,7 @@ using Three_Musketeers.Utils;
 using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
 using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
+using Three_Musketeers.Visitors.CodeGeneration.ControlFlow;
 
 namespace Three_Musketeers.Visitors
 {
@@ -41,6 +42,7 @@ namespace Three_Musketeers.Visitors
         private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
         private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
         private readonly IncludeCodeGenerator includeCodeGenerator;
+        private readonly IfStatementCodeGenerator ifStatementCodeGenerator;
 
         public CodeGenerator()
         {
@@ -109,6 +111,9 @@ namespace Three_Musketeers.Visitors
             //compound assignment
             compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit);
+            //control flow
+            ifStatementCodeGenerator = new IfStatementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
         }
 
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -337,6 +342,11 @@ namespace Three_Musketeers.Visitors
             {
                 base.functionCodeGenerator.VisitReturnStatement(context);
                 return null;
+            }
+
+            if (context.ifStatement() != null)
+            {
+                return ifStatementCodeGenerator.VisitIfStatement(context.ifStatement());
             }
             
             return base.VisitStm(context);

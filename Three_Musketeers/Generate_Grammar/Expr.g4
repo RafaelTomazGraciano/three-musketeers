@@ -41,6 +41,7 @@ stm
     | putsStatement
     | freeStatement
     | RETURN expr? EOL
+    | ifStatement
     ;
 
 declaration
@@ -101,6 +102,10 @@ index
 
 freeStatement
     : 'free''('ID')'EOL
+    ;
+
+ifStatement
+    : IF '(' expr ')' '{' func_body '}' (ELSE IF '(' expr ')' '{' func_body '}')* (ELSE '{' func_body '}')?
     ;
 
 expr
