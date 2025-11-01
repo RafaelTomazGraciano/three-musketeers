@@ -66,8 +66,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
 
             // Generate if block
             getCurrentBody().AppendLine($"{ifLabel}:");
-            GenerateBlock(bodies[0]);
-            getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+            bool hasControlFlow = GenerateBlock(bodies[0]);
+            if (!hasControlFlow)
+            {
+                getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+            }
 
             // Generate else-if chains
             for (int i = 0; i < elseIfCount; i++)
@@ -107,8 +110,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
 
                 // Generate else-if block
                 getCurrentBody().AppendLine($"{blockLabel}:");
-                GenerateBlock(bodies[i + 1]);
-                getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                bool hasControlFlowElseIf = GenerateBlock(bodies[i + 1]);
+                if (!hasControlFlowElseIf)
+                {
+                    getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                }
             }
 
             // Generate final else block (if present)
@@ -116,8 +122,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             {
                 string elseLabel = $"else_{baseLabel}";
                 getCurrentBody().AppendLine($"{elseLabel}:");
-                GenerateBlock(bodies[bodies.Length - 1]);
-                getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                bool hasControlFlowElse = GenerateBlock(bodies[bodies.Length - 1]);
+                if (!hasControlFlowElse)
+                {
+                    getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                }
             }
 
             // Generate merge label
@@ -126,13 +135,29 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             return null;
         }
 
-        private void GenerateBlock(ExprParser.Func_bodyContext context)
+        private bool GenerateBlock(ExprParser.Func_bodyContext context)
         {
             var statements = context.stm();
+            bool foundControlFlow = false;
+            
             foreach (var stm in statements)
             {
+                // Check if this is a break or continue statement
+                // These are handled at the VisitStm level but indicate control flow
+                if (stm.BREAK() != null || stm.CONTINUE() != null)
+                {
+                    // Let VisitStm handle it, but mark that we found control flow
+                    visitStatement(stm);
+                    foundControlFlow = true;
+                    // Don't break - VisitStm will generate the branch
+                    // But we won't generate the if's merge branch
+                    break;
+                }
+                
                 visitStatement(stm);
             }
+            
+            return foundControlFlow;
         }
 
         private string ConvertToBool(string value)

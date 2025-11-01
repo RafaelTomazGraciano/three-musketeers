@@ -44,6 +44,7 @@ namespace Three_Musketeers.Visitors
         private readonly IncludeCodeGenerator includeCodeGenerator;
         private readonly IfStatementCodeGenerator ifStatementCodeGenerator;
         private readonly SwitchStatementCodeGenerator switchStatementCodeGenerator;
+        private readonly LoopStatementCodeGenerator loopStatementCodeGenerator;
 
         public CodeGenerator()
         {
@@ -117,6 +118,8 @@ namespace Three_Musketeers.Visitors
                 GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
             switchStatementCodeGenerator = new SwitchStatementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
+            loopStatementCodeGenerator = new LoopStatementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, Visit, Visit, Visit);
         }
 
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -357,10 +360,33 @@ namespace Three_Musketeers.Visitors
                 return switchStatementCodeGenerator.VisitSwitchStatement(context.switchStatement());
             }
 
+            if (context.forStatement() != null)
+            {
+                return loopStatementCodeGenerator.VisitForStatement(context.forStatement());
+            }
+
+            if (context.whileStatement() != null)
+            {
+                return loopStatementCodeGenerator.VisitWhileStatement(context.whileStatement());
+            }
+
+            if (context.doWhileStatement() != null)
+            {
+                return loopStatementCodeGenerator.VisitDoWhileStatement(context.doWhileStatement());
+            }
+
             if (context.BREAK() != null)
             {
-                // Handle break statement
-                if (switchStatementCodeGenerator.IsInSwitch())
+                // Handle break statement - check loops first, then switches
+                if (loopStatementCodeGenerator.IsInLoop())
+                {
+                    string? mergeLabel = loopStatementCodeGenerator.GetCurrentLoopMergeLabel();
+                    if (mergeLabel != null)
+                    {
+                        GetCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                    }
+                }
+                else if (switchStatementCodeGenerator.IsInSwitch())
                 {
                     string? mergeLabel = switchStatementCodeGenerator.GetCurrentSwitchMergeLabel();
                     if (mergeLabel != null)
@@ -370,7 +396,26 @@ namespace Three_Musketeers.Visitors
                 }
                 else
                 {
-                    // Break outside switch - this will be caught by semantic analyzer
+                    // Break outside switch/loop - this will be caught by semantic analyzer
+                    // For now, just continue (semantic analyzer will report error)
+                }
+                return null;
+            }
+
+            if (context.CONTINUE() != null)
+            {
+                // Handle continue statement - must be in a loop
+                if (loopStatementCodeGenerator.IsInLoop())
+                {
+                    string? continueLabel = loopStatementCodeGenerator.GetCurrentLoopContinueLabel();
+                    if (continueLabel != null)
+                    {
+                        GetCurrentBody().AppendLine($"  br label %{continueLabel}");
+                    }
+                }
+                else
+                {
+                    // Continue outside loop - this will be caught by semantic analyzer
                     // For now, just continue (semantic analyzer will report error)
                 }
                 return null;

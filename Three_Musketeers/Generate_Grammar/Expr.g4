@@ -43,7 +43,11 @@ stm
     | RETURN expr? EOL
     | ifStatement
     | switchStatement
+    | forStatement
+    | whileStatement
+    | doWhileStatement
     | BREAK EOL
+    | CONTINUE EOL
     ;
 
 declaration
@@ -122,6 +126,34 @@ defaultLabel
     : DEFAULT ':' func_body
     ;
 
+forStatement
+    : FOR '(' forInit? EOL forCondition? EOL forIncrement? ')' '{' func_body '}'
+    ;
+
+forInit
+    : declaration
+    | att
+    | attVar
+    ;
+
+forCondition
+    : expr
+    ;
+
+forIncrement
+    : expr
+    | att
+    | attVar
+    ;
+
+whileStatement
+    : WHILE '(' expr ')' '{' func_body '}'
+    ;
+
+doWhileStatement
+    : DO '{' func_body '}' WHILE '(' expr ')' EOL
+    ;
+
 expr
     : '++' ID                      # PrefixIncrement
     | '--' ID                      # PrefixDecrement
@@ -179,6 +211,10 @@ SWITCH        : 'switch';
 CASE          : 'case';
 DEFAULT       : 'default';
 BREAK         : 'break';
+FOR           : 'for';
+WHILE         : 'while';
+DO            : 'do';
+CONTINUE      : 'continue';
 GR            : '>';
 GRT           : '>=';
 LE            : '<';

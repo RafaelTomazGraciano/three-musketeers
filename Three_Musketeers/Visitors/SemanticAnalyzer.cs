@@ -42,6 +42,7 @@ namespace Three_Musketeers.Visitors
         private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
         private readonly IfStatementSemanticAnalyzer ifStatementSemanticAnalyzer;
         private readonly SwitchStatementSemanticAnalyzer switchStatementSemanticAnalyzer;
+        private readonly LoopStatementSemanticAnalyzer loopStatementSemanticAnalyzer;
 
         private readonly DefineSemanticAnalyzer defineSemanticAnalyzer;
         private readonly IncludeSemanticAnalyzer includeSemanticAnalyzer;
@@ -89,6 +90,7 @@ namespace Three_Musketeers.Visitors
             // control flow
             ifStatementSemanticAnalyzer = new IfStatementSemanticAnalyzer(symbolTable, ReportError, GetExpressionType, Visit, Visit);
             switchStatementSemanticAnalyzer = new SwitchStatementSemanticAnalyzer(symbolTable, ReportError, GetExpressionType, Visit, Visit);
+            loopStatementSemanticAnalyzer = new LoopStatementSemanticAnalyzer(symbolTable, ReportError, GetExpressionType, Visit, Visit, Visit);
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -358,9 +360,32 @@ namespace Three_Musketeers.Visitors
                 return switchStatementSemanticAnalyzer.VisitSwitchStatement(context.switchStatement());
             }
 
+            if (context.forStatement() != null)
+            {
+                return loopStatementSemanticAnalyzer.VisitForStatement(context.forStatement());
+            }
+
+            if (context.whileStatement() != null)
+            {
+                return loopStatementSemanticAnalyzer.VisitWhileStatement(context.whileStatement());
+            }
+
+            if (context.doWhileStatement() != null)
+            {
+                return loopStatementSemanticAnalyzer.VisitDoWhileStatement(context.doWhileStatement());
+            }
+
             if (context.BREAK() != null)
             {
                 // Break statement semantic check - should be inside a switch or loop
+                // For now, we'll just allow it (semantic checking could be added later)
+                // The code generator will handle it appropriately
+                return null;
+            }
+
+            if (context.CONTINUE() != null)
+            {
+                // Continue statement semantic check - should be inside a loop
                 // For now, we'll just allow it (semantic checking could be added later)
                 // The code generator will handle it appropriately
                 return null;
