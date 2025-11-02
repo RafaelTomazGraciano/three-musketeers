@@ -5,7 +5,9 @@ namespace Three_Musketeers.Models
         public string name { get; set; }
         public string type { get; set; }
         public bool isInitializated { get; set; }
-        public int line { get; set; }
+        public int line { get; set; } //line declarated
+        public bool isConstant { get; set; } 
+        public string? constantValue { get; set; }
 
         public Symbol(string name, string type, int line)
         {
@@ -13,25 +15,42 @@ namespace Three_Musketeers.Models
             this.type = type;
             this.line = line;
             this.isInitializated = false;
+            this.isConstant = false;
+            this.constantValue = null;
+        }
+
+        //for defines
+        public Symbol(string name, string type, int line, string constantValue)
+        {
+            this.name = name;
+            this.type = type;
+            this.line = line;
+            this.isInitializated = true;
+            this.isConstant = true;
+            this.constantValue = constantValue;
         }
 
         public override string ToString()
         {
+            if (isConstant)
+            {
+                return $"{type} {name} = {constantValue} [CONSTANT] (line {line})";
+            }
             return $"{type} {name} (line {line})";
         }
     }
 
     public class ArraySymbol : Symbol
     {
-        public string elementType { get; }  // Changed from innerType for clarity
-        public List<int> dimensions { get; }
-        public int pointerLevel { get; }  // How many * after the element type
+        public string elementType { get; }
+        public List<int> Dimensions { get; }
+        public int pointerLevel { get; }
 
-        public ArraySymbol(string name, string elementType, int line, List<int> dimensions, int pointerLevel = 0)
+        public ArraySymbol(string name, string elementType, int line, List<int> Dimensions, int pointerLevel = 0)
             : base(name, "array", line)
         {
             this.elementType = elementType;
-            this.dimensions = dimensions;
+            this.Dimensions = Dimensions;
             this.pointerLevel = pointerLevel;
         }
 
@@ -42,57 +61,26 @@ namespace Three_Musketeers.Models
             return $"{type} {name}[{dims}] of {elementType}{pointers} (line {line})";
         }
 
-        // Returns the LLVM type for the element (with pointers)
         public string GetElementLLVMType(Func<string, string> getLLVMType)
         {
             string baseType = getLLVMType(elementType);
             return baseType + new string('*', pointerLevel);
         }
-        
-        // Returns the full array LLVM type
-        // Example: int*[10][5] -> [10 x [5 x i32*]]
-        public string GetArrayLLVMType(Func<string, string> getLLVMType)
-        {
-            string elementLLVM = GetElementLLVMType(getLLVMType);
-            string arrayType = elementLLVM;
-            
-            // Build from innermost to outermost dimension
-            for (int i = dimensions.Count - 1; i >= 0; i--)
-            {
-                arrayType = $"[{dimensions[i]} x {arrayType}]";
-            }
-            
-            return arrayType;
-        }
-
-        public bool IsPointerArray()
-        {
-            return pointerLevel > 0;
-        }
-
-        public bool IsStructArray()
-        {
-            return elementType.StartsWith("struct_") || elementType == "struct";
-        }
-
-        public bool IsStringArray()
-        {
-            return elementType == "string";
-        }
+    
     }
 
     public class PointerSymbol : Symbol
     {
         public string pointeeType { get; set; }  // What the pointer points to
         public int pointerLevel { get; set; }    // Number of * (indirection level)
-        public bool isDynamic { get; set; }
+        public bool IsDynamic { get; set; }
 
         public PointerSymbol(string name, string pointeeType, int line, int pointerLevel = 1, bool isDynamic = false)
             : base(name, "pointer", line)
         {
             this.pointeeType = pointeeType;
             this.pointerLevel = pointerLevel;
-            this.isDynamic = isDynamic;
+            IsDynamic = isDynamic;
         }
 
         public override string ToString()

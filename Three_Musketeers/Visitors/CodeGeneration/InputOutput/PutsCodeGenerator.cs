@@ -4,51 +4,51 @@ using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Utils;
+using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 {
     public class PutsCodeGenerator
     {
         private readonly StringBuilder declarations;
-        private readonly StringBuilder mainBody;
+        private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Func<StringBuilder?> getCurrentBody;
         private readonly VariableResolver variableResolver;
-        private bool putsInitialized = false;
         private readonly Func<ExprParser.IndexContext, string> calculateArrayPosition;
+        private readonly DefineCodeGenerator defineCodeGenerator;
 
-        public PutsCodeGenerator(
-            StringBuilder declarations,
-            StringBuilder mainBody,
-            Dictionary<string, string> registerTypes,
-            Func<string> nextRegister,
-            Func<StringBuilder?> getCurrentBody,
-            VariableResolver variableResolver,
-            Func<ExprParser.IndexContext, string> calculateArrayPosition
-            )
+        public PutsCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, string> registerTypes, Func<string> nextRegister, VariableResolver variableResolver, DefineCodeGenerator defineCodeGenerator, Func<ExprParser.IndexContext, string> calculateArrayPosition)
         {
-            this.declarations = declarations;
-            this.mainBody = mainBody;
+            this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
-            this.getCurrentBody = getCurrentBody;
             this.variableResolver = variableResolver;
+            this.defineCodeGenerator = defineCodeGenerator;
             this.calculateArrayPosition = calculateArrayPosition;
         }
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
         {
-            InitializePuts();
-
-            StringBuilder body = getCurrentBody() ?? mainBody;
+            StringBuilder body = getCurrentBody();
 
             //puts(ID) or puts(ID[index])
             if (context.ID() != null)
             {
                 string varName = context.ID().GetText();
 
-                Variable variable = variableResolver.GetVariable(varName);
+                if (defineCodeGenerator.IsDefine(varName))
+                {
+                    string? defineValue = defineCodeGenerator.GetDefineValue(varName);
+                    
+                    if (defineValue != null && defineValue.StartsWith("\"") && defineValue.EndsWith("\""))
+                    {
+                        GenerateStringLiteralPuts(defineValue, body);
+                        return null;
+                    }
+                }
+
+                Variable variable = variableResolver.GetVariable(varName)!;
                 bool hasIndexAccess = context.index() != null;
 
                 if (hasIndexAccess)
@@ -150,15 +150,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
             string resultReg = nextRegister();
             body.AppendLine($"  {resultReg} = call i32 @puts(i8* {strPtr})");
-        }
-
-        private void InitializePuts()
-        {
-            if (putsInitialized)
-                return;
-
-            declarations.AppendLine("declare i32 @puts(i8*)");
-            putsInitialized = true;
         }
     }
 } 

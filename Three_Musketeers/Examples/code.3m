@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 struct myStruct {
     int a,
     int b[5]
@@ -11,8 +12,43 @@ union myUnion {
     int g,
     myStruct a
 };
+=======
+#include <stdio.tm>
+#include <stdlib.tm>
+
+#define MAX_SIZE 100
+#define PI 3.14159
+#define MINIMUM 57
+#define MESSAGE "Hello, Three Musketeers!"
+
+// Global variables for testing
+int globalCounter;
+double globalValue = 3.14;
+string globalMessage = "Global variable test";
+int *ptest;
+
+>>>>>>> 380f3e02b779c539ac4a5ef00819d70eb1599631
 
 int main(int argc, char argv[]) {
+    printf("\n=== Test Define ===\n");
+    puts(MESSAGE);
+    int size = MAX_SIZE;
+    double pi_value = PI;
+    printf("MINIMUM: %d\n", MINIMUM);
+    printf("MAX_SIZE: %d\n", size);
+    printf("PI: %f\n", pi_value);
+
+    printf("\n=== Test Global Variables ===\n");
+    ptest = malloc(5);
+    ptest[1] = 27;
+    globalCounter = 1;
+    printf("Global counter: %d\n", globalCounter);
+    printf("Global value: %.2f\n", globalValue);
+    printf("Global Pointer[1] = %d\n", ptest[1]);
+    puts(globalMessage);
+    globalCounter = 42;
+    printf("Modified global counter: %d\n", globalCounter);
+
     printf("\n=== Test Arguments ===\n");
     printf("Argument count: %d\n", argc);
     puts("Arguments list:");
@@ -55,29 +91,19 @@ int main(int argc, char argv[]) {
     printf("\n=== Test Expression with Function ===\n");
     int result = add(5, 3) * multiply(2, 2, 2);
     printf("add(5,3) * multiply(2,2,2) = %d\n", result);
-    
+
     printf("\n=== Test Recursion ===\n");
-    //recursionPrint("Recursion implemented");
+    // recursionPrint("Recursion implemented");
 
     printf("\n=== Test Pointers ===\n");
-    int *pointer;
-    int *saved_pointer;
-    int **other_pointer;
-    int test = 5;
-    pointer = malloc(5);
-    saved_pointer = pointer;
-    pointer[1] = 5;
-    printf("Pointer[1] = %d\n", pointer[1]);
-    printf("Trying semantic warning\n");
-    pointer = malloc(test);
-    free(pointer);
-    pointer = &test;
-    printf("Test before pointer derref: %d\n", test);
-    (*pointer) = 12;
-    printf("Test after pointer derref: %d\n", test);
-    other_pointer = &pointer;
-    (*(*other_pointer)) = 26;
-    printf("Test after pointer derref of derref: %d\n", test);
+    int *ptrResult;
+    int original;
+    original = 10;
+    ptrResult = testPointers(&original, 3);
+    printf("Pointer[0]: %d\n", ptrResult[0]);  // 77
+    printf("Pointer[1]: %d\n", ptrResult[1]);  // 20
+    printf("Original value: %d\n", original);  // 99
+    free(ptrResult);
 
     printf("\n=== Test Structs ===\n");
     myStruct iDo;
@@ -90,9 +116,9 @@ int main(int argc, char argv[]) {
     printf("recieved.a = %d\n", recieved.a);
     
     printf("\n=== All Function Tests Completed ===\n");
-
     return 0;
 }
+
 // Test Simple void function
 void printWelcome() {
     puts("=== Three Musketeers Function Tests ===");
@@ -129,15 +155,37 @@ char getFirstLetter(int code) {
     return letter;
 }
 
-//recursion
 void recursionPrint(string message) {
     puts(message);
     recursionPrint(message);
 }
 
+<<<<<<< HEAD
 myStruct structFunc() {
     myStruct structers;
     structers.a = 0;
     return structers;
 }
 // === MAIN TESTS ===
+=======
+int *testPointers(int *inputPtr, int size) {
+    int *pointer;
+    int **other_pointer;
+    
+    pointer = malloc(size);
+    
+    pointer[0] = 10;
+    pointer[1] = 20;
+    printf("Pointer[0] = %d\n", pointer[0]);
+    printf("Pointer[1] = %d\n", pointer[1]);
+
+    ( *inputPtr ) = 99;
+    printf("After deref inputPtr: %d\n", ( *inputPtr ));
+
+    other_pointer = &pointer;
+    ( * ( *other_pointer ) ) = 77;
+    printf("Pointer[0] after double deref: %d\n", pointer[0]);
+
+    return pointer;
+}
+>>>>>>> 380f3e02b779c539ac4a5ef00819d70eb1599631

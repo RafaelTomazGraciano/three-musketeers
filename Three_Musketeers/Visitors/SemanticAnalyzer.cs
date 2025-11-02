@@ -13,6 +13,8 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
 using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
+using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors
 {
@@ -38,22 +40,28 @@ namespace Three_Musketeers.Visitors
         private readonly DynamicMemorySemanticAnalyzer dynamicMemorySemanticAnalyzer;
         private readonly IncrementDecrementSemanticAnalyzer incrementDecrementSemanticAnalyzer;
         private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
-        public SemanticAnalyzer()
+        private readonly DefineSemanticAnalyzer defineSemanticAnalyzer;
+        private readonly IncludeSemanticAnalyzer includeSemanticAnalyzer;
+
+        public SemanticAnalyzer(string currentFilePath = "")
         {
+            //compiler directives
+            includeSemanticAnalyzer = new IncludeSemanticAnalyzer(ReportError, ReportWarning, currentFilePath, libraryTracker);
+            defineSemanticAnalyzer = new DefineSemanticAnalyzer(symbolTable, ReportError, ReportWarning);
+
             //variables
-            variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
-                ReportError, ReportWarning, structures, Visit);
+            variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable, ReportError, ReportWarning, structures, Visit);
             pointerSemanticAnalyzer = new PointerSemanticAnalyzer(ReportError, ReportWarning, Visit, symbolTable);
             // input-output
-            printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
-            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable);
-            getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable);
-            putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable);
+            printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit, libraryTracker);
+            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
+            getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
+            putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
             // string conversion
-            atoiSemanticAnalyzer = new AtoiSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
-            atodSemanticAnalyzer = new AtodSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
-            itoaSemanticAnalyzer = new ItoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
-            dtoaSemanticAnalyzer = new DtoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit);
+            atoiSemanticAnalyzer = new AtoiSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
+            atodSemanticAnalyzer = new AtodSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
+            itoaSemanticAnalyzer = new ItoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
+            dtoaSemanticAnalyzer = new DtoaSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
             // arithmetic
             arithmeticSemanticAnalyzer = new ArithmeticSemanticAnalyzer(ReportError, GetExpressionType, Visit);
             // logical
@@ -66,9 +74,10 @@ namespace Three_Musketeers.Visitors
             mainFunctionSemanticAnalyzer = new MainFunctionSemanticAnalyzer(symbolTable, ReportError, Visit);
             functionSemanticAnalyzer = new FunctionSemanticAnalyzer(symbolTable, declaredFunctions, ReportError, ReportWarning,
                 GetExpressionType, Visit);
-            functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType, Visit);
+            functionCallSemanticAnalyzer = new FunctionCallSemanticAnalyzer(ReportError, declaredFunctions, GetExpressionType,
+                Visit, symbolTable);
             //Dynamic memory
-            dynamicMemorySemanticAnalyzer = new DynamicMemorySemanticAnalyzer(symbolTable, ReportError, ReportWarning, Visit);
+            dynamicMemorySemanticAnalyzer = new DynamicMemorySemanticAnalyzer(symbolTable, ReportError, ReportWarning, Visit, libraryTracker);
             // increment/decrement
             incrementDecrementSemanticAnalyzer = new IncrementDecrementSemanticAnalyzer(ReportError, ReportWarning, symbolTable);
             // compound assignment
@@ -92,7 +101,7 @@ namespace Three_Musketeers.Visitors
             string? exprType = Visit(context.expr());
             if (type == null || exprType == null) return null;
 
-            if (!TwoTypesArePermitedToCast(type, exprType))
+            if (!CastTypes.TwoTypesArePermitedToCast(type, exprType))
             {
                 ReportError(context.Start.Line,
                     $"Cannot assign value of type '{exprType}' to variable of type '{type}'");
@@ -130,7 +139,15 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
         {
-            return dynamicMemorySemanticAnalyzer.VisitMallocAtt(context);
+            string? type = variableAssignmentSemanticAnalyzer.VisitMallocAtt(context);
+            // Then validate the malloc call
+            dynamicMemorySemanticAnalyzer.VisitMallocAtt(context);
+            return type;
+        }
+        
+        public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
+        {
+            return dynamicMemorySemanticAnalyzer.VisitFreeStatment(context);            
         }
 
         public override string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)
@@ -143,11 +160,6 @@ namespace Three_Musketeers.Visitors
             string? variableType = pointerSemanticAnalyzer.VisitDerref(context);
             string? expr = Visit(context.expr());
             return "int";
-        }
-
-        public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)
-        {
-            return pointerSemanticAnalyzer.VisitFreeStatement(context);
         }
         public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
         {
@@ -214,22 +226,22 @@ namespace Three_Musketeers.Visitors
             return putsSemanticAnalyzer.VisitPutsStatement(context);
         }
 
-        public override string VisitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context)
+        public override string? VisitAtoiConversion([NotNull] ExprParser.AtoiConversionContext context)
         {
             return atoiSemanticAnalyzer.VisitAtoiConversion(context);
         }
 
-        public override string VisitAtodConversion([NotNull] ExprParser.AtodConversionContext context)
+        public override string? VisitAtodConversion([NotNull] ExprParser.AtodConversionContext context)
         {
             return atodSemanticAnalyzer.VisitAtodConversion(context);
         }
 
-        public override string VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context)
+        public override string? VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context)
         {
             return itoaSemanticAnalyzer.VisitItoaConversion(context);
         }
 
-        public override string VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context)
+        public override string? VisitDtoaConversion([NotNull] ExprParser.DtoaConversionContext context)
         {
             return dtoaSemanticAnalyzer.VisitDtoaConversion(context);
         }
@@ -309,13 +321,17 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
         {
+            symbolTable.EnterScope();
             mainFunctionSemanticAnalyzer.AnalyzeMainFunction(context);
+            symbolTable.ExitScope();
             return null;
         }
 
         public override string? VisitFunction([NotNull] ExprParser.FunctionContext context)
         {
+            symbolTable.EnterScope();
             functionSemanticAnalyzer.AnalyzeFunction(context);
+            symbolTable.ExitScope();
             return null;
         }
 
@@ -383,6 +399,31 @@ namespace Three_Musketeers.Visitors
             if (anyIsInt && (anyIsChar || anyIsBool)) return true;
             if (anyIsChar && (anyIsBool || !anyIsString)) return true;
             return false;
+        }
+
+        public override string? VisitIncludeSystem([NotNull] ExprParser.IncludeSystemContext context)
+        {
+            return includeSemanticAnalyzer.VisitIncludeSystem(context);
+        }
+
+        public override string? VisitIncludeUser([NotNull] ExprParser.IncludeUserContext context)
+        {
+            return includeSemanticAnalyzer.VisitIncludeUser(context);
+        }
+
+        public override string? VisitDefineInt([NotNull] ExprParser.DefineIntContext context)
+        {
+            return defineSemanticAnalyzer.VisitDefineInt(context);
+        }
+
+        public override string? VisitDefineDouble([NotNull] ExprParser.DefineDoubleContext context)
+        {
+            return defineSemanticAnalyzer.VisitDefineDouble(context);
+        }
+
+        public override string? VisitDefineString([NotNull] ExprParser.DefineStringContext context)
+        {
+            return defineSemanticAnalyzer.VisitDefineString(context);
         }
     }
 }

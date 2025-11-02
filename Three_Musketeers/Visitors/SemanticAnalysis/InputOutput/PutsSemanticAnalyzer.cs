@@ -1,6 +1,7 @@
 using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 {
@@ -8,17 +9,25 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
     {
         private readonly SymbolTable symbolTable;
         private readonly Action<int, string> reportError;
+        private readonly LibraryDependencyTracker libraryTracker;
 
         public PutsSemanticAnalyzer(
             Action<int, string> reportError,
-            SymbolTable symbolTable)
+            SymbolTable symbolTable,
+            LibraryDependencyTracker libraryTracker)
         {
             this.reportError = reportError;
             this.symbolTable = symbolTable;
+            this.libraryTracker = libraryTracker;
         }
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
         {
+            if (!libraryTracker.CheckFunctionDependency("puts", context.Start.Line))
+            {
+                return null;
+            }
+    
             int line = context.Start.Line;
 
             // puts(ID) or puts(ID[index])

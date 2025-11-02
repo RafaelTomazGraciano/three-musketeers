@@ -33,38 +33,50 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             var typeToken = context.type();
             string varName = context.ID().GetText();
             int line = context.Start.Line;
-
+            var pointers = context.POINTER();
+            Symbol symbol;
+            
             if (typeToken == null)
             {
                 var existingSymbol = symbolTable.GetSymbol(varName);
                 if (existingSymbol == null)
                 {
-                    reportError(context.Start.Line, $"Variable {varName} does not have a type");
+                    reportError(line, $"Variable '{varName}' was not declared");
                     return null;
                 }
                 existingSymbol.isInitializated = true;
                 return existingSymbol.type;
             }
 
+            // Case 2: Type specified 
             string type = typeToken.GetText();
 
-            if (symbolTable.Contains(varName))
+            // Check if already declared in current scope only
+            if (symbolTable.ContainsInCurrentScopeOnly(varName))
             {
                 reportError(line, $"Variable '{varName}' has already been declared");
                 return null;
             }
 
-            // Valida se tipo struct existe
             if (IsStructType(type) && !structs.ContainsKey(type))
             {
                 reportError(line, $"Struct type '{type}' is not defined");
                 return null;
             }
-
-            var symbol = new Symbol(varName, type, line);
+            
+            if (pointers != null && pointers.Length > 0)
+            {
+                symbol = new PointerSymbol(varName, type, line, pointers.Length);
+            }
+            else
+            {
+                symbol = new Symbol(varName, type, line);
+            }
+            
             symbol.isInitializated = true;
             symbolTable.AddSymbol(symbol);
-            return null;
+            
+            return type;
         }
 
         public string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
@@ -74,8 +86,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             var indexes = context.intIndex();
             int pointerCount = context.POINTER().Length;
             int line = context.Start.Line;
-        
-            if (symbolTable.Contains(varName))
+
+
+            if (symbolTable.ContainsInCurrentScopeOnly(varName))
             {
                 reportError(line, $"Variable '{varName}' has already been declared");
                 return null;
@@ -188,25 +201,15 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
-            // Se não há índices, é uma atribuição simples à variável
             if (indexes.Length == 0)
             {
                 string exprType = visitExpression(context.expr());
+            }
 
-                if (exprType == null)
-                {
-                    return null;
-                }
-
-                // Verificar compatibilidade de tipos
-                if (!AreTypesCompatible(symbol.type, exprType))
-                {
-                    reportError(line, $"Type mismatch: cannot assign '{exprType}' to '{symbol.type}'");
-                    return null;
-                }
-
-                symbol.isInitializated = true;
-                return symbol.type;
+            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
+            {
+                reportError(line, $"Variable '{varName}' is not an array nor Pointer");
+                return null;
             }
 
             // Se há índices, verificar se é array ou ponteiro
@@ -218,17 +221,14 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             bool hasErrors = false;
 
-            // Validar array
             if (symbol is ArraySymbol arraySymbol)
             {
-                // Verificar número de dimensões
                 if (indexes.Length > arraySymbol.dimensions.Count)
                 {
                     reportError(line, $"Too many indices for array '{varName}': expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
                     hasErrors = true;
                 }
 
-                // Validar cada índice
                 for (int i = 0; i < indexes.Length && i < arraySymbol.dimensions.Count; i++)
                 {
                     string indexType = visitExpression(indexes[i].expr());
@@ -239,7 +239,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                         continue;
                     }
 
-                    // Índice deve ser inteiro
                     if (indexType != "int")
                     {
                         reportError(indexes[i].Start.Line, $"Array index must be of type 'int', got '{indexType}'");
@@ -352,6 +351,49 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             }
 
             return null;
+        }
+        
+        public string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
+        {
+            string varName = context.ID().GetText();
+            int line = context.Start.Line;
+            var typeToken = context.type();
+            var pointers = context.POINTER();
+
+            // If no type specified, variable must exist
+            if (typeToken == null)
+            {
+                var existingSymbol = symbolTable.GetSymbol(varName);
+                if (existingSymbol == null)
+                {
+                    reportError(line, $"Variable '{varName}' was not declared");
+                    return null;
+                }
+                existingSymbol.isInitializated = true;
+                return existingSymbol.type;
+            }
+
+            // Type specified - new variable declaration
+            string type = typeToken.GetText();
+            int pointerCount = pointers?.Length ?? 0;
+
+            if (symbolTable.ContainsInCurrentScopeOnly(varName))
+            {
+                reportError(line, $"Variable '{varName}' has already been declared");
+                return null;
+            }
+
+            // malloc always returns a pointer, so add at least one level
+            if (pointerCount == 0)
+            {
+                pointerCount = 1;
+            }
+
+            var symbol = new PointerSymbol(varName, type, line, pointerCount, isDynamic: true);
+            symbol.isInitializated = true;
+            symbolTable.AddSymbol(symbol);
+
+            return "pointer";
         }
 
         private bool AreTypesCompatible(string targetType, string sourceType)

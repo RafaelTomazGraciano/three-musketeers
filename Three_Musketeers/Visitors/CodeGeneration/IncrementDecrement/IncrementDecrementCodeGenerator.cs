@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
 {
@@ -14,11 +15,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         private readonly Dictionary<string, Variable> variables;
         private readonly Func<ExprParser.ExprContext, string> visitExpresion;
         private readonly Func<ExprParser.IndexContext[], string> calculateArrayPosition;
+        private readonly VariableResolver variableResolver;
+
         public IncrementDecrementCodeGenerator(
             Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
-            Dictionary<string, Variable> variables,
+            VariableResolver variableResolver,
             Func<ExprParser.ExprContext, string> visitExpresion,
             Func<ExprParser.IndexContext[], string> calculateArrayPosition
             )
@@ -26,16 +29,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
-            this.variables = variables;
             this.visitExpresion = visitExpresion;
             this.calculateArrayPosition = calculateArrayPosition;
+            this.variableResolver = variableResolver;
         }
 
         // Prefix increment: ++x
         public string VisitPrefixIncrement([NotNull] ExprParser.PrefixIncrementContext context)
         {
             string varName = context.ID().GetText();
-            Variable variable = variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
             
             // Load current value
             string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
@@ -55,7 +58,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         public string VisitPrefixDecrement([NotNull] ExprParser.PrefixDecrementContext context)
         {
             string varName = context.ID().GetText();
-            Variable variable = variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
             
             // Load current value
             string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
@@ -75,7 +78,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         public string VisitPostfixIncrement([NotNull] ExprParser.PostfixIncrementContext context)
         {
             string varName = context.ID().GetText();
-            Variable variable = variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
             
             // Load current value
             string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
@@ -113,7 +116,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         public string VisitPostfixDecrement([NotNull] ExprParser.PostfixDecrementContext context)
         {
             string varName = context.ID().GetText();
-            Variable variable = variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
             
             // Load current value
             string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
@@ -152,7 +155,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
+            ArrayVariable arrayVar = (ArrayVariable)variable;
             
             // Calculate position
             string pos = calculateArrayPosition(indexes);
@@ -180,7 +184,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
+            ArrayVariable arrayVar = (ArrayVariable)variable;
             
             // Calculate position
             string pos = calculateArrayPosition(indexes);
@@ -208,7 +213,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
+            ArrayVariable arrayVar = (ArrayVariable)variable;
             
             // Calculate position
             string pos = calculateArrayPosition(indexes);
@@ -254,7 +260,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            Variable? variable = variableResolver.GetVariable(varName)!;
+            ArrayVariable arrayVar = (ArrayVariable)variable;
             
             // Calculate position
             string pos = calculateArrayPosition(indexes);

@@ -1,13 +1,26 @@
 grammar Expr;
 
 start
-    : prog* mainFunction prog* EOF
+    : include* define* prog* mainFunction prog* EOF
+    ;
+
+include
+    : INCLUDE ANGLE_STRING    #IncludeSystem
+    | INCLUDE STRING_LITERAL  #IncludeUser
+    ;
+
+define
+    : DEFINE ID INT                    #DefineInt
+    | DEFINE ID DOUBLE                 #DefineDouble
+    | DEFINE ID STRING_LITERAL         #DefineString
     ;
 
 prog
     : stm
     | heteregeneousDeclaration
     | function
+    | declaration EOL
+    | att  EOL
     ;
 
 mainFunction
@@ -53,7 +66,7 @@ function
     ;
 
 function_return
-    : type
+    : type POINTER*
     | VOID
     ;
 
@@ -93,7 +106,7 @@ attVar
     ;
 
 args
-    : type ID (',' type ID)*
+    : type POINTER* ID (',' type POINTER* ID)*
     ;
 
 index
@@ -166,7 +179,9 @@ type
     | ID
     ;
 
-/* -------- TOKENS -------- */   
+/* -------- TOKENS -------- */
+INCLUDE       : '#include';
+DEFINE        : '#define';
 RETURN        : 'return';
 IF            : 'if';
 ELSE          : 'else';
@@ -188,6 +203,7 @@ DOUBLE        : [0-9]+'.'[0-9]* | [0-9]*'.'[0-9]+;
 EOL           : ';';
 WS            : [ \t\r\n]+ -> skip;
 LINE_COMMENT  : '//' ~[\r\n]* -> skip;
+ANGLE_STRING  : '<' (~[>\r\n])+ '>';
 BLOCK_COMMENT : '/*' .*? '*/' -> skip;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 CHAR_LITERAL  : '\'' ( ~['\\] | '\\' [0trn'\\] ) '\'';
