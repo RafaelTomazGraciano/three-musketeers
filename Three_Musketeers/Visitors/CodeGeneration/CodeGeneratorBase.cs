@@ -107,8 +107,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         {
             var prog = context.prog();
             var heteregeneousDeclarationContexts = prog.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
-            
-            
+            foreach (var hetDecl in heteregeneousDeclarationContexts)
+            {
+                if (hetDecl.structStatement() != null)
+                {
+                    structCodeGenerator!.VisitStructStatement(hetDecl.structStatement());
+                }
+
+                if (hetDecl.unionStatement() != null)
+                {
+                    structCodeGenerator!.VisitUnionStatement(hetDecl.unionStatement());
+                }
+            }
+
             // collect Signatures
             var functions = prog.Where(p => p.function() != null).Select(p => p.function()).ToList();
             foreach (var func in functions)

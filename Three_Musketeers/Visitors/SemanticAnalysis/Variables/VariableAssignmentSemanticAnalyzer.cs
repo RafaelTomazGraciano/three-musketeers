@@ -268,17 +268,14 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     return null;
                 }
 
-                // Validar tipo da expressão atribuída
                 string exprType = visitExpression(context.expr());
                 if (exprType == null)
                 {
                     return null;
                 }
 
-                // Determinar o tipo do elemento do array
                 string elementType = arraySymbol.type;
 
-                // Se acessou todas as dimensões, retorna o tipo base
                 if (indexes.Length == arraySymbol.dimensions.Count)
                 {
                     if (!AreTypesCompatible(elementType, exprType))
@@ -292,22 +289,18 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 }
                 else
                 {
-                    // Acesso parcial retorna sub-array
                     reportWarning(line, $"Partial array access on '{varName}'");
                     return $"array_of_{elementType}";
                 }
             }
 
-            // Validar ponteiro
             if (symbol is PointerSymbol pointerSymbol)
             {
-                // Verificar se o ponteiro está inicializado
                 if (!pointerSymbol.isInitializated)
                 {
                     reportWarning(line, $"Pointer '{varName}' may not be initialized");
                 }
 
-                // Validar cada índice
                 foreach (var index in indexes)
                 {
                     string indexType = visitExpression(index.expr());
@@ -330,15 +323,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     return null;
                 }
 
-                // Validar tipo da expressão atribuída
                 string exprType = visitExpression(context.expr());
                 if (exprType == null)
                 {
                     return null;
                 }
 
-                // Determinar o tipo apontado considerando níveis de dereferência
-                string pointedType = pointerSymbol.type;
+                string pointedType = pointerSymbol.pointeeType;
                 int effectivePointerLevel = pointerSymbol.pointerLevel - indexes.Length;
 
                 if (effectivePointerLevel < 0)
@@ -365,7 +356,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
         private bool AreTypesCompatible(string targetType, string sourceType)
         {
-            // Tipos idênticos são sempre compatíveis
             if (targetType == sourceType)
             {
                 return true;
@@ -374,17 +364,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             // Permitir conversões numéricas implícitas
             if ((targetType == "double" && sourceType == "int") ||
                 (targetType == "int" && sourceType == "double"))
-            {
-                return true;
-            }
-
-            // Permitir ponteiros void
-            if (targetType.Contains("*") && sourceType == "void*")
-            {
-                return true;
-            }
-
-            if (sourceType.Contains("*") && targetType == "void*")
             {
                 return true;
             }
