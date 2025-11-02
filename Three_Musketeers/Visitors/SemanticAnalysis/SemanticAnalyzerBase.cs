@@ -10,7 +10,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     {
         protected SymbolTable symbolTable = new SymbolTable();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
-        protected Dictionary<string, StructInfo> structures = new Dictionary<string, StructInfo>();
+        protected Dictionary<string, HeterogenousInfo> structures = [];
 
         protected StructSemanticAnalyzer structSemanticAnalyzer;
 
@@ -32,18 +32,18 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         private void CollectStructs(ExprParser.StartContext context)
         {
             var allProgs = context.prog();
-            foreach (var prog in allProgs)
+            var heterogeneousContext = allProgs.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
+            foreach (var prog in heterogeneousContext)
             {
-                var heteregeneousStatement = prog.heteregeneousDeclaration();
-                if (heteregeneousStatement.structStatement() != null)
+                if (prog.structStatement() != null)
                 {
-                    structSemanticAnalyzer.VisitStructStatement(heteregeneousStatement.structStatement());
+                    structSemanticAnalyzer.VisitStructStatement(prog.structStatement());
                     continue;
                 }
 
-                if (heteregeneousStatement.unionStatement() != null)
+                if (prog.unionStatement() != null)
                 {
-                    structSemanticAnalyzer.VisitUnionStatement(heteregeneousStatement.unionStatement());
+                    structSemanticAnalyzer.VisitUnionStatement(prog.unionStatement());
                 }
             }
         }

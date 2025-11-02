@@ -10,14 +10,14 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
         private readonly SymbolTable symbolTable;
         private readonly Action<int, string> reportError;
         private readonly Action<int, string> reportWarning;
-        private readonly Dictionary<string, StructInfo> structs;
+        private readonly Dictionary<string, HeterogenousInfo> structs;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
         public VariableAssignmentSemanticAnalyzer(
             SymbolTable symbolTable,
             Action<int, string> reportError,
             Action<int, string> reportWarning,
-            Dictionary<string, StructInfo> structs,
+            Dictionary<string, HeterogenousInfo> structs,
             Func<ExprParser.ExprContext, string> visitExpression
             )
         {
@@ -181,42 +181,221 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             int line = context.Start.Line;
             var symbol = symbolTable.GetSymbol(varName);
             var indexes = context.index();
+
             if (symbol == null)
             {
                 reportError(line, $"Variable '{varName}' was not declared");
                 return null;
             }
-            if (indexes.Length > 0)
+
+            // Se não há índices, é uma atribuição simples à variável
+            if (indexes.Length == 0)
             {
-                bool hasErrors = false;
-                if (symbol is not ArraySymbol or PointerSymbol)
+                string exprType = visitExpression(context.expr());
+
+                if (exprType == null)
                 {
-                    reportError(line, $"Variable '{varName}' is not an array nor pointer");
                     return null;
                 }
 
-                if (symbol is ArraySymbol arraySymbol)
+                // Verificar compatibilidade de tipos
+                if (!AreTypesCompatible(symbol.type, exprType))
                 {
+                    reportError(line, $"Type mismatch: cannot assign '{exprType}' to '{symbol.type}'");
+                    return null;
+                }
 
-                    foreach (var index in indexes)
+                symbol.isInitializated = true;
+                return symbol.type;
+            }
+
+            // Se há índices, verificar se é array ou ponteiro
+            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
+            {
+                reportError(line, $"Variable '{varName}' is not an array or pointer");
+                return null;
+            }
+
+            bool hasErrors = false;
+
+            // Validar array
+            if (symbol is ArraySymbol arraySymbol)
+            {
+                // Verificar número de dimensões
+                if (indexes.Length > arraySymbol.dimensions.Count)
+                {
+                    reportError(line, $"Too many indices for array '{varName}': expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
+                    hasErrors = true;
+                }
+
+                // Validar cada índice
+                for (int i = 0; i < indexes.Length && i < arraySymbol.dimensions.Count; i++)
+                {
+                    string indexType = visitExpression(indexes[i].expr());
+
+                    if (indexType == null)
                     {
-                        if (index.expr() is ExprParser.IntLiteralContext intLiteralContext)
+                        hasErrors = true;
+                        continue;
+                    }
+
+                    // Índice deve ser inteiro
+                    if (indexType != "int")
+                    {
+                        reportError(indexes[i].Start.Line, $"Array index must be of type 'int', got '{indexType}'");
+                        hasErrors = true;
+                    }
+
+                    // Validar valor literal se for constante
+                    if (indexes[i].expr() is ExprParser.IntLiteralContext intLiteralContext)
+                    {
+                        int value = int.Parse(intLiteralContext.INT().GetText());
+                        if (value < 0)
                         {
-                            int value = int.Parse(intLiteralContext.INT().GetText());
-                            if (value < 0 || value >= arraySymbol.dimensions.Count)
-                            {
-                                reportError(index.Start.Line, $"Index {value} is out of bounds for array '{varName}'");
-                                hasErrors = true;
-                            }
+                            reportError(indexes[i].Start.Line, $"Array index cannot be negative: {value}");
+                            hasErrors = true;
                         }
-                        string typeOfExpr = visitExpression(index.expr());
+                        else if (value >= arraySymbol.dimensions[i])
+                        {
+                            reportError(indexes[i].Start.Line, $"Index {value} is out of bounds for dimension {i} (size: {arraySymbol.dimensions[i]})");
+                            hasErrors = true;
+                        }
                     }
                 }
 
-                var pointerSymbol 
+                if (hasErrors)
+                {
+                    return null;
+                }
+
+                // Validar tipo da expressão atribuída
+                string exprType = visitExpression(context.expr());
+                if (exprType == null)
+                {
+                    return null;
+                }
+
+                // Determinar o tipo do elemento do array
+                string elementType = arraySymbol.type;
+
+                // Se acessou todas as dimensões, retorna o tipo base
+                if (indexes.Length == arraySymbol.dimensions.Count)
+                {
+                    if (!AreTypesCompatible(elementType, exprType))
+                    {
+                        reportError(line, $"Type mismatch: cannot assign '{exprType}' to array element of type '{elementType}'");
+                        return null;
+                    }
+
+                    arraySymbol.isInitializated = true;
+                    return elementType;
+                }
+                else
+                {
+                    // Acesso parcial retorna sub-array
+                    reportWarning(line, $"Partial array access on '{varName}'");
+                    return $"array_of_{elementType}";
+                }
             }
 
-            return symbol.type;
+            // Validar ponteiro
+            if (symbol is PointerSymbol pointerSymbol)
+            {
+                // Verificar se o ponteiro está inicializado
+                if (!pointerSymbol.isInitializated)
+                {
+                    reportWarning(line, $"Pointer '{varName}' may not be initialized");
+                }
+
+                // Validar cada índice
+                foreach (var index in indexes)
+                {
+                    string indexType = visitExpression(index.expr());
+
+                    if (indexType == null)
+                    {
+                        hasErrors = true;
+                        continue;
+                    }
+
+                    if (indexType != "int")
+                    {
+                        reportError(index.Start.Line, $"Pointer index must be of type 'int', got '{indexType}'");
+                        hasErrors = true;
+                    }
+                }
+
+                if (hasErrors)
+                {
+                    return null;
+                }
+
+                // Validar tipo da expressão atribuída
+                string exprType = visitExpression(context.expr());
+                if (exprType == null)
+                {
+                    return null;
+                }
+
+                // Determinar o tipo apontado considerando níveis de dereferência
+                string pointedType = pointerSymbol.type;
+                int effectivePointerLevel = pointerSymbol.pointerLevel - indexes.Length;
+
+                if (effectivePointerLevel < 0)
+                {
+                    reportError(line, $"Too many dereferences for pointer '{varName}'");
+                    return null;
+                }
+
+                string expectedType = effectivePointerLevel > 0 
+                    ? pointedType + new string('*', effectivePointerLevel)
+                    : pointedType;
+
+                if (!AreTypesCompatible(expectedType, exprType))
+                {
+                    reportError(line, $"Type mismatch: cannot assign '{exprType}' to '{expectedType}'");
+                    return null;
+                }
+
+                return expectedType;
+            }
+
+            return null;
+        }
+
+        private bool AreTypesCompatible(string targetType, string sourceType)
+        {
+            // Tipos idênticos são sempre compatíveis
+            if (targetType == sourceType)
+            {
+                return true;
+            }
+
+            // Permitir conversões numéricas implícitas
+            if ((targetType == "double" && sourceType == "int") ||
+                (targetType == "int" && sourceType == "double"))
+            {
+                return true;
+            }
+
+            // Permitir ponteiros void
+            if (targetType.Contains("*") && sourceType == "void*")
+            {
+                return true;
+            }
+
+            if (sourceType.Contains("*") && targetType == "void*")
+            {
+                return true;
+            }
+
+            // Comparação de tipos struct
+            if (targetType.StartsWith("struct_") && sourceType.StartsWith("struct_"))
+            {
+                return targetType == sourceType;
+            }
+
+            return false;
         }
 
         private bool IsStructType(string typeName)

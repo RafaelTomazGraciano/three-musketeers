@@ -7,6 +7,11 @@ struct otherStruct {
     myStruct c
 };
 
+union myUnion {
+    int g,
+    myStruct a
+};
+
 int main(int argc, char argv[]) {
     printf("\n=== Test Arguments ===\n");
     printf("Argument count: %d\n", argc);

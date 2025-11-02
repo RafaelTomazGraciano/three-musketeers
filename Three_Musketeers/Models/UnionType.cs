@@ -6,6 +6,7 @@ namespace Three_Musketeers.Models
         public UnionType(string LLVMName, List<HeterogenousMember> members, Func<string, int> getSize) : base(LLVMName, members)
         {
             totalSize = 0;
+            
             foreach (var member in members)
             {
                 int size = getSize(member.LLVMType);

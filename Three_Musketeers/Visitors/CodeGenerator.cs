@@ -193,7 +193,7 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
         {
-            if (context.Parent is ExprParser.HeteregeneousDeclarationContext) return null;
+            if (context.Parent.Parent is ExprParser.HeteregeneousDeclarationContext) return null;
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
 

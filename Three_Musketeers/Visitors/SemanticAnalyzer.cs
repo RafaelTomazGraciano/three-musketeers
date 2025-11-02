@@ -42,7 +42,7 @@ namespace Three_Musketeers.Visitors
         {
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable,
-                ReportError, ReportWarning, structures);
+                ReportError, ReportWarning, structures, Visit);
             pointerSemanticAnalyzer = new PointerSemanticAnalyzer(ReportError, ReportWarning, Visit, symbolTable);
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit);
@@ -102,13 +102,24 @@ namespace Three_Musketeers.Visitors
             return type;
         }
 
-        public override string VisitSingleArrayAtt([NotNull] ExprParser.SingleArrayAttContext context)
+        public override string? VisitSingleArrayAtt([NotNull] ExprParser.SingleArrayAttContext context)
         {
-            return variableAssignmentSemanticAnalyzer.VisitSingleArrayAtt(context);
+            var result = variableAssignmentSemanticAnalyzer.VisitSingleArrayAtt(context);
+            var exprType = Visit(context.expr());
+            if (result == null || exprType == null) return null;
+            if(!TwoTypesArePermitedToCast(result, exprType))
+            {
+                ReportError(context.Start.Line,
+                    $"Cannot assign value of type '{exprType}' to array element of type '{result}'");
+                return null;
+            }
+            return null;
         }
 
         public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
         {
+            if (context.Parent.Parent is ExprParser.HeteregeneousDeclarationContext) return null;
+            
             return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
         }
 

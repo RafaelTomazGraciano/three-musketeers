@@ -22,5 +22,10 @@ namespace Three_Musketeers.Models
         {
             return totalSize;
         }
+
+        public List<HeterogenousMember> GetMembers()
+        {
+            return members;
+        }
     }
 }
