@@ -2,18 +2,29 @@ namespace Three_Musketeers.Models
 {
     public class PointerSymbol : Symbol
     {
-        public string innerType;
+        public string pointeeType { get; set; }
+        public int pointerLevel { get; set; }
+        public bool isDynamic { get; set; }
 
-        public bool isDynamic;
-
-        public int amountOfPointers;
-
-        public PointerSymbol(string name, string innerType, int line, int amountOfPointers, bool isDynamic = false)
-        : base(name, "pointer", line)
+        public PointerSymbol(string name, string pointeeType, int line, int pointerLevel = 1, bool isDynamic = false)
+            : base(name, "pointer", line)
         {
-            this.innerType = innerType;
-            this.amountOfPointers = amountOfPointers;
-            this.isDynamic = isDynamic;
+            this.pointeeType = pointeeType;
+            this.pointerLevel = pointerLevel;
+            isDynamic = isDynamic;
+        }
+
+        public override string ToString()
+        {
+            string pointers = new string('*', pointerLevel);
+            string dynamic = isDynamic ? " (dynamic)" : "";
+            return $"{pointeeType}{pointers} {name}{dynamic} (line {line})";
+        }
+
+        public string GetLLVMType(Func<string, string> getLLVMType)
+        {
+            string baseType = getLLVMType(pointeeType);
+            return baseType + new string('*', pointerLevel);
         }
     }
 }

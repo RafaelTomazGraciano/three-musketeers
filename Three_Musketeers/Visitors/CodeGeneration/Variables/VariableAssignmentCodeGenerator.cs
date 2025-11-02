@@ -216,42 +216,39 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string? currentFunc = getCurrentFunctionName();
             string actualVarName = currentFunc != null ? $"@{currentFunc}.{varName}" : varName;
 
-
-                if (indexes.Length > 0)
-                {
-                    (var arrayType, var totalSize) = GetArrayDimensions(indexes, varType, llvmType);
-                    WriteAlloca(register, arrayType, GetAlignment(llvmType));
-                    variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType + pointers);
-                    registerTypes[register] = arrayType;
-                    return null;
-                }
-
-                if (varType == "string")
-                {
-                    llvmType = "[256 x i8]" + pointers;
-                    WriteAlloca(register, llvmType, GetAlignment("i8*"));
-                    variables[varName] = new Variable(varName, varType, llvmType, register);
-                    registerTypes[register] = llvmType;
-                    return null;
-                }
-
-                WriteAlloca(register, llvmType + pointers, GetAlignment(llvmType));
-                registerTypes[register] = llvmType + pointers;
-                variables[varName] = new Variable(varName, varType, llvmType + pointers, register);
-                if (currentFunc == null)
-                {
-                    // global string - use i8* pointer
-                    string globalReg = $"@{varName}";
-                    declarations.AppendLine($"{globalReg} = global i8* null, align 8");
-                    variables[varName] = new Variable(varName, varType, "i8*", globalReg);
-                }
-                else
-                {
-                    // local string
-                    register = nextRegister();
-                    WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
-                    variables[actualVarName] = new Variable(varName, varType, "[256 x i8]", register);
-                }
+            if (indexes.Length > 0)
+            {
+                (var arrayType, var totalSize) = GetArrayDimensions(indexes, varType, llvmType);
+                WriteAlloca(register, arrayType, GetAlignment(llvmType));
+                variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType + pointers);
+                registerTypes[register] = arrayType;
+                return null;
+            }
+            if (varType == "string")
+            {
+                llvmType = "[256 x i8]" + pointers;
+                WriteAlloca(register, llvmType, GetAlignment("i8*"));
+                variables[varName] = new Variable(varName, varType, llvmType, register);
+                registerTypes[register] = llvmType;
+                return null;
+            }
+            WriteAlloca(register, llvmType + pointers, GetAlignment(llvmType));
+            registerTypes[register] = llvmType + pointers;
+            variables[varName] = new Variable(varName, varType, llvmType + pointers, register);
+            if (currentFunc == null)
+            {
+                // global string - use i8* pointer
+                string globalReg = $"@{varName}";
+                declarations.AppendLine($"{globalReg} = global i8* null, align 8");
+                variables[varName] = new Variable(varName, varType, "i8*", globalReg);
+            }
+            else
+            {
+                // local string
+                register = nextRegister();
+                WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
+                variables[actualVarName] = new Variable(varName, varType, "[256 x i8]", register);
+            }
 
             if (currentFunc == null)
             {

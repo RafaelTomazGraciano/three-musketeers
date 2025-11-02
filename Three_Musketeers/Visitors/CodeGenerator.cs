@@ -78,7 +78,7 @@ namespace Three_Musketeers.Visitors
             scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
                 NextRegister, NextStringLabel, GetLLVMType, variableResolver);
             getsCodeGenerator = new GetsCodeGenerator(GetCurrentBody, NextRegister, variableResolver);
-            putsCodeGenerator = new PutsCodeGenerator(GetCurrentBody, registerTypes, NextRegister,
+            putsCodeGenerator = new PutsCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister,
                 variableResolver, defineCodeGenerator, CalculateArrayPosition);
 
 
@@ -416,6 +416,8 @@ namespace Three_Musketeers.Visitors
         public override string VisitVarStruct([NotNull] ExprParser.VarStructContext context)
         {
             return structCodeGenerator!.VisitVarStruct(context.structGet());
+        }
+
         private string? GetCurrentFunctionNameIncludingMain()
         {
             if (functionCodeGenerator?.IsInsideFunction() == true)
@@ -435,5 +437,4 @@ namespace Three_Musketeers.Visitors
             return includeCodeGenerator.VisitIncludeUser(context);
         }
     }
-}
 }

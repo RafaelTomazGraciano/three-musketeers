@@ -12,7 +12,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Dictionary<string, Variable> variables;
         private readonly Func<ExprParser.ExprContext, string> visitExpresion;
         private readonly Func<ExprParser.IndexContext[], string> calculateArrayPosition;
         private readonly VariableResolver variableResolver;

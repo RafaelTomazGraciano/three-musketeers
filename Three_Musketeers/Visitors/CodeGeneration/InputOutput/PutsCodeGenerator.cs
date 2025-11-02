@@ -1,5 +1,4 @@
 using Antlr4.Runtime.Misc;
-using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
@@ -18,8 +17,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Func<ExprParser.IndexContext, string> calculateArrayPosition;
         private readonly DefineCodeGenerator defineCodeGenerator;
 
-        public PutsCodeGenerator(Func<StringBuilder> getCurrentBody, Dictionary<string, string> registerTypes, Func<string> nextRegister, VariableResolver variableResolver, DefineCodeGenerator defineCodeGenerator, Func<ExprParser.IndexContext, string> calculateArrayPosition)
+        public PutsCodeGenerator(StringBuilder declarations, Func<StringBuilder> getCurrentBody, Dictionary<string, string> registerTypes, Func<string> nextRegister, VariableResolver variableResolver, DefineCodeGenerator defineCodeGenerator, Func<ExprParser.IndexContext, string> calculateArrayPosition)
         {
+            this.declarations = declarations;
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;

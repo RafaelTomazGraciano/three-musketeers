@@ -45,7 +45,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
 
                 if (symbol is PointerSymbol pointerSymbol)
                 {
-                    return pointerSymbol.innerType;
+                    return pointerSymbol.pointeeType;
                 }
 
                 return symbol.type;

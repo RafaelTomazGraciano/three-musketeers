@@ -90,7 +90,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
 
                 if (symbol is PointerSymbol pointerSymbol)
                 {
-                    return pointerSymbol.amountOfPointers;
+                    return pointerSymbol.pointerLevel;
                 }
 
                 return 0; // Not a pointer
@@ -124,8 +124,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
 
                 if (symbol is PointerSymbol pointerSymbol)
                 {
-                    // Array indexing on pointer reduces level by 1
-                    return Math.Max(0, pointerSymbol.amountOfPointers - 1);
+                    return Math.Max(0, pointerSymbol.pointerLevel - 1);
                 }
 
                 return 0;
