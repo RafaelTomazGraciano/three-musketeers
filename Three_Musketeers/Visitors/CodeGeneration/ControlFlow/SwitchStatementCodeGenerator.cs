@@ -14,7 +14,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         private readonly Func<ExprParser.StmContext, string?> visitStatement;
         private int labelCounter = 0;
 
-        // Track active switch context for break statements
         private readonly Stack<string> activeSwitchMergeLabels = new Stack<string>();
 
         public SwitchStatementCodeGenerator(
@@ -152,13 +151,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             
             foreach (var stm in statements)
             {
-                // Check if this is a break statement
                 if (stm.BREAK() != null)
                 {
-                    // Generate branch to merge label and stop processing this block
                     getCurrentBody().AppendLine($"  br label %{mergeLabel}");
                     foundBreak = true;
-                    break; // Exit loop - break prevents fall-through
+                    break;
                 }
 
                 visitStatement(stm);
@@ -178,13 +175,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             }
             else if (charToken != null)
             {
-                // Convert char literal to integer value
+                
                 string charLiteral = charToken.GetText();
-                // Remove quotes and get character value
-                char charValue = charLiteral[1]; // Skip first quote
+                char charValue = charLiteral[1];
                 if (charLiteral[1] == '\\')
                 {
-                    // Handle escape sequences
                     switch (charLiteral[2])
                     {
                         case 'n': charValue = '\n'; break;
@@ -200,7 +195,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             }
             else
             {
-                return "0"; // Should not happen due to grammar
+                return "0";
             }
         }
 
@@ -214,7 +209,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             }
             else if (currentType == "i1")
             {
-                // Convert bool to i32
                 string convReg = nextRegister();
                 getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i32");
                 registerTypes[convReg] = "i32";
@@ -222,7 +216,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             }
             else if (currentType == "i8")
             {
-                // Convert char to i32
                 string convReg = nextRegister();
                 getCurrentBody().AppendLine($"  {convReg} = zext i8 {value} to i32");
                 registerTypes[convReg] = "i32";
@@ -230,16 +223,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             }
             else
             {
-                // Default: assume it's already compatible or convert from double
                 if (currentType == "double")
                 {
-                    // Convert double to i32 (truncate)
                     string convReg = nextRegister();
                     getCurrentBody().AppendLine($"  {convReg} = fptosi double {value} to i32");
                     registerTypes[convReg] = "i32";
                     return convReg;
                 }
-                // For unknown types, return as-is (might cause error, but let LLVM handle it)
                 return value;
             }
         }
@@ -248,7 +238,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             if (!registerTypes.ContainsKey(value))
             {
-                // For literals, determine the type based on the value
                 if (value == "1" || value == "true")
                 {
                     registerTypes[value] = "i1";
@@ -259,7 +248,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
                 }
                 else
                 {
-                    // Default to i32 for numeric literals
                     registerTypes[value] = "i32";
                 }
             }

@@ -40,10 +40,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             var caseLabels = context.caseLabel();
             var defaultLabel = context.defaultLabel();
 
-            // Enter switch context for break statement validation
             enterSwitchContext();
 
-            // Validate switch expression type
             string? switchExprType = getExpressionType(switchExpr);
             visitExpression(switchExpr);
 
@@ -53,22 +51,18 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                     $"Switch expression must be an integer-compatible type (int, char, bool), got '{switchExprType}'");
             }
 
-            // Track case values to detect duplicates
             HashSet<string> caseValues = new HashSet<string>();
 
-            // Analyze each case label
             foreach (var caseLabel in caseLabels)
             {
                 AnalyzeCaseLabel(caseLabel, caseValues);
             }
 
-            // Analyze default label if present
             if (defaultLabel != null)
             {
                 AnalyzeDefaultLabel(defaultLabel);
             }
 
-            // Exit switch context
             exitSwitchContext();
 
             return null;
@@ -80,7 +74,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             var intToken = context.INT();
             var charToken = context.CHAR_LITERAL();
 
-            // Case value must be a constant (INT or CHAR_LITERAL)
             string caseValue;
             if (intToken != null)
             {
@@ -96,7 +89,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                 return;
             }
 
-            // Check for duplicate case values
             if (caseValues.Contains(caseValue))
             {
                 reportError(line, $"Duplicate case value: {caseValue}");
@@ -106,7 +98,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                 caseValues.Add(caseValue);
             }
 
-            // Enter scope for case block
             symbolTable.EnterScope();
             AnalyzeBlock(context.func_body());
             symbolTable.ExitScope();
@@ -114,7 +105,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
 
         private void AnalyzeDefaultLabel([NotNull] ExprParser.DefaultLabelContext context)
         {
-            // Enter scope for default block
             symbolTable.EnterScope();
             AnalyzeBlock(context.func_body());
             symbolTable.ExitScope();
@@ -131,7 +121,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
 
         private bool IsValidSwitchType(string type)
         {
-            // Switch expressions can be int, char, or bool (integer-compatible types)
             return type == "int" || type == "char" || type == "bool";
         }
     }

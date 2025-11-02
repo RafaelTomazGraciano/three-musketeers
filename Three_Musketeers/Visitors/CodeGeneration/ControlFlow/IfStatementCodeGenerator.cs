@@ -143,23 +143,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             
             foreach (var stm in statements)
             {
-                // Check if this is a break or continue statement
-                // These are handled at the VisitStm level but indicate control flow
                 if (stm.BREAK() != null || stm.CONTINUE() != null)
                 {
-                    // Let VisitStm handle it, but mark that we found control flow
                     visitStatement(stm);
                     foundControlFlow = true;
-                    break; // Exit - control flow statement ends the block
+                    break;
                 }
                 
-                // Check if this is a return statement
                 if (stm.RETURN() != null)
                 {
                     visitStatement(stm);
                     foundReturn = true;
-                    foundControlFlow = true; // Return also prevents merge branch
-                    break; // Exit - return ends the block
+                    foundControlFlow = true;
+                    break;
                 }
                 
                 visitStatement(stm);
@@ -174,7 +170,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             
             if (currentType == "i1")
             {
-                // Already boolean, return as is
                 return value;
             }
 
@@ -183,22 +178,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
 
             if (currentType == "i32")
             {
-                // Convert integer to boolean: != 0
                 getCurrentBody().AppendLine($"  {convReg} = icmp ne i32 {value}, 0");
             }
             else if (currentType == "double")
             {
-                // Convert double to boolean: != 0.0
                 getCurrentBody().AppendLine($"  {convReg} = fcmp one double {value}, 0.0");
             }
             else if (currentType == "i8")
             {
-                // Convert char to boolean: != 0
                 getCurrentBody().AppendLine($"  {convReg} = icmp ne i8 {value}, 0");
             }
             else
             {
-                // Default case - treat as integer
                 getCurrentBody().AppendLine($"  {convReg} = icmp ne i32 {value}, 0");
             }
 
@@ -210,7 +201,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             if (!registerTypes.ContainsKey(value))
             {
-                // For literals, determine the type based on the value
                 if (value == "1" || value == "true")
                 {
                     registerTypes[value] = "i1";
@@ -221,7 +211,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
                 }
                 else
                 {
-                    // Default to i32 for numeric literals
                     registerTypes[value] = "i32";
                 }
             }

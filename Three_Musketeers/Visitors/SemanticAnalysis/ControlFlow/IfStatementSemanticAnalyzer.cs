@@ -33,15 +33,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             var bodies = context.func_body();
             var elseTokens = context.ELSE();
 
-            // Validate that we have matching conditions and bodies
-            // The grammar ensures this, but we validate for safety
             if (expressions.Length != bodies.Length && expressions.Length != bodies.Length - 1)
             {
                 reportError(line, "Internal error: Mismatch between conditions and blocks in if statement");
                 return null;
             }
 
-            // Analyze the if condition
             var ifCondition = expressions[0];
             string? conditionType = getExpressionType(ifCondition);
             visitExpression(ifCondition);
@@ -52,19 +49,15 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                     $"If condition must be a boolean-compatible type, got '{conditionType}'");
             }
 
-            // Enter scope for if block
             symbolTable.EnterScope();
             AnalyzeBlock(bodies[0]);
             symbolTable.ExitScope();
 
-            // Analyze else if chains
             int elseIfCount = expressions.Length - 1;
             if (elseTokens != null && elseTokens.Length > 0 && bodies.Length > 1)
             {
-                // Check if last ELSE is a final else or an else if
                 bool hasFinalElse = elseTokens.Length > elseIfCount;
                 
-                // Process else if blocks (if any)
                 for (int i = 1; i <= elseIfCount; i++)
                 {
                     var elseIfCondition = expressions[i];
@@ -83,7 +76,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                     symbolTable.ExitScope();
                 }
 
-                // Process final else block (if present)
                 if (hasFinalElse)
                 {
                     int elseBodyIndex = bodies.Length - 1;
@@ -94,7 +86,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             }
             else if (elseIfCount > 0)
             {
-                // Process else if blocks without final else
                 for (int i = 1; i <= elseIfCount; i++)
                 {
                     var elseIfCondition = expressions[i];
@@ -107,7 +98,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                             $"Else if condition must be a boolean-compatible type, got '{elseIfConditionType}'");
                     }
 
-                    // Enter scope for else if block
                     symbolTable.EnterScope();
                     AnalyzeBlock(bodies[i]);
                     symbolTable.ExitScope();
@@ -128,7 +118,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
 
         private bool IsValidConditionType(string type)
         {
-            // Conditions can be bool, int, double, or char (treated as truthy/falsy)
             return type == "bool" || type == "int" || type == "double" || type == "char";
         }
     }

@@ -44,16 +44,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             var forIncrement = context.forIncrement();
             var body = context.func_body();
 
-            // Enter scope for the entire for loop (init variables are in loop scope)
             symbolTable.EnterScope();
 
-            // Analyze initialization (if present)
             if (forInit != null)
             {
                 visitContext(forInit);
             }
 
-            // Analyze condition (if present)
             if (forCondition != null)
             {
                 string? conditionType = getExpressionType(forCondition.expr());
@@ -66,24 +63,19 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                 }
             }
 
-            // Analyze increment (if present) - just visit it, type checking happens in visitExpression/visitAtt/visitAttVar
             if (forIncrement != null)
             {
                 visitContext(forIncrement);
             }
 
-            // Enter loop context for break/continue validation
             enterLoopContext();
 
-            // Enter scope for loop body
             symbolTable.EnterScope();
             AnalyzeBlock(body);
             symbolTable.ExitScope();
 
-            // Exit loop scope
             symbolTable.ExitScope();
 
-            // Exit loop context
             exitLoopContext();
 
             return null;
@@ -95,7 +87,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             var condition = context.expr();
             var body = context.func_body();
 
-            // Validate condition
             string? conditionType = getExpressionType(condition);
             visitExpression(condition);
 
@@ -105,15 +96,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                     $"While loop condition must be a boolean-compatible type, got '{conditionType}'");
             }
 
-            // Enter loop context for break/continue validation
             enterLoopContext();
 
-            // Enter scope for loop body
             symbolTable.EnterScope();
             AnalyzeBlock(body);
             symbolTable.ExitScope();
 
-            // Exit loop context
             exitLoopContext();
 
             return null;
@@ -125,15 +113,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
             var condition = context.expr();
             var body = context.func_body();
 
-            // Enter loop context for break/continue validation
             enterLoopContext();
 
-            // Enter scope for loop body
             symbolTable.EnterScope();
             AnalyzeBlock(body);
             symbolTable.ExitScope();
 
-            // Validate condition
             string? conditionType = getExpressionType(condition);
             visitExpression(condition);
 
@@ -143,7 +128,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
                     $"Do-while loop condition must be a boolean-compatible type, got '{conditionType}'");
             }
 
-            // Exit loop context
             exitLoopContext();
 
             return null;
@@ -160,7 +144,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
 
         private bool IsValidConditionType(string type)
         {
-            // Conditions can be bool, int, double, or char (treated as truthy/falsy)
             return type == "bool" || type == "int" || type == "double" || type == "char";
         }
     }
