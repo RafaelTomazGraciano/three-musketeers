@@ -8,17 +8,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
     public class PrintfCodeGenerator
     {
         private readonly StringBuilder globalStrings;
-        private readonly StringBuilder declarations;
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<string> nextStringLabel;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
-        private bool printfInitialized = false;
 
         public PrintfCodeGenerator(
             StringBuilder globalStrings,
-            StringBuilder declarations,
             Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
@@ -26,7 +23,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             Func<ExprParser.ExprContext, string> visitExpression)
         {
             this.globalStrings = globalStrings;
-            this.declarations = declarations;
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
@@ -36,8 +32,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
         public string? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
         {
-            InitializePrintf();
-
             string formatString = context.STRING_LITERAL().GetText();
             formatString = formatString.Substring(1, formatString.Length - 2); //remove quotes
 
@@ -93,15 +87,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             getCurrentBody().AppendLine($"  {resultReg} = call i32 (i8*, ...) @printf({argsString})");
 
             return null;
-        }
-        
-        private void InitializePrintf()
-        {
-            if (printfInitialized)
-                return;
-
-            declarations.AppendLine("declare i32 @printf(i8*, ...)");
-            printfInitialized = true;
         }
     }
 }

@@ -60,14 +60,14 @@ namespace Three_Musketeers.Models{
             return null;
         }
 
-        public bool ContainsInCurrentScope(string name)
+        public bool Contains(string name)
         {
             return currentScope.symbols.ContainsKey(name);
         }
 
-        public bool Contains(string name)
+        public bool ContainsInCurrentScopeOnly(string name)
         {
-            return GetSymbol(name) != null;
+            return currentScope.symbols.ContainsKey(name);
         }
 
         public void MarkInitializated(string name)
@@ -82,11 +82,6 @@ namespace Three_Musketeers.Models{
                 }
                 scope = scope.parent;
             }
-        }
-
-        public Dictionary<string, Symbol> GetCurrentScopeSymbols()
-        {
-            return new Dictionary<string, Symbol>(currentScope.symbols);
         }
 
         public Dictionary<string, Symbol> GetAllSymbols()
@@ -107,12 +102,6 @@ namespace Three_Musketeers.Models{
             }
 
             return allSymbols;
-        }
-        
-        public void Clear()
-        {
-            globalScope = new Scope();
-            currentScope = globalScope;
         }
     }
 }

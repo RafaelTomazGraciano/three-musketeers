@@ -49,6 +49,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             else
             {
                 llvmReturnType = getLLVMType(functionInfo.returnType!);
+                //pointers
+                for (int i = 0; i < functionInfo.returnPointerLevel; i++)
+                {
+                    llvmReturnType += "*";
+                }
             }
             
             // evaluate arguments

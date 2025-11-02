@@ -1,7 +1,7 @@
 using Antlr4.Runtime.Misc;
-using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.StringConversion
 {
@@ -11,21 +11,29 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.StringConversion
         private readonly Action<int, string> reportError;
         private readonly Func<ExprParser.ExprContext, string> getExpressionType;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
+        private readonly LibraryDependencyTracker libraryTracker;
 
         public ItoaSemanticAnalyzer(
             Action<int, string> reportError,
             SymbolTable symbolTable,
             Func<ExprParser.ExprContext, string> getExpressionType,
-            Func<ExprParser.ExprContext, string?> visitExpression)
+            Func<ExprParser.ExprContext, string?> visitExpression,
+            LibraryDependencyTracker libraryTracker)
         {
             this.reportError = reportError;
             this.symbolTable = symbolTable;
             this.getExpressionType = getExpressionType;
             this.visitExpression = visitExpression;
+            this.libraryTracker = libraryTracker;
         }
 
-        public string VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context)
+        public string? VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context)
         {
+            if (!libraryTracker.CheckFunctionDependency("itoa", context.Start.Line))
+            {
+                return null;
+            }
+            
             var expr = context.expr();
             visitExpression(expr);
 

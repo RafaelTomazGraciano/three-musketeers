@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
 {
@@ -9,13 +10,82 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
     {
         protected SymbolTable symbolTable = new SymbolTable();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
+        protected LibraryDependencyTracker libraryTracker;
         public bool hasErrors { get; protected set; } = false;
+
+        public SemanticAnalyzerBase()
+        {
+            libraryTracker = new LibraryDependencyTracker(ReportError);
+        }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
         {
+            var includes = context.include();
+            foreach (var include in includes)
+            {
+                Visit(include);
+            }
+    
+            // Process all #define 
+            var defines = context.define();
+            foreach (var define in defines)
+            {
+                Visit(define);
+            }
+
             CollectFunctionSignatures(context);
 
-            return base.VisitStart(context);
+            // global declarations
+            var allProgs = context.prog();
+            foreach (var prog in allProgs)
+            {
+                // Skip functions - they'll be processed later
+                if (prog.function() != null)
+                {
+                    continue;
+                }
+
+                // Visit declarations and assignments
+                Visit(prog);
+            }
+
+            // Visit functions
+            foreach (var prog in allProgs)
+            {
+                if (prog.function() != null)
+                {
+                    Visit(prog.function());
+                }
+            }
+
+            //visit main
+            if (context.mainFunction() != null)
+            {
+                Visit(context.mainFunction());
+            }
+
+            return null;
+        }
+        
+        public override string? VisitProg([NotNull] ExprParser.ProgContext context)
+        {
+            if (context.declaration() != null)
+            {
+                return Visit(context.declaration());
+            }
+            
+            if (context.att() != null)
+            {
+                return Visit(context.att());
+            }
+            
+            if (context.stm() != null)
+            {
+                return Visit(context.stm());
+            }
+            
+            // Functions are handled separately in VisitStart
+            return null;
         }
 
         private void CollectFunctionSignatures([NotNull] ExprParser.StartContext context)
@@ -38,6 +108,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             // Get return type
             var returnTypeCtx = context.function_return();
             string returnType = "";
+            int returnPointerLevel = returnTypeCtx.POINTER()?.Length ?? 0;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -67,7 +138,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             var functionInfo = new FunctionInfo
             {
                 returnType = returnType,
-                parameters = new List<(string, string)>(),
+                returnPointerLevel = returnPointerLevel,
+                parameters = new List<(string, string, int)>(),
                 hasReturnStatement = false
             };
 
@@ -77,22 +149,36 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 var types = argsCtx.type();
                 var ids = argsCtx.ID();
+                var allPointers = argsCtx.POINTER();
 
                 HashSet<string> paramNames = new HashSet<string>();
+                int pointerIndex = 0;
 
                 for (int i = 0; i < types.Length; i++)
                 {
                     string paramType = GetTypeStringFromContext(types[i]);
                     string paramName = ids[i].GetText();
 
+                    int pointerLevel = 0;
+                    int typeEndPos = types[i].Stop.StopIndex;
+                    int idStartPos = ids[i].Symbol.StartIndex;
+
+                    while (pointerIndex < allPointers.Length && 
+                    allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                    allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                    {
+                        pointerLevel++;
+                        pointerIndex++;
+                    }
+                    
                     if (paramNames.Contains(paramName))
                     {
                         ReportError(line, $"Parameter '{paramName}' duplicated in function '{functionName}'");
                         continue;
                     }
-
+                    
                     paramNames.Add(paramName);
-                    functionInfo.parameters?.Add((paramType, paramName));
+                    functionInfo.parameters?.Add((paramType, paramName, pointerLevel));
                 }
             }
 

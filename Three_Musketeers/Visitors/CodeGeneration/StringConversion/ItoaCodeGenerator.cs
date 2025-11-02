@@ -7,21 +7,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.StringConversion
 {
     public class ItoaCodeGenerator
     {
-        private readonly StringBuilder declarations;
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
-        private bool itoaInitialized = false;
 
         public ItoaCodeGenerator(
-            StringBuilder declarations,
             Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string?> visitExpression)
         {
-            this.declarations = declarations;
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
@@ -30,7 +26,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.StringConversion
 
         public string VisitItoaConversion([NotNull] ExprParser.ItoaConversionContext context)
         {
-            InitializeItoa();
             string? intValue = visitExpression(context.expr());
             //Allocate buffer for string (20 bytes is enough for int)
             string bufferReg = nextRegister();
@@ -44,16 +39,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.StringConversion
             
             registerTypes[bufferPtr] = "i8*";
             return bufferPtr;
-        }
-
-        private void InitializeItoa()
-        {
-            if (itoaInitialized)
-                return;
-                
-            declarations.AppendLine("declare i32 @sprintf(i8*, i8*, ...)");
-            declarations.AppendLine("@.fmt.d = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1");
-            itoaInitialized = true;
         }
     }
 }
