@@ -23,13 +23,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
         {
-            CollectStructs(context);
+            CollectHeterogenousType(context);
             CollectFunctionSignatures(context);
 
             return base.VisitStart(context);
         }
 
-        private void CollectStructs(ExprParser.StartContext context)
+        private void CollectHeterogenousType(ExprParser.StartContext context)
         {
             var allProgs = context.prog();
             var heterogeneousContext = allProgs.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
