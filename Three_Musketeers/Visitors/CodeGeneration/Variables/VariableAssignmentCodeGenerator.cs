@@ -18,7 +18,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<string?> getCurrentFunctionName;
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Func<string, int> GetAlignment;
-        private readonly Dictionary<string, HeterogenousType> structs;
+        private readonly Func<ExprParser.IndexContext[], string> calculateArrayPosition;
 
         public VariableAssignmentCodeGenerator(
             StringBuilder declarations,
@@ -30,7 +30,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Func<string?> getCurrentFunctionName,
             Func<StringBuilder> getCurrentBody,
             Func<string, int> GetAlignment,
-            Dictionary<string, HeterogenousType> structs)
+            Func<ExprParser.IndexContext[], string> calculateArrayPosition)
         {
             this.declarations = declarations;
             this.variables = variables;
@@ -41,7 +41,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.getCurrentBody = getCurrentBody;
             this.GetAlignment = GetAlignment;
-            this.structs = structs;
+            this.calculateArrayPosition = calculateArrayPosition;
         }
 
         public string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -265,15 +265,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             {
                 // For arrays: use getelementptr with i32 0 as first index
                 var register = nextRegister();
-                int i;
-                currentBody.Append($"  {register} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, ");
-                for (i = 0; i < indexes.Length - 1; i++)
-                {
-                    expr = visitExpression(indexes[i].expr());
-                    currentBody.Append($"i32 {expr}, ");
-                }
-                expr = visitExpression(indexes[i].expr());
-                currentBody.AppendLine($"i32 {expr}");
+                string result = calculateArrayPosition(indexes);
+                currentBody.Append($"  {register} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0,{result}");
 
                 if (variable is ArrayVariable arrayVariable)
                 {
@@ -282,6 +275,32 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 registerTypes[register] = llvmType + "*";
                 return register;
             }
+        }
+
+        public string? VisitSingleArrayAtt(ExprParser.SingleArrayAttContext context)
+        {
+            string varName = context.ID().GetText();
+            var index = context.index();
+            string exprValue = visitExpression(context.expr());
+            Variable variable = GetVariableWithScope(varName)!;
+            var currentBody = getCurrentBody();
+            string register = variable.register;
+            if (index != null)
+            {
+                register = nextRegister();
+                string position = calculateArrayPosition(context.index());
+                if (variable is ArrayVariable)
+                {
+                    currentBody.AppendLine($"  {register} = getelementptr inbounds {variable.LLVMType}, {variable.LLVMType}* {variable.register}, i32 0, {position}");
+                }
+                else
+                {
+                    currentBody.AppendLine($"  {register} = getelementptr inbounds {variable.LLVMType}, {variable.LLVMType}* {variable.register}, {position}");
+                }
+            }
+            
+            currentBody.AppendLine($"   store {registerTypes[exprValue]} {exprValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            return null;
         }
     }
 }

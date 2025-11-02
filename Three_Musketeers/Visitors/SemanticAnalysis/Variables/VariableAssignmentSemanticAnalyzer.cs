@@ -11,17 +11,21 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
         private readonly Action<int, string> reportError;
         private readonly Action<int, string> reportWarning;
         private readonly Dictionary<string, StructInfo> structs;
+        private readonly Func<ExprParser.ExprContext, string> visitExpression;
 
         public VariableAssignmentSemanticAnalyzer(
             SymbolTable symbolTable,
             Action<int, string> reportError,
             Action<int, string> reportWarning,
-            Dictionary<string, StructInfo> structs)
+            Dictionary<string, StructInfo> structs,
+            Func<ExprParser.ExprContext, string> visitExpression
+            )
         {
             this.symbolTable = symbolTable;
             this.reportError = reportError;
             this.reportWarning = reportWarning;
             this.structs = structs;
+            this.visitExpression = visitExpression;
         }
 
         public string? VisitAtt([NotNull] ExprParser.GenericAttContext context)
@@ -166,6 +170,50 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             {
                 reportError(line, $"Variable '{varName}' is empty");
                 return null;
+            }
+
+            return symbol.type;
+        }
+
+        public string? VisitSingleArrayAtt(ExprParser.SingleArrayAttContext context)
+        {
+            string varName = context.ID().GetText();
+            int line = context.Start.Line;
+            var symbol = symbolTable.GetSymbol(varName);
+            var indexes = context.index();
+            if (symbol == null)
+            {
+                reportError(line, $"Variable '{varName}' was not declared");
+                return null;
+            }
+            if (indexes.Length > 0)
+            {
+                bool hasErrors = false;
+                if (symbol is not ArraySymbol or PointerSymbol)
+                {
+                    reportError(line, $"Variable '{varName}' is not an array nor pointer");
+                    return null;
+                }
+
+                if (symbol is ArraySymbol arraySymbol)
+                {
+
+                    foreach (var index in indexes)
+                    {
+                        if (index.expr() is ExprParser.IntLiteralContext intLiteralContext)
+                        {
+                            int value = int.Parse(intLiteralContext.INT().GetText());
+                            if (value < 0 || value >= arraySymbol.dimensions.Count)
+                            {
+                                reportError(index.Start.Line, $"Index {value} is out of bounds for array '{varName}'");
+                                hasErrors = true;
+                            }
+                        }
+                        string typeOfExpr = visitExpression(index.expr());
+                    }
+                }
+
+                var pointerSymbol 
             }
 
             return symbol.type;

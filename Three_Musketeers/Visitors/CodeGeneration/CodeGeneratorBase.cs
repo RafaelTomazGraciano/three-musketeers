@@ -106,13 +106,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         public override string? VisitStart(ExprParser.StartContext context)
         {
             var prog = context.prog();
-            var structs = prog.Where(p => p.structStatement() != null).Select(p => p.structStatement());
-            foreach (var structStm in structs)
-            {
-                structCodeGenerator!.VisitStructStatement(structStm);
-            }
+            var heteregeneousDeclarationContexts = prog.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
             
-            // collect SIgnatures
+            
+            // collect Signatures
             var functions = prog.Where(p => p.function() != null).Select(p => p.function()).ToList();
             foreach (var func in functions)
             {
@@ -127,7 +124,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
             foreach (var stm in context.prog())
             {
-                if (stm.function() == null && stm.structStatement() == null)
+                if (stm.function() == null && stm.heteregeneousDeclaration() == null)
                 {
                     Visit(stm);
                 }

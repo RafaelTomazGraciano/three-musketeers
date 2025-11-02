@@ -1,7 +1,3 @@
-// ============================================================================
-// Complete implementation for StructSemanticAnalyzer.cs
-// ============================================================================
-
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 
@@ -10,17 +6,17 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
     public class StructSemanticAnalyzer
     {
         private readonly SymbolTable symbolTable;
-        private readonly Dictionary<string, StructInfo> structInfo;
+        private readonly Dictionary<string, HeterogenousInfo> heterogenousInfo;
         private readonly Action<int, string> reportError;
 
-        public StructSemanticAnalyzer(SymbolTable symbolTable, Dictionary<string, StructInfo> structInfo, Action<int, string> reportError)
+        public StructSemanticAnalyzer(SymbolTable symbolTable, Dictionary<string, HeterogenousInfo> heterogenousInfo, Action<int, string> reportError)
         {
             this.symbolTable = symbolTable;
-            this.structInfo = structInfo;
+            this.heterogenousInfo = heterogenousInfo;
             this.reportError = reportError;
         }
 
-        public string? VisitStructStatement(ExprParser.StructStatementContext context)
+        public void VisitStructStatement(ExprParser.StructStatementContext context)
         {
             string structName = context.ID().GetText();
             int line = context.Start.Line;
@@ -29,8 +25,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
 
             foreach (var declarationContext in declarationContexts)
             {
-                Symbol? symbol = ProcessDeclaration(declarationContext);
-                
+                Symbol? symbol = ProcessDeclaration(declarationContext, declarationContext.Start.Line);
+
                 if (symbol != null)
                 {
                     // Check for duplicate members
@@ -39,26 +35,42 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                         reportError(line, $"Member '{symbol.name}' in struct '{structName}' was found duplicated");
                         continue;
                     }
-                    
+
                     members[symbol.name] = symbol;
                 }
             }
 
             // Register the struct in the dictionary
-            if (!structInfo.ContainsKey(structName))
+            if (!heterogenousInfo.ContainsKey(structName))
             {
-                structInfo[structName] = new StructInfo(structName, members, line);
-                return null;
+                heterogenousInfo[structName] = new StructInfo(structName, members, line);
+                return;
             }
             reportError(line, $"Struct '{structName}' already declared");
-            return null;
+            return;
         }
-
-        private Symbol? ProcessDeclaration(ExprParser.DeclarationContext declarationContext)
+        
+        public void VisitUnionStatement(ExprParser.UnionStatementContext context)
         {
-            int line = declarationContext.Start.Line;
+            string unionName = context.ID().GetText();
+            int line = context.Start.Line;
+            var declarationContexts = context.declaration();
+            var members = new Dictionary<string, Symbol>();
+            foreach (var declaration in declarationContexts)
+            {
+                Symbol? symbol = ProcessDeclaration(declaration, declaration.Start.Line);
+                if (symbol != null)
+                {
+                    // Check for duplicate members
+                    if (members.ContainsKey(symbol.name))
+                    {
+                        reportError(line, $"Member '{symbol.name}' in union '{unionName}' was found duplicated");
+                        continue;
+                    }
 
-            return ProcessDeclaration(declarationContext, line);
+                    members[symbol.name] = symbol;
+                }
+            }
         }
 
         private Symbol? ProcessDeclaration(ExprParser.DeclarationContext context, int line)
@@ -68,7 +80,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             var indexes = context.intIndex();
             int pointerCount = context.POINTER().Length;
 
-            string elementType = structInfo.ContainsKey(type) ? $"struct_{type}" : type;
+            string elementType = heterogenousInfo.ContainsKey(type) ? $"struct_{type}" : type;
 
             if (indexes.Length > 0)
             {
@@ -97,7 +109,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             }
 
             // Handle struct members (non-pointer, non-array)
-            if (structInfo.ContainsKey(type))
+            if (heterogenousInfo.ContainsKey(type))
             {
                 // Nested struct member
                 return new StructSymbol(id, type, line, new Dictionary<string, Symbol>());
@@ -175,7 +187,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             }
 
             // Verify the type is a struct
-            if (!structInfo.ContainsKey(currentType))
+            if (!heterogenousInfo.ContainsKey(currentType))
             {
                 reportError(line, $"Variable '{id}' is not a struct type. Cannot access members.");
                 return null;
@@ -197,9 +209,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             }
 
             // Get the struct definition
-            if (!structInfo.TryGetValue(currentType, out StructInfo? currentStruct))
+            if (!heterogenousInfo.TryGetValue(currentType, out HeterogenousInfo? currentStruct))
             {
-                reportError(line, $"Struct type '{currentType}' not found");
+                reportError(line, $"Struct or Union type '{currentType}' not found");
                 return null;
             }
 
@@ -207,7 +219,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             if (!currentStruct.HasMember(fieldId))
             {
                 var availableMembers = string.Join(", ", currentStruct.members.Keys);
-                reportError(line, $"Struct '{currentType}' does not have a member '{fieldId}'. Available members: {availableMembers}");
+                reportError(line, $"Struct or Union '{currentType}' does not have a member '{fieldId}'. Available members: {availableMembers}");
                 return null;
             }
 
@@ -262,7 +274,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     fieldType = fieldType.Substring(7);
                 }
 
-                if (!structInfo.ContainsKey(fieldType))
+                if (!heterogenousInfo.ContainsKey(fieldType))
                 {
                     reportError(line, $"Field '{fieldId}' is not a struct type. Cannot access nested members.");
                     return null;

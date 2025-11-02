@@ -48,7 +48,7 @@ namespace Three_Musketeers.Models
             string baseType = getLLVMType(elementType);
             return baseType + new string('*', pointerLevel);
         }
-
+        
         // Returns the full array LLVM type
         // Example: int*[10][5] -> [10 x [5 x i32*]]
         public string GetArrayLLVMType(Func<string, string> getLLVMType)

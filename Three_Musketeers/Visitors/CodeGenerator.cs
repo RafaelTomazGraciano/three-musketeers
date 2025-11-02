@@ -61,7 +61,7 @@ namespace Three_Musketeers.Visitors
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
                 declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
-                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment, structTypes);
+                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment, CalculateArrayPosition);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
@@ -110,6 +110,11 @@ namespace Three_Musketeers.Visitors
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
         {
             return variableAssignmentCodeGenerator.VisitGenericAtt(context);
+        }
+
+        public override string? VisitSingleArrayAtt([NotNull] ExprParser.SingleArrayAttContext context)
+        {
+            return variableAssignmentCodeGenerator.VisitSingleArrayAtt(context);
         }
 
         public override string? VisitDerrefAtt([NotNull] ExprParser.DerrefAttContext context)
@@ -188,7 +193,7 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
         {
-            if (context.Parent is ExprParser.StructStatementContext) return null;
+            if (context.Parent is ExprParser.HeteregeneousDeclarationContext) return null;
             return variableAssignmentCodeGenerator.VisitDec(context);
         }
 

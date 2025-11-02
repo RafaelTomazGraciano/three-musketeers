@@ -102,6 +102,11 @@ namespace Three_Musketeers.Visitors
             return type;
         }
 
+        public override string VisitSingleArrayAtt([NotNull] ExprParser.SingleArrayAttContext context)
+        {
+            return variableAssignmentSemanticAnalyzer.VisitSingleArrayAtt(context);
+        }
+
         public override string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
         {
             return variableAssignmentSemanticAnalyzer.VisitDeclaration(context);
@@ -290,20 +295,6 @@ namespace Three_Musketeers.Visitors
         {
             return incrementDecrementSemanticAnalyzer.VisitPostfixDecrementArray(context) ?? "int";
         }
-        
-        private static bool TwoTypesArePermitedToCast(string type1, string type2)
-        {
-            bool anyIsDouble = type1 == "double" || type2 == "double";
-            bool anyIsChar = type1 == "char" || type2 == "char";
-            bool anyIsInt = type1 == "int" || type2 == "int";
-            bool anyIsBool = type1 == "bool" || type2 == "bool";
-            bool anyIsString = type1 == "string" || type2 == "string";
-            if (type1 == type2) return true;
-            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
-            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
-            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
-            return false;
-        }
 
         public override string? VisitMainFunction([NotNull] ExprParser.MainFunctionContext context)
         {
@@ -353,7 +344,7 @@ namespace Three_Musketeers.Visitors
             }
 
             string? exprType = Visit(context.expr());
-    
+
             if (exprType == null)
             {
                 return null;
@@ -365,8 +356,22 @@ namespace Three_Musketeers.Visitors
                 ReportError(line, $"Cannot assign value of type '{exprType}' to struct field of type '{fieldType}'");
                 return null;
             }
-    
+
             return fieldType;
+        }
+    
+        private static bool TwoTypesArePermitedToCast(string type1, string type2)
+        {
+            bool anyIsDouble = type1 == "double" || type2 == "double";
+            bool anyIsChar = type1 == "char" || type2 == "char";
+            bool anyIsInt = type1 == "int" || type2 == "int";
+            bool anyIsBool = type1 == "bool" || type2 == "bool";
+            bool anyIsString = type1 == "string" || type2 == "string";
+            if (type1 == type2) return true;
+            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
+            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
+            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
+            return false;
         }
     }
 }

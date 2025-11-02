@@ -6,7 +6,7 @@ start
 
 prog
     : stm
-    | structStatement
+    | heteregeneousDeclaration
     | function
     ;
 
@@ -28,8 +28,12 @@ stm
     | getsStatement
     | putsStatement
     | freeStatement
-    | unionStatement
     | RETURN expr? EOL
+    ;
+
+heteregeneousDeclaration
+    : structStatement
+    | unionStatement
     ;
 
 declaration

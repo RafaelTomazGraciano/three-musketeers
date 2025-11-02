@@ -34,10 +34,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             var allProgs = context.prog();
             foreach (var prog in allProgs)
             {
-                var structStatement = prog.structStatement();
-                if (prog.structStatement() != null)
+                var heteregeneousStatement = prog.heteregeneousDeclaration();
+                if (heteregeneousStatement.structStatement() != null)
                 {
-                    structSemanticAnalyzer.VisitStructStatement(structStatement);
+                    structSemanticAnalyzer.VisitStructStatement(heteregeneousStatement.structStatement());
+                    continue;
+                }
+
+                if (heteregeneousStatement.unionStatement() != null)
+                {
+                    structSemanticAnalyzer.VisitUnionStatement(heteregeneousStatement.unionStatement());
                 }
             }
         }
