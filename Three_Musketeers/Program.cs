@@ -64,7 +64,6 @@ namespace Three_Musketeers {
 
                 //Semantic Analysis
                 var semanticAnalyzer = new SemanticAnalyzer();
-                Console.WriteLine("SemanticAnalyzer");
                 semanticAnalyzer.Visit(tree);
 
                 if (semanticAnalyzer.hasErrors)
