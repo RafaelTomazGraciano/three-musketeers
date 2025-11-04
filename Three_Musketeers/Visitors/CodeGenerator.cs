@@ -15,6 +15,7 @@ using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
 using Three_Musketeers.Visitors.CodeGeneration.Struct;
 using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
+using Three_Musketeers.Visitors.CodeGeneration.ControlFlow;
 
 namespace Three_Musketeers.Visitors
 {
@@ -42,6 +43,9 @@ namespace Three_Musketeers.Visitors
         private readonly IncrementDecrementCodeGenerator incrementDecrementCodeGenerator;
         private readonly CompoundAssignmentCodeGenerator compoundAssignmentCodeGenerator;
         private readonly IncludeCodeGenerator includeCodeGenerator;
+        private readonly IfStatementCodeGenerator ifStatementCodeGenerator;
+        private readonly SwitchStatementCodeGenerator switchStatementCodeGenerator;
+        private readonly LoopStatementCodeGenerator loopStatementCodeGenerator;
 
         public CodeGenerator()
         {
@@ -113,6 +117,13 @@ namespace Three_Musketeers.Visitors
             //struct
             structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
                 variables, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
+            //control flow
+            ifStatementCodeGenerator = new IfStatementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
+            switchStatementCodeGenerator = new SwitchStatementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
+            loopStatementCodeGenerator = new LoopStatementCodeGenerator(
+                GetCurrentBody, registerTypes, NextRegister, Visit, Visit, Visit);
         }
 
         public override string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -335,6 +346,72 @@ namespace Three_Musketeers.Visitors
             if (context.RETURN() != null && base.functionCodeGenerator!.IsInsideFunction())
             {
                 base.functionCodeGenerator.VisitReturnStatement(context);
+                return null;
+            }
+
+            if (context.ifStatement() != null)
+            {
+                return ifStatementCodeGenerator.VisitIfStatement(context.ifStatement());
+            }
+
+            if (context.switchStatement() != null)
+            {
+                return switchStatementCodeGenerator.VisitSwitchStatement(context.switchStatement());
+            }
+
+            if (context.forStatement() != null)
+            {
+                return loopStatementCodeGenerator.VisitForStatement(context.forStatement());
+            }
+
+            if (context.whileStatement() != null)
+            {
+                return loopStatementCodeGenerator.VisitWhileStatement(context.whileStatement());
+            }
+
+            if (context.doWhileStatement() != null)
+            {
+                return loopStatementCodeGenerator.VisitDoWhileStatement(context.doWhileStatement());
+            }
+
+            if (context.BREAK() != null)
+            {
+                // Handle break statement - check loops first, then switches
+                if (loopStatementCodeGenerator.IsInLoop())
+                {
+                    string? mergeLabel = loopStatementCodeGenerator.GetCurrentLoopMergeLabel();
+                    if (mergeLabel != null)
+                    {
+                        GetCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                    }
+                }
+                else if (switchStatementCodeGenerator.IsInSwitch())
+                {
+                    string? mergeLabel = switchStatementCodeGenerator.GetCurrentSwitchMergeLabel();
+                    if (mergeLabel != null)
+                    {
+                        GetCurrentBody().AppendLine($"  br label %{mergeLabel}");
+                    }
+                }
+                else
+                {
+                    // Break outside switch/loop - this will be caught by semantic analyzer
+                    // For now, just continue (semantic analyzer will report error)
+                }
+                return null;
+            }
+
+            if (context.CONTINUE() != null)
+            {
+                // Handle continue statement - must be in a loop
+                if (loopStatementCodeGenerator.IsInLoop())
+                {
+                    string? continueLabel = loopStatementCodeGenerator.GetCurrentLoopContinueLabel();
+                    if (continueLabel != null)
+                    {
+                        GetCurrentBody().AppendLine($"  br label %{continueLabel}");
+                    }
+                }
                 return null;
             }
             

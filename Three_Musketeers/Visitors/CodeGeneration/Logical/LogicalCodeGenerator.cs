@@ -114,30 +114,26 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             if (currentType == "i32")
             {
                 // Convert integer to boolean: != 0
-                string tempReg = nextRegister();
-                getCurrentBody().AppendLine($"  {tempReg} = icmp ne i32 {value}, 0");
-                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                // icmp already returns i1, no need to extend
+                getCurrentBody().AppendLine($"  {convReg} = icmp ne i32 {value}, 0");
             }
             else if (currentType == "double")
             {
                 // Convert double to boolean: != 0.0
-                string tempReg = nextRegister();
-                getCurrentBody().AppendLine($"  {tempReg} = fcmp one double {value}, 0.0");
-                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                // fcmp already returns i1, no need to extend
+                getCurrentBody().AppendLine($"  {convReg} = fcmp one double {value}, 0.0");
             }
             else if (currentType == "i8")
             {
                 // Convert char to boolean: != 0
-                string tempReg = nextRegister();
-                getCurrentBody().AppendLine($"  {tempReg} = icmp ne i8 {value}, 0");
-                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                // icmp already returns i1, no need to extend
+                getCurrentBody().AppendLine($"  {convReg} = icmp ne i8 {value}, 0");
             }
             else
             {
                 // Default case - treat as integer
-                string tempReg = nextRegister();
-                getCurrentBody().AppendLine($"  {tempReg} = icmp ne i32 {value}, 0");
-                getCurrentBody().AppendLine($"  {convReg} = zext i1 {tempReg} to i1");
+                // icmp already returns i1, no need to extend
+                getCurrentBody().AppendLine($"  {convReg} = icmp ne i32 {value}, 0");
             }
             
             registerTypes[convReg] = "i1";

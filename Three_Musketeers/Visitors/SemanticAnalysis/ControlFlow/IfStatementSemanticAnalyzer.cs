@@ -1,0 +1,125 @@
+using Antlr4.Runtime.Misc;
+using Three_Musketeers.Grammar;
+using Three_Musketeers.Models;
+
+namespace Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow
+{
+    public class IfStatementSemanticAnalyzer
+    {
+        private readonly SymbolTable symbolTable;
+        private readonly Action<int, string> reportError;
+        private readonly Func<ExprParser.ExprContext, string?> getExpressionType;
+        private readonly Func<ExprParser.ExprContext, string?> visitExpression;
+        private readonly Func<ExprParser.StmContext, string?> visitStatement;
+
+        public IfStatementSemanticAnalyzer(
+            SymbolTable symbolTable,
+            Action<int, string> reportError,
+            Func<ExprParser.ExprContext, string?> getExpressionType,
+            Func<ExprParser.ExprContext, string?> visitExpression,
+            Func<ExprParser.StmContext, string?> visitStatement)
+        {
+            this.symbolTable = symbolTable;
+            this.reportError = reportError;
+            this.getExpressionType = getExpressionType;
+            this.visitExpression = visitExpression;
+            this.visitStatement = visitStatement;
+        }
+
+        public string? VisitIfStatement([NotNull] ExprParser.IfStatementContext context)
+        {
+            int line = context.Start.Line;
+            var expressions = context.expr();
+            var bodies = context.func_body();
+            var elseTokens = context.ELSE();
+
+            if (expressions.Length != bodies.Length && expressions.Length != bodies.Length - 1)
+            {
+                reportError(line, "Internal error: Mismatch between conditions and blocks in if statement");
+                return null;
+            }
+
+            var ifCondition = expressions[0];
+            string? conditionType = getExpressionType(ifCondition);
+            visitExpression(ifCondition);
+
+            if (conditionType != null && !IsValidConditionType(conditionType))
+            {
+                reportError(ifCondition.Start.Line, 
+                    $"If condition must be a boolean-compatible type, got '{conditionType}'");
+            }
+
+            symbolTable.EnterScope();
+            AnalyzeBlock(bodies[0]);
+            symbolTable.ExitScope();
+
+            int elseIfCount = expressions.Length - 1;
+            if (elseTokens != null && elseTokens.Length > 0 && bodies.Length > 1)
+            {
+                bool hasFinalElse = elseTokens.Length > elseIfCount;
+                
+                for (int i = 1; i <= elseIfCount; i++)
+                {
+                    var elseIfCondition = expressions[i];
+                    string? elseIfConditionType = getExpressionType(elseIfCondition);
+                    visitExpression(elseIfCondition);
+
+                    if (elseIfConditionType != null && !IsValidConditionType(elseIfConditionType))
+                    {
+                        reportError(elseIfCondition.Start.Line, 
+                            $"Else if condition must be a boolean-compatible type, got '{elseIfConditionType}'");
+                    }
+
+                    // Enter scope for else if block
+                    symbolTable.EnterScope();
+                    AnalyzeBlock(bodies[i]);
+                    symbolTable.ExitScope();
+                }
+
+                if (hasFinalElse)
+                {
+                    int elseBodyIndex = bodies.Length - 1;
+                    symbolTable.EnterScope();
+                    AnalyzeBlock(bodies[elseBodyIndex]);
+                    symbolTable.ExitScope();
+                }
+            }
+            else if (elseIfCount > 0)
+            {
+                for (int i = 1; i <= elseIfCount; i++)
+                {
+                    var elseIfCondition = expressions[i];
+                    string? elseIfConditionType = getExpressionType(elseIfCondition);
+                    visitExpression(elseIfCondition);
+
+                    if (elseIfConditionType != null && !IsValidConditionType(elseIfConditionType))
+                    {
+                        reportError(elseIfCondition.Start.Line, 
+                            $"Else if condition must be a boolean-compatible type, got '{elseIfConditionType}'");
+                    }
+
+                    symbolTable.EnterScope();
+                    AnalyzeBlock(bodies[i]);
+                    symbolTable.ExitScope();
+                }
+            }
+
+            return null;
+        }
+
+        private void AnalyzeBlock(ExprParser.Func_bodyContext context)
+        {
+            var statements = context.stm();
+            foreach (var stm in statements)
+            {
+                visitStatement(stm);
+            }
+        }
+
+        private bool IsValidConditionType(string type)
+        {
+            return type == "bool" || type == "int" || type == "double" || type == "char";
+        }
+    }
+}
+

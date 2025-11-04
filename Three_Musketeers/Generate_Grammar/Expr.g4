@@ -42,6 +42,13 @@ stm
     | putsStatement
     | freeStatement
     | RETURN expr? EOL
+    | ifStatement
+    | switchStatement
+    | forStatement
+    | whileStatement
+    | doWhileStatement
+    | BREAK EOL
+    | CONTINUE EOL
     ;
 
 heteregeneousDeclaration
@@ -121,6 +128,50 @@ freeStatement
     : 'free''('ID')'EOL
     ;
 
+ifStatement
+    : IF '(' expr ')' '{' func_body '}' (ELSE IF '(' expr ')' '{' func_body '}')* (ELSE '{' func_body '}')?
+    ;
+
+switchStatement
+    : SWITCH '(' expr ')' '{' caseLabel* defaultLabel? '}'
+    ;
+
+caseLabel
+    : CASE (INT | CHAR_LITERAL) ':' func_body
+    ;
+
+defaultLabel
+    : DEFAULT ':' func_body
+    ;
+
+forStatement
+    : FOR '(' forInit? EOL forCondition? EOL forIncrement? ')' '{' func_body '}'
+    ;
+
+forInit
+    : declaration
+    | att
+    | attVar
+    ;
+
+forCondition
+    : expr
+    ;
+
+forIncrement
+    : expr
+    | att
+    | attVar
+    ;
+
+whileStatement
+    : WHILE '(' expr ')' '{' func_body '}'
+    ;
+
+doWhileStatement
+    : DO '{' func_body '}' WHILE '(' expr ')' EOL
+    ;
+
 expr
     : '++' ID                      # PrefixIncrement
     | '--' ID                      # PrefixDecrement
@@ -185,6 +236,14 @@ DEFINE        : '#define';
 RETURN        : 'return';
 IF            : 'if';
 ELSE          : 'else';
+SWITCH        : 'switch';
+CASE          : 'case';
+DEFAULT       : 'default';
+BREAK         : 'break';
+FOR           : 'for';
+WHILE         : 'while';
+DO            : 'do';
+CONTINUE      : 'continue';
 GR            : '>';
 GRT           : '>=';
 LE            : '<';

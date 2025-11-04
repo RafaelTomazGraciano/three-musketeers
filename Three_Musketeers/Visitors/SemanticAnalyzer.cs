@@ -1,4 +1,5 @@
 using Antlr4.Runtime.Misc;
+using System.Collections.Generic;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Visitors.SemanticAnalysis;
 using Three_Musketeers.Visitors.SemanticAnalysis.Variables;
@@ -14,12 +15,21 @@ using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
 using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
+using Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow;
 using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors
 {
+    public enum ControlFlowContext
+    {
+        Loop,
+        Switch
+    }
+
     public class SemanticAnalyzer : SemanticAnalyzerBase
     {
+        // Track active control flow contexts for break/continue validation
+        private readonly Stack<ControlFlowContext> activeControlFlowContexts = new Stack<ControlFlowContext>();
         private readonly VariableAssignmentSemanticAnalyzer variableAssignmentSemanticAnalyzer;
         private readonly PointerSemanticAnalyzer pointerSemanticAnalyzer;
         private readonly PrintfSemanticAnalyzer printfSemanticAnalyzer;
@@ -40,6 +50,10 @@ namespace Three_Musketeers.Visitors
         private readonly DynamicMemorySemanticAnalyzer dynamicMemorySemanticAnalyzer;
         private readonly IncrementDecrementSemanticAnalyzer incrementDecrementSemanticAnalyzer;
         private readonly CompoundAssignmentSemanticAnalyzer compoundAssignmentSemanticAnalyzer;
+        private readonly IfStatementSemanticAnalyzer ifStatementSemanticAnalyzer;
+        private readonly SwitchStatementSemanticAnalyzer switchStatementSemanticAnalyzer;
+        private readonly LoopStatementSemanticAnalyzer loopStatementSemanticAnalyzer;
+
         private readonly DefineSemanticAnalyzer defineSemanticAnalyzer;
         private readonly IncludeSemanticAnalyzer includeSemanticAnalyzer;
 
@@ -83,6 +97,18 @@ namespace Three_Musketeers.Visitors
             // compound assignment
             compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable, GetExpressionType);
             structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
+            compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable,
+                GetExpressionType);
+            // control flow
+            ifStatementSemanticAnalyzer = new IfStatementSemanticAnalyzer(symbolTable, ReportError, GetExpressionType, Visit, Visit);
+            switchStatementSemanticAnalyzer = new SwitchStatementSemanticAnalyzer(
+                symbolTable, ReportError, GetExpressionType, Visit, Visit,
+                () => activeControlFlowContexts.Push(ControlFlowContext.Switch),
+                () => activeControlFlowContexts.Pop());
+            loopStatementSemanticAnalyzer = new LoopStatementSemanticAnalyzer(
+                symbolTable, ReportError, GetExpressionType, Visit, Visit, Visit,
+                () => activeControlFlowContexts.Push(ControlFlowContext.Loop),
+                () => activeControlFlowContexts.Pop());
         }
 
         public override string? VisitStart([NotNull] ExprParser.StartContext context)
@@ -340,6 +366,54 @@ namespace Three_Musketeers.Visitors
             if (context.RETURN() != null)
             {
                 functionSemanticAnalyzer.AnalyzeReturnStatement(context);
+                return null;
+            }
+
+            if (context.ifStatement() != null)
+            {
+                return ifStatementSemanticAnalyzer.VisitIfStatement(context.ifStatement());
+            }
+
+            if (context.switchStatement() != null)
+            {
+                return switchStatementSemanticAnalyzer.VisitSwitchStatement(context.switchStatement());
+            }
+
+            if (context.forStatement() != null)
+            {
+                return loopStatementSemanticAnalyzer.VisitForStatement(context.forStatement());
+            }
+
+            if (context.whileStatement() != null)
+            {
+                return loopStatementSemanticAnalyzer.VisitWhileStatement(context.whileStatement());
+            }
+
+            if (context.doWhileStatement() != null)
+            {
+                return loopStatementSemanticAnalyzer.VisitDoWhileStatement(context.doWhileStatement());
+            }
+
+            if (context.BREAK() != null)
+            {
+                // Break statement semantic check - must be inside a switch or loop
+                if (activeControlFlowContexts.Count == 0)
+                {
+                    ReportError(context.Start.Line, 
+                        "'break' statement must be inside a loop or switch statement");
+                }
+                return null;
+            }
+
+            if (context.CONTINUE() != null)
+            {
+                // Continue statement semantic check - must be inside a loop
+                if (activeControlFlowContexts.Count == 0 || 
+                    activeControlFlowContexts.Peek() != ControlFlowContext.Loop)
+                {
+                    ReportError(context.Start.Line, 
+                        "'continue' statement must be inside a loop");
+                }
                 return null;
             }
 
