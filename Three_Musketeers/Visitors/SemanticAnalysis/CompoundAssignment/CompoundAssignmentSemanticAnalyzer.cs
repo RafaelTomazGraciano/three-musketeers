@@ -16,7 +16,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             Action<int, string> reportError,
             Action<int, string> reportWarning,
             SymbolTable symbolTable,
-            Func<ExprParser.ExprContext, string> getExpressionType)
+            Func<ExprParser.ExprContext, string> getExpressionType
+            )
         {
             this.reportError = reportError;
             this.reportWarning = reportWarning;
@@ -120,29 +121,29 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             for (int i = 0; i < indices.Length; i++)
             {
                 var indexCtx = indices[i];
-                int indexValue = int.Parse(indexCtx.INT().GetText());
+                /*int indexValue = int.Parse(indexCtx.INT().GetText());
                 if (indexValue < 0 || indexValue >= arraySymbol.dimensions[i])
                 {
                     reportError(indexCtx.Start.Line,
                         $"Index {i} of array '{varName}' is out of bounds. Expected 0 to {arraySymbol.dimensions[i] - 1}, but got {indexValue}");
                     return null;
-                }
+                }*/
             }
 
-            if (!IsNumericType(arraySymbol.innerType))
+            if (!IsNumericType(arraySymbol.elementType))
             {
-                reportError(line, $"Compound assignment operators can only be used with numeric types, got '{arraySymbol.innerType}'");
+                reportError(line, $"Compound assignment operators can only be used with numeric types, got '{arraySymbol.elementType}'");
                 return null;
             }
 
             // Validate expression type compatibility
             string exprType = getExpressionType(exprContext);
-            if (!AreTypesCompatible(arraySymbol.innerType, exprType))
+            if (!AreTypesCompatible(arraySymbol.elementType, exprType))
             {
-                reportWarning(line, $"Type mismatch: '{arraySymbol.innerType}' and '{exprType}' in compound assignment");
+                reportWarning(line, $"Type mismatch: '{arraySymbol.elementType}' and '{exprType}' in compound assignment");
             }
 
-            return arraySymbol.innerType;
+            return arraySymbol.elementType;
         }
 
         private bool IsNumericType(string type)

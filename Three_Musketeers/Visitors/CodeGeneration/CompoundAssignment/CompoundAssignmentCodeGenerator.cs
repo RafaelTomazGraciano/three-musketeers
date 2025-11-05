@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
 {
@@ -11,21 +12,25 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Dictionary<string, Variable> variables;
+        private readonly VariableResolver variableResolver;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
+        private readonly Func<ExprParser.IndexContext[], string> calculateArrayPosition;
 
         public CompoundAssignmentCodeGenerator(
             Func<StringBuilder> getCurrentBody,
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
-            Dictionary<string, Variable> variables,
-            Func<ExprParser.ExprContext, string> visitExpression)
+            VariableResolver variableResolver,
+            Func<ExprParser.ExprContext, string> visitExpression,
+            Func<ExprParser.IndexContext[], string> calculateArrayPosition
+            )
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
-            this.variables = variables;
+            this.variableResolver = variableResolver;
             this.visitExpression = visitExpression;
+            this.calculateArrayPosition = calculateArrayPosition;
         }
 
         // Array element +=
@@ -33,14 +38,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, i32 0, {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -62,14 +67,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, i32 0, {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -91,10 +96,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
@@ -120,14 +125,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
-            ArrayVariable arrayVar = (ArrayVariable)variables[varName];
+            ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
-            int pos = CalculateArrayPosition(indexes, arrayVar);
+            string pos = calculateArrayPosition(indexes);
             
             // Get element pointer
             string elementPtr = nextRegister();
-            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
+            getCurrentBody().AppendLine($"  {elementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, i32 0, {pos}");
             
             // Load current value
             string currentValue = LoadArrayElementValue(elementPtr, arrayVar.innerType);
@@ -158,19 +163,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
             getCurrentBody().AppendLine($"  {loadReg} = load {llvmType}, {llvmType}* {elementPtr}, align {GetAlignment(llvmType)}");
             registerTypes[loadReg] = llvmType;
             return loadReg;
-        }
-
-        private int CalculateArrayPosition(ExprParser.IndexContext[] indexes, ArrayVariable arrayVar)
-        {
-            int pos = 0;
-            int i = 0;
-            foreach (var dim in arrayVar.dimensions)
-            {
-                int index = int.Parse(indexes[i].INT().GetText());
-                pos = pos * dim + index;
-                i++;
-            }
-            return pos;
         }
 
         private string PerformCompoundOperation(string currentValue, string exprValue, string operation, string llvmType)

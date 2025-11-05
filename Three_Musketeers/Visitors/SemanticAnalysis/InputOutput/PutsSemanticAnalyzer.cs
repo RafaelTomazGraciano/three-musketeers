@@ -1,6 +1,7 @@
 using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 {
@@ -8,17 +9,25 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
     {
         private readonly SymbolTable symbolTable;
         private readonly Action<int, string> reportError;
+        private readonly LibraryDependencyTracker libraryTracker;
 
         public PutsSemanticAnalyzer(
             Action<int, string> reportError,
-            SymbolTable symbolTable)
+            SymbolTable symbolTable,
+            LibraryDependencyTracker libraryTracker)
         {
             this.reportError = reportError;
             this.symbolTable = symbolTable;
+            this.libraryTracker = libraryTracker;
         }
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
         {
+            if (!libraryTracker.CheckFunctionDependency("puts", context.Start.Line))
+            {
+                return null;
+            }
+    
             int line = context.Start.Line;
 
             // puts(ID) or puts(ID[index])
@@ -65,10 +74,10 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
         {
             if (symbol is ArraySymbol arraySymbol)
             {
-                if (arraySymbol.innerType != "string" && arraySymbol.innerType != "char")
+                if (arraySymbol.elementType != "string" && arraySymbol.elementType != "char")
                 {
                     reportError(line,
-                        $"puts() can only print string or char array elements, but '{varName}' is '{arraySymbol.innerType}[]'");
+                        $"puts() can only print string or char array elements, but '{varName}' is '{arraySymbol.elementType}[]'");
                 }
             }
             else
@@ -82,12 +91,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
         {
             if (symbol is ArraySymbol arraySymbol)
             {
-                if (arraySymbol.innerType == "char")
+                if (arraySymbol.elementType == "char")
                 {
                     // char array can be printed as a whole (it's a string)
                     return;
                 }
-                else if (arraySymbol.innerType == "string")
+                else if (arraySymbol.elementType == "string")
                 {
                     // string array without index - not allowed
                     reportError(line,
@@ -97,7 +106,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
                 else
                 {
                     reportError(line,
-                        $"puts() cannot print array of type '{arraySymbol.innerType}'");
+                        $"puts() cannot print array of type '{arraySymbol.elementType}'");
                     return;
                 }
             }

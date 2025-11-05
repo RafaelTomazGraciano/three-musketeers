@@ -1,7 +1,11 @@
 using System.Text;
+using System.Text.RegularExpressions;
+using LLVMSharp;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
+using Three_Musketeers.Visitors.CodeGeneration.Struct;
+using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 
 namespace Three_Musketeers.Visitors.CodeGeneration
 {
@@ -13,13 +17,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         protected readonly StringBuilder forwardDeclarations = new StringBuilder();
         protected Dictionary<string, Variable> variables = new Dictionary<string, Variable>();
         protected Dictionary<string, string> registerTypes = new Dictionary<string, string>();
+        protected Dictionary<string, string> defineValues = new Dictionary<string, string>();
 
         //for functions
         protected StringBuilder functionDefinitions = new StringBuilder();
         protected Dictionary<string, FunctionInfo> declaredFunctions = new Dictionary<string, FunctionInfo>();
-
         protected MainFunctionCodeGenerator? mainFunctionCodeGenerator;
         protected FunctionCodeGenerator? functionCodeGenerator;
+        protected DefineCodeGenerator? defineCodeGenerator;
+
+        protected StructCodeGenerator? structCodeGenerator;
+
+        //for structs
+        protected Dictionary<string, HeterogenousType> structTypes = [];
+        protected StringBuilder structBuilder = new();
 
         protected int stringCounter = 0;
         protected int registerCount = 0;
@@ -36,6 +47,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                 "bool" => "i1",
                 "char" => "i8",
                 "string" => "i8*",
+                var t when structTypes.TryGetValue(t, out var structModel) => structModel.GetLLVMName(),
                 _ => "i32"
             };
         }
@@ -45,6 +57,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             return type switch
             {
                 var t when t.Contains('*') => 8,
+                var t when structTypes.ContainsKey(t) => 4,
                 "i32" => 4,
                 "double" => 8,
                 "i1" or "i8" => 1,
@@ -52,32 +65,127 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             };
         }
 
+        protected int GetSize(string type)
+        {
+            if (type.Contains('*') || type == "double") return 8;
+            if (type == "i1" || type == "i8") return 1;
+            if (type == "i32") return 4;
+            int total = 1;
+            var splits = Regex.Split(type, @"[\[\]x]+");
+            foreach (var split in splits)
+            {
+                if (int.TryParse(split.Trim(), out int dim))
+                {
+                    total *= dim;
+                    continue;
+                }
+                if (split.Contains('i'))
+                {
+                    total *= GetSize(split.Trim());
+                }
+            }
+            return total;
+        }
+
+        protected string CalculateArrayPosition(ExprParser.IndexContext index)
+        {
+            string expr = Visit(index.expr())!;
+            return "i32 "+expr;
+        }
+
+        protected string? CalculateArrayPosition(ExprParser.IndexContext[] indexes)
+        {
+            string expr = Visit(indexes[0].expr())!;
+            string result = "i32 " + expr;
+
+            for (int i = 1; i < indexes.Length; i++)
+            {
+                expr = Visit(indexes[i].expr())!;
+                result += $", i32 {expr}";
+            }
+            return result;
+        }
+
         public override string? VisitStart(ExprParser.StartContext context)
         {
-            // collect SIgnatures
-            var functions = context.prog().Where(p => p.function() != null).Select(p => p.function()).ToList();
-            foreach (var func in functions)
+            var prog = context.prog();
+            var heteregeneousDeclarationContexts = prog.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
+            foreach (var hetDecl in heteregeneousDeclarationContexts)
             {
-                functionCodeGenerator!.CollectFunctionSignature(func);
-            }
-
-            // generate all definitios of functions
-            foreach (var func in functions)
-            {
-                functionCodeGenerator!.VisitFunction(func);
-            }
-
-            foreach (var prog in context.prog())
-            {
-                if (prog.function() == null)
+                if (hetDecl.structStatement() != null)
                 {
-                    Visit(prog);
+                    structCodeGenerator!.VisitStructStatement(hetDecl.structStatement());
+                }
+
+                if (hetDecl.unionStatement() != null)
+                {
+                    structCodeGenerator!.VisitUnionStatement(hetDecl.unionStatement());
                 }
             }
 
-            Visit(context.mainFunction());
+            // collect Signatures
+            var functions = prog.Where(p => p.function() != null).Select(p => p.function()).ToList();
+            {
+                // Process all #include directives first
+                var includes = context.include();
+                foreach (var include in includes)
+                {
+                    Visit(include);
+                }
 
-            return GenerateFinalCode();
+                // Process all #define directives first
+                var defines = context.define();
+                foreach (var define in defines)
+                {
+                    defineCodeGenerator!.ProcessDefine(define);
+                }
+
+                foreach (var func in functions)
+                {
+                    functionCodeGenerator!.CollectFunctionSignature(func);
+                }
+
+                // generate all function definitions
+                foreach (var func in functions)
+                {
+                    functionCodeGenerator!.VisitFunction(func);
+                }
+
+                foreach (var stm in context.prog())
+                {
+                    if (stm.function() == null && stm.heteregeneousDeclaration() == null)
+                    {
+                        Visit(stm);
+                    }
+                }
+
+                // Visit main function
+                Visit(context.mainFunction());
+
+                return GenerateFinalCode();
+            }
+        }
+        
+        public override string? VisitProg(ExprParser.ProgContext context)
+        {
+            
+            if (context.declaration() != null)
+            {
+                return Visit(context.declaration());
+            }
+            
+            if (context.att() != null)
+            {
+                return Visit(context.att());
+            }
+            
+            if (context.function() != null)
+            {
+                // Don't visit here - will be visited later
+                return null;
+            }
+            
+            return base.VisitProg(context);
         }
 
         protected virtual string GenerateFinalCode()
@@ -87,15 +195,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             output.AppendLine("target triple = \"x86_64-pc-linux-gnu\"");
             output.AppendLine();
             
+            output.Append(structBuilder);
+
             output.Append(globalStrings);
             output.AppendLine();
-            
+
             output.Append(declarations);
             output.AppendLine();
             
             output.Append(functionDefinitions);
             output.AppendLine();
-            
+
             output.Append(mainDefinition);
 
             return output.ToString();
@@ -118,4 +228,3 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         }
     }
 }
-

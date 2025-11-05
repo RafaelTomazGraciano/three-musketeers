@@ -141,22 +141,22 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement
             for (int i = 0; i < indices.Length; i++)
             {
                 var indexCtx = indices[i];
-                int indexValue = int.Parse(indexCtx.INT().GetText());
+                /*int indexValue = int.Parse(indexCtx.INT().GetText());
                 if (indexValue < 0 || indexValue >= arraySymbol.dimensions[i])
                 {
                     reportError(indexCtx.Start.Line,
                         $"Index {i} of array '{varName}' is out of bounds. Expected 0 to {arraySymbol.dimensions[i] - 1}, but got {indexValue}");
                     return null;
-                }
+                }*/
             }
 
-            if (!IsNumericType(arraySymbol.innerType))
+            if (!IsNumericType(arraySymbol.elementType))
             {
-                reportError(line, $"Increment/decrement operators can only be used with numeric types, got '{arraySymbol.innerType}'");
+                reportError(line, $"Increment/decrement operators can only be used with numeric types, got '{arraySymbol.elementType}'");
                 return null;
             }
 
-            return arraySymbol.innerType;
+            return arraySymbol.elementType;
         }
 
         private bool IsNumericType(string type)

@@ -50,6 +50,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
         {
             var returnTypeCtx = context.function_return();
             string llvmReturnType;
+            int returnPointerLevel = returnTypeCtx.POINTER()?.Length ?? 0;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -59,10 +60,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 string basetype = GetTypeString(returnTypeCtx.type());
                 llvmReturnType = getLLVMType(basetype);
-                
+
                 if (basetype == "string")
                 {
                     llvmReturnType = "i8*";
+                }
+                //add * for each pointer level
+                for (int i = 0; i < returnPointerLevel; i++)
+                {
+                    llvmReturnType += "*";
                 }
             }
             else
@@ -78,7 +84,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 var funcInfo = new FunctionInfo
                 {
                     returnType = GetTypeString(returnTypeCtx.type()),
-                    parameters = new List<(string, string)>()
+                    returnPointerLevel = returnPointerLevel,
+                    parameters = new List<(string, string, int)>()
                 };
 
                 // Process parameters
@@ -87,12 +94,27 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 {
                     var types = argsCtx.type();
                     var ids = argsCtx.ID();
+                    var allPointers = argsCtx.POINTER();
+                    int pointerIndex = 0;
 
                     for (int i = 0; i < types.Length; i++)
                     {
                         string paramType = GetTypeString(types[i]);
                         string paramName = ids[i].GetText();
-                        funcInfo.parameters.Add((paramType, paramName));
+                        //pointers
+                        int pointerLevel = 0;
+                        int typeEndPos = types[i].Stop.StopIndex;
+                        int idStartPos = ids[i].Symbol.StartIndex;
+                        
+                        while (pointerIndex < allPointers.Length && 
+                            allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                            allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                        {
+                            pointerLevel++;
+                            pointerIndex++;
+                        }
+                        
+                        funcInfo.parameters.Add((paramType, paramName, pointerLevel));
                     }
                 }
 
@@ -105,6 +127,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             //get return type
             var returnTypeCtx = context.function_return();
             string llvmReturnType;
+            int returnPointerLevel = returnTypeCtx.POINTER()?.Length ?? 0;
 
             if (returnTypeCtx.VOID() != null)
             {
@@ -114,6 +137,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 string basetype = GetTypeString(returnTypeCtx.type());
                 llvmReturnType = getLLVMType(basetype);
+                
+                if (basetype == "string")
+                {
+                    llvmReturnType = "i8*";
+                }
+                
+                // Add * for pointer levels
+                for (int i = 0; i < returnPointerLevel; i++)
+                {
+                    llvmReturnType += "*";
+                }
             }
             else
             {
@@ -129,7 +163,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 var funcInfo = new FunctionInfo
                 {
                     returnType = GetTypeString(returnTypeCtx.type()),
-                    parameters = new List<(string, string)>()
+                    returnPointerLevel = returnPointerLevel,
+                    parameters = new List<(string, string, int)>()
                 };
                 declaredFunctions[functionName] = funcInfo;
             }
@@ -149,12 +184,37 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 var types = argsCtx.type();
                 var ids = argsCtx.ID();
+                var allPointers = argsCtx.POINTER();
+                int pointerIndex = 0;
 
                 for (int i = 0; i < types.Length; i++)
                 {
                     string paramType = GetTypeString(types[i]);
                     string llvmParamType = getLLVMType(paramType);
                     string paramName = ids[i].GetText();
+
+                    //count pointers
+                    int pointerLevel = 0;
+                    int typeEndPos = types[i].Stop.StopIndex;
+                    int idStartPos = ids[i].Symbol.StartIndex;
+
+                    while (pointerIndex < allPointers.Length &&
+                        allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                        allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                    {
+                        pointerLevel++;
+                        pointerIndex++;
+                    }
+                    
+                    if (paramType == "string")
+                    {
+                        llvmParamType = "i8*";
+                    }
+                    
+                    for (int j = 0; j < pointerLevel; j++)
+                    {
+                        llvmParamType += "*";
+                    }
 
                     //register parameter
                     string paramReg = $"%param.{paramName}";
@@ -173,6 +233,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             {
                 var ids = argsCtx.ID();
                 var types = argsCtx.type();
+                var allPointers = argsCtx.POINTER();
+                int pointerIndex = 0;
 
                 for (int i = 0; i < ids.Length; i++)
                 {
@@ -180,9 +242,28 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                     string paramType = GetTypeString(types[i]);
                     string llvmParamType = getLLVMType(paramType);
 
+                    // Count pointers 
+                    int pointerLevel = 0;
+                    int typeEndPos = types[i].Stop.StopIndex;
+                    int idStartPos = ids[i].Symbol.StartIndex;
+
+                    while (pointerIndex < allPointers.Length &&
+                        allPointers[pointerIndex].Symbol.StartIndex > typeEndPos &&
+                        allPointers[pointerIndex].Symbol.StartIndex < idStartPos)
+                    {
+                        pointerLevel++;
+                        pointerIndex++;
+                    }
+
                     if (paramType == "string")
                     {
                         llvmParamType = "i8*";
+                    }
+
+                    // Add * for each pointer level
+                    for (int j = 0; j < pointerLevel; j++)
+                    {
+                        llvmParamType += "*";
                     }
 
                     string allocaReg = NextFunctionRegister();
@@ -278,11 +359,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
 
             var exprCtx = context.expr();
 
+            // Check if we're inside a control flow structure (if/switch/loop)
+            // by checking if the last line in the body is a label (indicating we're in a control flow block)
+            bool isInControlFlow = IsInsideControlFlow();
+
             // Void return
             if (currentFunction.isVoid)
             {
                 currentFunctionBody.AppendLine("  ret void");
-                hasReturnedInCurrentBlock = true;
+                // Only set flag for unconditional returns (not inside control flow)
+                if (!isInControlFlow)
+                {
+                    hasReturnedInCurrentBlock = true;
+                }
                 return;
             }
 
@@ -297,9 +386,69 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                         : getLLVMType(currentFunction.returnType ?? "i32");
 
                     currentFunctionBody.AppendLine($"  ret {returnType} {returnValue}");
-                    hasReturnedInCurrentBlock = true;
+                    // Only set flag for unconditional returns (not inside control flow)
+                    if (!isInControlFlow)
+                    {
+                        hasReturnedInCurrentBlock = true;
+                    }
                 }
             }
+        }
+
+        private bool IsInsideControlFlow()
+        {
+            if (currentFunctionBody == null || currentFunctionBody.Length == 0)
+            {
+                return false;
+            }
+
+            // Check recent lines to see if we're inside a control flow structure
+            // We're inside control flow if we just branched TO a control flow label,
+            // not if we're AT a merge label (merge labels mark the end of control flow)
+            string bodyText = currentFunctionBody.ToString();
+            string[] lines = bodyText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            
+            if (lines.Length == 0)
+            {
+                return false;
+            }
+
+            // Check the last few non-empty lines
+            int checkedLines = 0;
+            for (int i = lines.Length - 1; i >= 0 && checkedLines < 3; i--)
+            {
+                string line = lines[i].Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+                
+                checkedLines++;
+                
+                // If the line is a merge label, we're past control flow
+                if (line.StartsWith("merge_") && line.EndsWith(":"))
+                {
+                    return false; // We're at a merge point, past the control flow
+                }
+                
+                // If the line is a control flow block label (if_, case_, while_, etc.) but not merge_,
+                // we're inside control flow
+                if ((line.StartsWith("if_") || line.StartsWith("case_") || line.StartsWith("while_") || 
+                     line.StartsWith("for_") || line.StartsWith("dowhile_") || line.StartsWith("else_")) 
+                    && line.EndsWith(":"))
+                {
+                    return true; // We're in a control flow block
+                }
+                
+                // If it's a branch TO a control flow label (but not merge), we're entering control flow
+                if ((line.Contains("br i1") || line.Contains("br label %")) && 
+                    !line.Contains("merge_"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
         
         private string GetTypeString(ExprParser.TypeContext context)

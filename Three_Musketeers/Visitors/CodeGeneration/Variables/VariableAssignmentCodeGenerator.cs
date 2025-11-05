@@ -18,6 +18,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly Func<string?> getCurrentFunctionName;
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Func<string, int> GetAlignment;
+        private readonly Func<ExprParser.IndexContext[], string> calculateArrayPosition;
 
         public VariableAssignmentCodeGenerator(
             StringBuilder declarations,
@@ -28,7 +29,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Func<ExprParser.ExprContext, string> visitExpression,
             Func<string?> getCurrentFunctionName,
             Func<StringBuilder> getCurrentBody,
-            Func<string, int> GetAlignment)
+            Func<string, int> GetAlignment,
+            Func<ExprParser.IndexContext[], string> calculateArrayPosition)
         {
             this.declarations = declarations;
             this.variables = variables;
@@ -39,6 +41,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.getCurrentBody = getCurrentBody;
             this.GetAlignment = GetAlignment;
+            this.calculateArrayPosition = calculateArrayPosition;
         }
 
         public string? VisitGenericAtt([NotNull] ExprParser.GenericAttContext context)
@@ -47,22 +50,68 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             string varName = context.ID().GetText();
             string llvmType;
             string register;
+            string? currentFunc = getCurrentFunctionName();
 
             if (context.type() != null)
             {
                 varType = context.type().GetText();
                 llvmType = getLLVMType(varType);
+
+                // Global variable
+                if (currentFunc == null)
+                {
+                    string globalReg = $"@{varName}";
+
+                    if (context.expr() != null)
+                    {
+                        // Evaluate expression first to get the value
+                        string initValue = visitExpression(context.expr());
+                        
+                        if (varType == "string")
+                        {
+                            // String: store pointer directly in declaration
+                            declarations.AppendLine($"{globalReg} = global i8* {initValue}, align 8");
+                            variables[varName] = new Variable(varName, varType, "i8*", globalReg);
+                        }
+                        else
+                        {
+                            // Other types: store value directly
+                            string valueType = registerTypes[initValue];
+                            declarations.AppendLine($"{globalReg} = global {valueType} {initValue}, align {GetAlignment(valueType)}");
+                            variables[varName] = new Variable(varName, varType, valueType, globalReg);
+                        }
+                    }
+                    else
+                    {
+                        // No initialization - use zeroinitializer
+                        if (varType == "string")
+                        {
+                            declarations.AppendLine($"{globalReg} = global i8* null, align 8");
+                            variables[varName] = new Variable(varName, varType, "i8*", globalReg);
+                        }
+                        else
+                        {
+                            declarations.AppendLine($"{globalReg} = global {llvmType} zeroinitializer, align {GetAlignment(llvmType)}");
+                            variables[varName] = new Variable(varName, varType, llvmType, globalReg);
+                        }
+                    }
+
+                    return null;
+                }
+                
+                // Local variable
                 register = nextRegister();
+                string actualVarName = $"@{currentFunc}.{varName}";
 
                 if (varType == "string")
                 {
                     WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
-                    variables[varName] = new Variable(varName, varType, "[256 x i8]", register);
+                    variables[actualVarName] = new Variable(varName, varType, "[256 x i8]", register);
                 }
                 else
                 {
                     WriteAlloca(register, llvmType, GetAlignment(llvmType));
-                    variables[varName] = new Variable(varName, varType, llvmType, register);
+                    variables[actualVarName] = new Variable(varName, varType, llvmType, register);
                 }
             }
             else
@@ -77,7 +126,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             {
                 string exprResult = visitExpression(context.expr());
 
-                if (registerTypes.ContainsKey(exprResult) && registerTypes[exprResult] == "i8*")
+                if (registerTypes.TryGetValue(exprResult, out string? exprType) && exprType == "i8*")
                 {
                     WriteStrCopy(register, exprResult);
                 }
@@ -110,45 +159,70 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             Variable variable = GetVariableWithScope(varName)!;
 
+            if (variable == null)
+            {
+                // Return a default value or throw a more meaningful error
+                return "0";
+            }
+
             if (variable.type == "string")
             {
-                // Se é [256 x i8] (string local), faz getelementptr
-        if (variable.LLVMType == "[256 x i8]")
-        {
-            string ptrReg = nextRegister();
-            getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
-            registerTypes[ptrReg] = "i8*";
-            return ptrReg;
-        }
-        // Se é i8* (parâmetro de string), apenas faz load
-        else if (variable.LLVMType == "i8*")
-        {
-            string loadRegStr = nextRegister();
-            getCurrentBody().AppendLine($"  {loadRegStr} = load i8*, i8** {variable.register}, align 8");
-            registerTypes[loadRegStr] = "i8*";
-            return loadRegStr;
-        }
+                if (variable.LLVMType == "[256 x i8]")
+                {
+                    string ptrReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {variable.register}, i32 0, i32 0");
+                    registerTypes[ptrReg] = "i8*";
+                    return ptrReg;
+                }
+                else if (variable.LLVMType == "i8*")
+                {
+                    string loadRegStr = nextRegister();
+                    getCurrentBody().AppendLine($"  {loadRegStr} = load i8*, i8** {variable.register}, align 8");
+                    registerTypes[loadRegStr] = "i8*";
+                    return loadRegStr;
+                }
             }
 
             string loadReg = nextRegister();
-            getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+
+            //pinter handling
+            if (variable.LLVMType.EndsWith("*"))
+            {
+                int alignment = GetAlignment(variable.LLVMType);
+                getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {alignment}");
+            }
+            //regular types
+            else
+            {
+                getCurrentBody().AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+            }
+
             registerTypes[loadReg] = variable.LLVMType;
             return loadReg;
         }
 
-        public string? VisitDec([NotNull] ExprParser.BaseDecContext context)
+        public string? VisitDec([NotNull] ExprParser.DeclarationContext context)
         {
             string varType = context.type().GetText();
             string varName = context.ID().GetText();
-            string llvmType = getLLVMType(varType);
-            string register = nextRegister();
-            var indexes = context.index();
 
-            if (context.index().Length > 0)
+            bool isPointer = context.POINTER() != null && context.POINTER().Length > 0;
+            string pointers = isPointer
+                ? context.POINTER().Aggregate("", (a, b) => a + b.GetText())
+                : "";
+
+            string llvmType = getLLVMType(varType) + pointers;
+
+            string? currentFunc = getCurrentFunctionName();
+            bool isGlobal = currentFunc == null;
+            string varKey = isGlobal ? varName : $"@{currentFunc}.{varName}";
+
+            if (!isPointer && context.intIndex() != null && context.intIndex().Length > 0)
             {
+                var indexes = context.intIndex();
                 List<int> dimensions = new ArrayList<int>();
                 int totalSize = 1;
-                string arrayType;
+
                 foreach (var index in indexes)
                 {
                     int size = int.Parse(index.INT().GetText());
@@ -161,155 +235,65 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                     totalSize *= 256;
                 }
 
-                arrayType = $"[{totalSize} x {llvmType}]";
+                string arrayType = $"[{totalSize} x {llvmType}]";
+                string register = isGlobal ? $"@{varName}" : nextRegister();
 
-                WriteAlloca(register, arrayType, GetAlignment(llvmType));
-                variables[varName] = new ArrayVariable(varName, varType, arrayType, register, totalSize, dimensions, llvmType);
+                if (isGlobal)
+                {
+                    declarations.AppendLine($"{register} = global {arrayType} zeroinitializer, align {GetAlignment(llvmType)}");
+                }
+                else
+                {
+                    WriteAlloca(register, arrayType, GetAlignment(llvmType));
+                }
+
+                variables[varKey] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType);
                 return null;
             }
 
-            if (varType == "string")
+            // Handle string declarations (non-pointer, non-array)
+            if (!isPointer && varType == "string")
             {
-                WriteAlloca(register, "[256 x i8]", GetAlignment("i8"));
-                variables[varName] = new Variable(varName, varType, "[256 x i8]", register);
+                string register = isGlobal ? $"@{varName}" : nextRegister();
+                string actualLlvmType = isGlobal ? "i8*" : "[256 x i8]";
+                int alignment = isGlobal ? 8 : GetAlignment("i8");
+
+                if (isGlobal)
+                {
+                    declarations.AppendLine($"{register} = global {actualLlvmType} null, align {alignment}");
+                }
+                else
+                {
+                    WriteAlloca(register, actualLlvmType, alignment);
+                }
+
+                variables[varKey] = new Variable(varName, varType, actualLlvmType, register);
                 return null;
             }
 
-            WriteAlloca(register, llvmType, GetAlignment(llvmType));
-            variables[varName] = new Variable(varName, varType, llvmType, register);
-            return null;
-        }
+            // Handle regular variables, pointers, and structs
+            string reg = isGlobal ? $"@{varName}" : nextRegister();
+            int align = isPointer ? 8 : GetAlignment(llvmType);
+            string initialValue = isPointer ? "null" : "zeroinitializer";
 
-        public string? VisitDec(ExprParser.PointerDecContext context)
-        {
-            string varType = context.type().GetText();
-            string varName = context.ID().GetText();
-            string pointers = context.POINTER().Aggregate("", (a, b) => a + b.GetText());
-            string llvmType = getLLVMType(varType) + pointers;
-            string register = nextRegister();
-            variables[varName] = new Variable(varName, varType, llvmType, register);
-
-            WriteAlloca(register, llvmType, GetAlignment(llvmType));
-            registerTypes[register] = llvmType + "*";
-            return null;
-        }
-
-        public string VisitVarArray(ExprParser.VarArrayContext context)
-        {
-            string varName = context.ID().GetText();
-            var mainBody = getCurrentBody();
-            var indexes = context.index();
-            int i = 0;
-            int pos = 0;
-            Variable variable = GetVariableWithScope(varName)!;
-            string llvmType;
-            string loadReg;
-            if (variable is ArrayVariable arrayVar)
+            if (isGlobal)
             {
-                foreach (var dim in arrayVar.dimensions)
+                declarations.AppendLine($"{reg} = global {llvmType} {initialValue}, align {align}");
+            }
+            else
+            {
+                WriteAlloca(reg, llvmType, align);
+                if (isPointer)
                 {
-                    int index = int.Parse(indexes[i].INT().GetText());
-                    pos = pos * dim + index;
-                    i++;
+                    registerTypes[reg] = llvmType + "*";
                 }
-
-                string elementPtrReg = nextRegister();
-
-                llvmType = arrayVar.type == "string" ? "i8" : arrayVar.innerType;
-
-                mainBody.AppendLine($"  {elementPtrReg} = getelementptr inbounds [{arrayVar.size} x {llvmType}], [{arrayVar.size} x {llvmType}]* {arrayVar.register}, i32 0, i32 {pos}");
-
-                if (arrayVar.type == "string")
-                {
-                    registerTypes[elementPtrReg] = "i8*";
-                    return elementPtrReg;
-                }
-
-                loadReg = nextRegister();
-                getCurrentBody().AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {elementPtrReg}, align {GetAlignment(arrayVar.innerType)}");
-                registerTypes[loadReg] = arrayVar.innerType;
-                return loadReg;
             }
 
-            string currentPtr = nextRegister();
-            llvmType = variable.LLVMType;
-    
-            mainBody.AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
-    
-            string elementType = llvmType.TrimEnd('*');
-            string resultPtr = currentPtr;
-            foreach (var index in indexes)
-            {
-                int value = int.Parse(index.INT().GetText());
-                string gepReg = nextRegister();
-
-                mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
-                resultPtr = gepReg;
-            }
-    
-            loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {elementType}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
-            registerTypes[loadReg] = elementType;
-    
-            return loadReg;
-        }
-
-        public string? VisitSingleAtt(ExprParser.SingleAttContext context)
-        {
-            string varName = context.ID().GetText();
-            string expression = visitExpression(context.expr());
-            var indexes = context.index();
-            var mainBody = getCurrentBody();
-            int pos = 0;
-            int i = 0;
-            Variable variable = GetVariableWithScope(varName)!;
-
-            if (variable is ArrayVariable arrayVar)
-            {
-                foreach (var dim in arrayVar.dimensions)
-                {
-                    int index = int.Parse(indexes[i].INT().GetText());
-                    pos = pos * dim + index;
-                    i++;
-                }
-
-                if (arrayVar.type == "string")
-                {
-                    if (registerTypes.TryGetValue(expression, out string? value) && value == "i8*")
-                    {
-                        WriteStrCopy(arrayVar.register, expression, pos * 256);
-                    }
-                    return null;
-                }
-
-            string regElementPtr = nextRegister();
-            mainBody.AppendLine($"  {regElementPtr} = getelementptr inbounds [{arrayVar.size} x {arrayVar.innerType}], [{arrayVar.size} x {arrayVar.innerType}]* {arrayVar.register}, {arrayVar.innerType} 0, {arrayVar.innerType} {pos}");
-            mainBody.AppendLine($"  store {arrayVar.innerType} {expression}, {arrayVar.innerType}* {regElementPtr}, align {GetAlignment(arrayVar.innerType)}");
+            variables[varKey] = new Variable(varName, varType, llvmType, reg);
             return null;
         }
 
-        string currentPtr = nextRegister();
-        string llvmType = variable.LLVMType;
-    
-        mainBody.AppendLine($"  {currentPtr} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
-
-        string elementType = llvmType.TrimEnd('*');
-        string resultPtr = currentPtr;
-
-        foreach (var index in indexes)
-        {
-            int value = int.Parse(index.INT().GetText());
-            string gepReg = nextRegister();
-            mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {elementType}* {resultPtr}, i32 {value}");
-            resultPtr = gepReg;
-        }
-    
-        mainBody.AppendLine($"  store {elementType} {expression}, {elementType}* {resultPtr}, align {GetAlignment(elementType)}");
-    
-        return null;
-    }
-
-        private Variable? GetVariableWithScope(string varName)
+        public Variable? GetVariableWithScope(string varName)
         {
             string? currentFunc = getCurrentFunctionName();
 
@@ -332,9 +316,187 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             return null;
         }
 
+
         private void WriteAlloca(string register, string type, int alignment)
         {
             getCurrentBody().AppendLine($"  {register} = alloca {type}, align {alignment}");
         }
+
+        public string VisitVarArray(ExprParser.VarArrayContext context)
+        {
+            string name = context.ID().GetText();
+            var indexes = context.index();
+            var currentBody = getCurrentBody();
+            Variable variable = GetVariableWithScope(name)!;
+
+
+            var llvmType = variable.LLVMType;
+
+            // Check if this is a pointer variable (not an array)
+            bool isPointer = !(variable is ArrayVariable) && llvmType.Contains('*');
+
+            if (isPointer)
+            {
+                // For pointer variables: load the pointer first, then use single index
+                string loadedPointer = nextRegister();
+                currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+
+                // Get element address with single index (no i32 0)
+                string gepReg = nextRegister();
+                string expr = visitExpression(indexes[0].expr());
+                string elementType = llvmType.TrimEnd('*');
+                currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
+
+                // Load the value at this address
+                string loadReg = nextRegister();
+                currentBody.AppendLine($"  {loadReg} = load {elementType}, {elementType}* {gepReg}, align {GetAlignment(elementType)}");
+
+                registerTypes[loadReg] = elementType;
+                return loadReg;
+            }
+            else
+            {
+                // For arrays: use getelementptr with i32 0 as first index
+                string gepReg = nextRegister();
+                string result = calculateArrayPosition(indexes);
+                currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, {result}");
+
+                string elementType;
+                if (variable is ArrayVariable arrayVariable)
+                {
+                    elementType = arrayVariable.innerType;
+                }
+                else
+                {
+                    elementType = llvmType;
+                }
+
+                // Load the value
+                string loadReg = nextRegister();
+                currentBody.AppendLine($"  {loadReg} = load {elementType}, {elementType}* {gepReg}, align {GetAlignment(elementType)}");
+
+                registerTypes[loadReg] = elementType;
+                return loadReg;
+            }
+        }
+
+        public string? VisitSingleArrayAtt(ExprParser.SingleArrayAttContext context)
+        {
+            string varName = context.ID().GetText();
+            var indexes = context.index();
+            string exprValue = visitExpression(context.expr());
+            Variable variable = GetVariableWithScope(varName)!;
+            var currentBody = getCurrentBody();
+
+            if (variable == null)
+            {
+                return null;
+            }
+
+            string targetRegister;
+            string targetType;
+
+            // Check if this is a pointer variable
+            bool isPointer = !(variable is ArrayVariable) && variable.LLVMType.Contains('*');
+
+            if (indexes != null && indexes.Length > 0)
+            {
+                if (isPointer)
+                {
+                    // For pointer variables: load pointer, then GEP
+                    string loadedPointer = nextRegister();
+                    currentBody.AppendLine($"  {loadedPointer} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+
+                    string gepReg = nextRegister();
+                    string position = calculateArrayPosition(indexes);
+                    string elementType = variable.LLVMType.TrimEnd('*');
+                    currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {variable.LLVMType} {loadedPointer}, {position}");
+
+                    targetRegister = gepReg;
+                    targetType = elementType;
+                }
+                else
+                {
+                    // For arrays: GEP with i32 0 prefix
+                    string gepReg = nextRegister();
+                    string position = calculateArrayPosition(indexes);
+
+                    if (variable is ArrayVariable arrayVar)
+                    {
+                        currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {variable.LLVMType}, {variable.LLVMType}* {variable.register}, i32 0, {position}");
+                        targetType = arrayVar.innerType;
+                    }
+                    else
+                    {
+                        currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {variable.LLVMType}, {variable.LLVMType}* {variable.register}, {position}");
+                        targetType = variable.LLVMType;
+                    }
+
+                    targetRegister = gepReg;
+                }
+            }
+            else
+            {
+                // No index - direct assignment to variable
+                targetRegister = variable.register;
+                targetType = variable.LLVMType;
+            }
+
+            // Store the value
+            string valueType = registerTypes.ContainsKey(exprValue) ? registerTypes[exprValue] : targetType;
+            currentBody.AppendLine($"  store {valueType} {exprValue}, {targetType}* {targetRegister}, align {GetAlignment(targetType)}");
+
+            return null;
+        }
+
+        public string VisitVarArrayPointer(string varName, ExprParser.IndexContext[] indexes)
+        {
+            var currentBody = getCurrentBody();
+            Variable variable = GetVariableWithScope(varName)!;
+
+            if (variable == null)
+            {
+                return nextRegister(); // Error case
+            }
+
+            var llvmType = variable.LLVMType;
+            bool isPointer = !(variable is ArrayVariable) && llvmType.Contains('*');
+
+            if (isPointer)
+            {
+                // Load pointer, then GEP
+                string loadedPointer = nextRegister();
+                currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+
+                string gepReg = nextRegister();
+                string expr = visitExpression(indexes[0].expr());
+                string elementType = llvmType.TrimEnd('*');
+                currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
+
+                registerTypes[gepReg] = elementType + "*";
+                return gepReg;
+            }
+            else
+            {
+                // For arrays
+                string gepReg = nextRegister();
+                string result = calculateArrayPosition(indexes);
+                currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, {result}");
+
+                string elementType;
+                if (variable is ArrayVariable arrayVariable)
+                {
+                    elementType = arrayVariable.innerType;
+                }
+                else
+                {
+                    elementType = llvmType;
+                }
+
+                registerTypes[gepReg] = elementType + "*";
+                return gepReg;
+            }
+        }
+
     }
 }
