@@ -21,15 +21,13 @@ namespace Three_Musketeers
             DefaultValueFactory = (res) => "a.out",
         };
 
-        private static readonly CliOption<uint> compilerOptimazionLevel = new("-O",
-            aliases: ["--opt"])
+        private static readonly CliOption<uint> compilerOptimazionLevel = new("-O", ["--opt"])
         {
             DefaultValueFactory = (res) => 2,
             Description = "Optimization level (0-3)",
         };
 
-        private static readonly CliOption<string> dotLLCodePath = new("--ll",
-        )
+        private static readonly CliOption<string> dotLLCodePath = new("--ll")
         {
             DefaultValueFactory = (res) => "",
             Description = "Path of generated LLVM IR code"
