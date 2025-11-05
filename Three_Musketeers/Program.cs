@@ -77,16 +77,25 @@ namespace Three_Musketeers {
                 // Intermediate Code generation
                 var codeGenerator = new CodeGenerator();
                 var llvmCode = codeGenerator.Visit(tree);
-                string outputPath = Path.ChangeExtension(filePath, ".ll");
-                string bytecodePath = Path.ChangeExtension(filePath, ".bc");
-                string optBytecodePath = bytecodePath.Replace(".bc", "-opt.bc");
-                string assemblyPath = Path.ChangeExtension(filePath, ".s");
+
+                // Create bin directory
+                string fileDir = Path.GetDirectoryName(Path.GetFullPath(filePath))!;
+                string binDir = Path.Combine(fileDir, "bin");
+                Directory.CreateDirectory(binDir);
+
+                // Generate output paths inside bin directory
+                string fileName = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(binDir, $"{fileName}.ll");
+                string bytecodePath = Path.Combine(binDir, $"{fileName}.bc");
+                string optBytecodePath = Path.Combine(binDir, $"{fileName}-opt.bc");
+                string assemblyPath = Path.Combine(binDir, $"{fileName}.s");
+                string executablePath = Path.Combine(binDir, fileName);
 
                 File.WriteAllText(outputPath, llvmCode);
                 Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
                 Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
                 Process.Start("llc", $"{optBytecodePath} -o {assemblyPath}").WaitForExit();
-                Process.Start("gcc", $"{assemblyPath} -o {resultPath} -no-pie").WaitForExit();
+                Process.Start("gcc", $"{assemblyPath} -o {executablePath} -no-pie").WaitForExit();
                 Process.Start("rm", $"{bytecodePath} {optBytecodePath} {assemblyPath}");
                 return 0;
             }
