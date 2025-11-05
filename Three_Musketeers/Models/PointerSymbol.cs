@@ -11,7 +11,7 @@ namespace Three_Musketeers.Models
         {
             this.pointeeType = pointeeType;
             this.pointerLevel = pointerLevel;
-            isDynamic = isDynamic;
+            this.isDynamic = isDynamic;
         }
 
         public override string ToString()

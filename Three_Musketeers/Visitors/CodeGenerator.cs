@@ -72,7 +72,7 @@ namespace Three_Musketeers.Visitors
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
                 declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
-                () => functionCodeGenerator?.GetCurrentFunctionName(), GetCurrentBody, GetAlignment, CalculateArrayPosition);
+                GetCurrentFunctionNameIncludingMain, GetCurrentBody, GetAlignment, CalculateArrayPosition);
             stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
@@ -107,7 +107,7 @@ namespace Three_Musketeers.Visitors
             //pointers & dynamic memory
             pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, variableResolver);
             dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, 
-                GetAlignment, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver);
+                GetAlignment, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables);
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit, CalculateArrayPosition);
@@ -116,7 +116,7 @@ namespace Three_Musketeers.Visitors
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit, CalculateArrayPosition);
             //struct
             structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
-                variables, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
+                variableResolver, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
             //control flow
             ifStatementCodeGenerator = new IfStatementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit, Visit);

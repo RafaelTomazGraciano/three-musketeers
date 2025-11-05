@@ -3,6 +3,7 @@ using System.Text;
 using Antlr4.Runtime.Tree;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.Struct
 {
@@ -13,20 +14,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
         private readonly Func<StringBuilder> getCurrentBody;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
-        private readonly Dictionary<string, Variable> variables;
+        private readonly VariableResolver variableResolver;
         private readonly Func<IParseTree, string> visit;
         private readonly Func<string, string> getLLVMType;
         private readonly Func<string, int> getSize;
         private readonly Func<ExprParser.IndexContext[], string> CalculateArrayPosition;
         
-        public StructCodeGenerator(Dictionary<string, HeterogenousType> structsTypes, StringBuilder structDeclaration, Func<StringBuilder> getCurrentBody, Dictionary<string, string> registerTypes, Func<string> nextRegister, Dictionary<string, Variable> variables, Func<IParseTree, string> visit, Func<string, string> getLLVMType, Func<string, int> getSize, Func<ExprParser.IndexContext[], string> CalculateArrayPosition)
+        public StructCodeGenerator(Dictionary<string, HeterogenousType> structsTypes, StringBuilder structDeclaration, Func<StringBuilder> getCurrentBody, Dictionary<string, string> registerTypes, Func<string> nextRegister, VariableResolver variableResolver, Func<IParseTree, string> visit, Func<string, string> getLLVMType, Func<string, int> getSize, Func<ExprParser.IndexContext[], string> CalculateArrayPosition)
         {
             this.structsTypes = structsTypes;
             this.structDeclaration = structDeclaration;
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
             this.nextRegister = nextRegister;
-            this.variables = variables;
+            this.variableResolver = variableResolver;
             this.visit = visit;
             this.getLLVMType = getLLVMType;
             this.getSize = getSize;
@@ -113,24 +114,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             string id = context.ID().GetText();
             var structContinueCtx = context.structContinue();
             var indexes = context.index();
-
-            // Verificar se a variável existe
-            if (!variables.ContainsKey(id))
-            {
-                throw new Exception($"Variable '{id}' not found");
-            }
-
-            Variable variable = variables[id];
+            Variable variable = variableResolver.GetVariable(id)!;
             string currentRegister = variable.register;
             string currentType = variable.type;
 
-            // Se houver índices de array na variável base (ex: structArray[0].member)
             if (indexes.Length > 0)
             {
                 string arrayPositions = CalculateArrayPosition(indexes);
                 string ptrReg = nextRegister();
                 
-                // Obter o tipo LLVM correto da variável
                 string varLLVMType = variable.LLVMType;
                 currentBody.AppendLine($"   {ptrReg} = getelementptr inbounds {varLLVMType}, {varLLVMType}* {currentRegister}, i32 0,{arrayPositions}");
                 currentRegister = ptrReg;
@@ -148,10 +140,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
         {
             var currentBody = getCurrentBody();
 
-            // Remover o '%' do nome do tipo para buscar na tabela
             string typeName = currentType.TrimStart('%');
 
-            // Obter informações do tipo heterogêneo
             if (!structsTypes.ContainsKey(typeName))
             {
                 throw new Exception($"Type '{typeName}' not found");
@@ -159,7 +149,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
 
             HeterogenousType heterogeneousType = structsTypes[typeName];
 
-            // Se structContinue é outro structGet (acesso aninhado)
             if (context.structGet() != null)
             {
                 string memberId = context.structGet().ID().GetText();
@@ -168,12 +157,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                 string memberPtrReg = "";
                 string memberType = "";
 
-                // Processar diferentemente para struct e union
                 if (heterogeneousType is StructType structType)
                 {
                     string llvmStructType = structType.GetLLVMName();
-                    
-                    // Se for acesso por ponteiro, fazer load primeiro
+                
                     if (isPointerAccess)
                     {
                         string loadReg = nextRegister();
@@ -182,7 +169,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                         registerTypes[loadReg] = llvmStructType;
                     }
 
-                    // Para structs, usar getelementptr com índice
                     int memberIndex = structType.GetFieldIndex(memberId);
                     memberType = structType.GetFieldType(memberId);
 
@@ -191,11 +177,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                 }
                 else if (heterogeneousType is UnionType unionType)
                 {
-                    // Para unions, não fazemos load - trabalhamos com o ponteiro direto
                     memberType = GetMemberType(heterogeneousType, memberId);
 
                     memberPtrReg = nextRegister();
-                    // GetLLVMVar retorna a expressão de bitcast
                     string bitcastExpr = unionType.GetLLVMVar(memberId, currentRegister);
                     currentBody.AppendLine($"   {memberPtrReg} = {bitcastExpr}");
                 }
@@ -203,7 +187,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
 
                 registerTypes[memberPtrReg] = memberType;
 
-                // Processar índices de array no membro (se houver)
                 if (indexes.Length > 0)
                 {
                     string arrayPositions = CalculateArrayPosition(indexes);
@@ -213,7 +196,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                     registerTypes[arrayPtrReg] = GetInnerType(memberType);
                 }
 
-                // Continuar processando recursivamente
                 bool nextIsPointerAccess = context.structGet().GetText().Contains("->");
                 string nextType = GetBaseType(memberType);
                 
@@ -221,19 +203,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             }
             else
             {
-                // Caso base: acessar o membro final
                 string memberId = context.ID().GetText();
                 var indexes = context.index();
 
                 string memberPtrReg;
                 string memberType;
 
-                // Processar diferentemente para struct e union
                 if (heterogeneousType is StructType structType)
                 {
                     string llvmStructType = structType.GetLLVMName();
                     
-                    // Se for acesso por ponteiro, fazer load primeiro
                     if (isPointerAccess)
                     {
                         string loadReg = nextRegister();

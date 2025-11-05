@@ -26,7 +26,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             Func<string, int> getAlignment,
             Func<string, string> getLLVMType,
             Func<string?> getCurrentFunctionName,
-            VariableResolver variableResolver
+            VariableResolver variableResolver,
+            Dictionary<string, Variable> variables
             ) 
         {
             this.getCurrentBody = getCurrentBody;
@@ -37,6 +38,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             this.getLLVMType = getLLVMType;
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.variableResolver = variableResolver;
+            this.variables = variables;
         }
 
         public string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)

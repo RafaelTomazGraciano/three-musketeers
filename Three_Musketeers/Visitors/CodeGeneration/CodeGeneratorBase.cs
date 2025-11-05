@@ -195,10 +195,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             output.AppendLine("target triple = \"x86_64-pc-linux-gnu\"");
             output.AppendLine();
             
-            output.Append(globalStrings);
-            output.AppendLine();
-            
             output.Append(structBuilder);
+
+            output.Append(globalStrings);
             output.AppendLine();
 
             output.Append(declarations);
