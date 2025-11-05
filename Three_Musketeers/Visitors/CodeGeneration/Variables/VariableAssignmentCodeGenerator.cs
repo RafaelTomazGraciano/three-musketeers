@@ -286,7 +286,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
         private (string dimension, int totalSize) GetArrayDimensions(ExprParser.IntIndexContext[] indexes, string varType, string llvmType)
         {
-            List<int> dimensions = new ArrayList<int>();
             int totalSize = 1;
             int i;
             string arrayType = new('[', 1);
