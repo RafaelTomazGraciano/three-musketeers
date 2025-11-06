@@ -59,7 +59,9 @@ func_body: stm*;
 
 printfStatement:'printf' '(' STRING_LITERAL (',' expr)* ')' EOL;
 
-scanfStatement: 'scanf' '(' ID (',' ID)* ')' EOL;
+scanfStatement: 'scanf' '(' scanfArg (',' scanfArg)* ')' EOL;
+
+scanfArg: ID index* | structGet;
 
 getsStatement: 'gets' '(' ID ')' EOL;
 

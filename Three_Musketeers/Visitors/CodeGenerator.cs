@@ -49,9 +49,18 @@ namespace Three_Musketeers.Visitors
 
         public CodeGenerator()
         {
+            variableResolver = new VariableResolver(
+            variables,
+            GetCurrentFunctionNameIncludingMain
+            );
+            
             //compiler directives
             includeCodeGenerator = new IncludeCodeGenerator(declarations);
             defineCodeGenerator = new DefineCodeGenerator(globalStrings, defineValues, registerTypes, NextStringLabel);
+
+            //struct
+            structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
+                variableResolver, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
 
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
@@ -64,10 +73,6 @@ namespace Three_Musketeers.Visitors
                 GetLLVMType, Visit, () => base.functionCodeGenerator!.IsInsideFunction()
                 ? base.functionCodeGenerator.GetCurrentFunctionBody()! : mainDefinition);
             
-            variableResolver = new VariableResolver(
-            variables,
-            GetCurrentFunctionNameIncludingMain
-            );
 
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
@@ -80,7 +85,8 @@ namespace Three_Musketeers.Visitors
             printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
                 NextRegister, NextStringLabel, Visit);
             scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
-                NextRegister, NextStringLabel, GetLLVMType, variableResolver);
+                NextRegister, NextStringLabel, GetLLVMType, variableResolver, CalculateArrayPosition,
+                (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx), registerTypes, GetAlignment);
             getsCodeGenerator = new GetsCodeGenerator(GetCurrentBody, NextRegister, variableResolver);
             putsCodeGenerator = new PutsCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister,
                 variableResolver, defineCodeGenerator, CalculateArrayPosition);
@@ -114,9 +120,6 @@ namespace Three_Musketeers.Visitors
             //compound assignment
             compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit, CalculateArrayPosition);
-            //struct
-            structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
-                variableResolver, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
             //control flow
             ifStatementCodeGenerator = new IfStatementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit, Visit);

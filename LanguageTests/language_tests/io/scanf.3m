@@ -1,0 +1,40 @@
+#include <stdio.tm>
+
+struct myStruct {
+    int a,
+    int b[5]
+};
+
+union myUnion {
+    int e,
+    myStruct ms
+};
+
+int main() {
+    int a;
+    double b;
+    char c;
+    bool d;
+
+    int array[2][2];
+    myStruct structTest;
+    myUnion unionTest;
+
+    scanf(a, b, c, d, array[0][1], structTest.a, structTest.b[1], unionTest.e, unionTest.ms.a, unionTest.ms.b[0]);
+
+    printf("int: %d\n", a);
+    printf("double: %f\n", b);
+    printf("char: %c\n", c);
+    printf("bool: %d\n", d);
+
+    printf("array: %d\n", array[0][1]);
+
+    printf("struct: a = %d\n", structTest.a);
+    printf("struct: b = %d \n", structTest.b[1]);
+
+    printf("union: e = %d\n", unionTest.e);
+    printf("union: ms.a = %d\n", unionTest.ms.a);
+    printf("union: ms.b[0] = %d\n", unionTest.ms.b[0]);
+
+    return 0;
+}

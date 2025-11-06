@@ -56,6 +56,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             int line = context.Start.Line;
             var declarationContexts = context.declaration();
             var members = new Dictionary<string, Symbol>();
+            
             foreach (var declaration in declarationContexts)
             {
                 Symbol? symbol = ProcessDeclaration(declaration, declaration.Start.Line);
@@ -71,6 +72,15 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     members[symbol.name] = symbol;
                 }
             }
+            
+            // Register the union in the dictionary
+            if (!heterogenousInfo.ContainsKey(unionName))
+            {
+                heterogenousInfo[unionName] = new UnionInfo(unionName, members, line);
+                return;
+            }
+            reportError(line, $"Union '{unionName}' already declared");
+            return;
         }
 
         private Symbol? ProcessDeclaration(ExprParser.DeclarationContext context, int line)
@@ -80,7 +90,20 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             var indexes = context.intIndex();
             int pointerCount = context.POINTER().Length;
 
-            string elementType = heterogenousInfo.ContainsKey(type) ? $"struct_{type}" : type;
+            string elementType = type;
+            if (heterogenousInfo.ContainsKey(type))
+            {
+                // Check if it's a struct or union
+                var hetInfo = heterogenousInfo[type];
+                if (hetInfo is StructInfo)
+                {
+                    elementType = $"struct_{type}";
+                }
+                else if (hetInfo is UnionInfo)
+                {
+                    elementType = $"union_{type}";
+                }
+            }
 
             if (indexes.Length > 0)
             {
@@ -180,16 +203,20 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                 }
             }
 
-            // Clean up type name if it has "struct_" prefix
+            // Clean up type name if it has "struct_" or "union_" prefix
             if (currentType.StartsWith("struct_"))
             {
                 currentType = currentType.Substring(7);
             }
+            else if (currentType.StartsWith("union_"))
+            {
+                currentType = currentType.Substring(6);
+            }
 
-            // Verify the type is a struct
+            // Verify the type is a struct or union
             if (!heterogenousInfo.ContainsKey(currentType))
             {
-                reportError(line, $"Variable '{id}' is not a struct type. Cannot access members.");
+                reportError(line, $"Variable '{id}' is not a struct or union type. Cannot access members.");
                 return null;
             }
 
@@ -207,23 +234,27 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             {
                 currentType = currentType.Substring(7);
             }
+            else if (currentType.StartsWith("union_"))
+            {
+                currentType = currentType.Substring(6);
+            }
 
-            // Get the struct definition
-            if (!heterogenousInfo.TryGetValue(currentType, out HeterogenousInfo? currentStruct))
+            // Get the struct/union definition
+            if (!heterogenousInfo.TryGetValue(currentType, out HeterogenousInfo? currentHetType))
             {
                 reportError(line, $"Struct or Union type '{currentType}' not found");
                 return null;
             }
 
             // Check if the field exists
-            if (!currentStruct.HasMember(fieldId))
+            if (!currentHetType.HasMember(fieldId))
             {
-                var availableMembers = string.Join(", ", currentStruct.members.Keys);
+                var availableMembers = string.Join(", ", currentHetType.members.Keys);
                 reportError(line, $"Struct or Union '{currentType}' does not have a member '{fieldId}'. Available members: {availableMembers}");
                 return null;
             }
 
-            Symbol fieldSymbol = currentStruct.GetMember(fieldId)!;
+            Symbol fieldSymbol = currentHetType.GetMember(fieldId)!;
             string fieldType = fieldSymbol.type;
 
             // Handle array indexing on the field
@@ -252,12 +283,29 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             var nestedStructGet = context.structGet();
             if (nestedStructGet != null)
             {
+                var nestedStructContinue = nestedStructGet.structContinue();
+                
+                // Check if structContinue exists before proceeding
+                if (nestedStructContinue == null)
+                {
+                    reportError(line, $"Invalid struct/union access syntax");
+                    return null;
+                }
+                
                 var nestedIndexes = nestedStructGet.index();
-                bool isArrowOp = nestedStructGet.GetChild(nestedIndexes.Length + 1)?.GetText() == "->";
+                bool isArrowOp = false;
+                
+                // Safely check for arrow operator
+                int childIndex = nestedIndexes.Length + 1;
+                if (nestedStructGet.ChildCount > childIndex)
+                {
+                    var child = nestedStructGet.GetChild(childIndex);
+                    isArrowOp = child?.GetText() == "->";
+                }
 
                 if (isArrowOp)
                 {
-                    // Field should be a pointer to struct
+                    // Field should be a pointer to struct/union
                     if (fieldSymbol is PointerSymbol pointerField)
                     {
                         fieldType = pointerField.pointeeType;
@@ -269,18 +317,23 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     }
                 }
 
+                // Clean up field type prefix
                 if (fieldType.StartsWith("struct_"))
                 {
                     fieldType = fieldType.Substring(7);
                 }
+                else if (fieldType.StartsWith("union_"))
+                {
+                    fieldType = fieldType.Substring(6);
+                }
 
                 if (!heterogenousInfo.ContainsKey(fieldType))
                 {
-                    reportError(line, $"Field '{fieldId}' is not a struct type. Cannot access nested members.");
+                    reportError(line, $"Field '{fieldId}' is not a struct or union type. Cannot access nested members.");
                     return null;
                 }
 
-                return NavigateStructChain(nestedStructGet.structContinue(), fieldType, line);
+                return NavigateStructChain(nestedStructContinue, fieldType, line);
             }
 
             return fieldType;

@@ -63,14 +63,20 @@ namespace Three_Musketeers.Visitors
             includeSemanticAnalyzer = new IncludeSemanticAnalyzer(ReportError, ReportWarning, currentFilePath, libraryTracker);
             defineSemanticAnalyzer = new DefineSemanticAnalyzer(symbolTable, ReportError, ReportWarning);
 
+            //structs and unions
+            structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
+            
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable, ReportError, ReportWarning, structures, Visit);
             pointerSemanticAnalyzer = new PointerSemanticAnalyzer(ReportError, ReportWarning, Visit, symbolTable);
+
+            
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit, libraryTracker);
-            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
+            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable, libraryTracker, structSemanticAnalyzer);
             getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
             putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
+            
             // string conversion
             atoiSemanticAnalyzer = new AtoiSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
             atodSemanticAnalyzer = new AtodSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
@@ -96,7 +102,6 @@ namespace Three_Musketeers.Visitors
             incrementDecrementSemanticAnalyzer = new IncrementDecrementSemanticAnalyzer(ReportError, ReportWarning, symbolTable);
             // compound assignment
             compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable, GetExpressionType);
-            structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
             compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable,
                 GetExpressionType);
             // control flow
