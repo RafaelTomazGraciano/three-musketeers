@@ -27,10 +27,10 @@ namespace Three_Musketeers
             Description = "Optimization level (0-3)",
         };
 
-        private static readonly CliOption<string> dotLLCodePath = new("--ll")
+        private static readonly CliOption<bool> dotLLCodePath = new("--ll")
         {
-            DefaultValueFactory = (res) => "",
-            Description = "Path of generated LLVM IR code"
+            DefaultValueFactory = (res) => false,
+            Description = "Save generated LLVM IR code"
         };
 
         private static readonly CliOption<bool> addDebugFlagToGcc = new("-g")
@@ -72,11 +72,11 @@ namespace Three_Musketeers
                 string? inputPath = result.GetValue(input);
                 string outputPath = result.GetValue(output)!;
                 uint optLevel = result.GetValue(compilerOptimazionLevel);
-                string llPath = result.GetValue(dotLLCodePath)!;
+                bool saveLLVM = result.GetValue(dotLLCodePath)!;
                 bool debugFlag = result.GetValue(addDebugFlagToGcc)!;
                 string includeLib = result.GetValue(includeLibrary)!;
 
-                return CompileFile(inputPath, outputPath, optLevel, llPath, debugFlag, includeLib);
+                return CompileFile(inputPath, outputPath, optLevel, saveLLVM, debugFlag, includeLib);
             });
 
             CliConfiguration config = new(rootCommand);
@@ -97,7 +97,7 @@ namespace Three_Musketeers
         }
 
         private static int CompileFile(string? filePath, string resultPath,
-                                       uint optimizationLevel, string llCodePath,
+                                       uint optimizationLevel, bool saveLLVM,
                                        bool addDebugFlag, string includeLib)
         {
             if (filePath == null)
@@ -111,8 +111,6 @@ namespace Three_Musketeers
                 WriteError("No valid extension from input file");
                 return 1;
             }
-
-            bool dontSaveDotLL = string.IsNullOrEmpty(llCodePath);
 
             try
             {
@@ -171,7 +169,7 @@ namespace Three_Musketeers
                 Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyFilePath} -o {executablePath} -no-pie")?.WaitForExit();
                 File.Delete(assemblyFilePath);
 
-                if (dontSaveDotLL)
+                if (!saveLLVM)
                 {
                     File.Delete(outputPath);
                 }
