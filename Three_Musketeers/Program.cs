@@ -102,18 +102,17 @@ namespace Three_Musketeers
         {
             if (filePath == null)
             {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("No input file specified.");
-                Console.ResetColor();
+                WriteError("No input file especified");
                 return 1;
             }
-            
-            bool dontSaveDotLL = string.IsNullOrEmpty(llCodePath);
-            if (dontSaveDotLL)
-            {
 
-                llCodePath = Path.GetTempFileName();
+            if (Path.GetExtension(filePath) != ".3m")
+            {
+                WriteError("No valid extension from input file");
+                return 1;
             }
+
+            bool dontSaveDotLL = string.IsNullOrEmpty(llCodePath);
 
             try
             {
@@ -156,14 +155,21 @@ namespace Three_Musketeers
                 // Intermediate Code generation
                 var codeGenerator = new CodeGenerator();
                 var llvmCode = codeGenerator.Visit(tree);
-                string outputPath = Path.ChangeExtension(llCodePath, ".ll");
-                string assemblyPath = Path.ChangeExtension(outputPath, ".s");
 
+                string fileDir = Path.GetDirectoryName(Path.GetFullPath(filePath))!;
+                string binDir = Path.Combine(fileDir, "bin");
+                Directory.CreateDirectory(binDir);
+
+                // Generate output paths inside bin directory
+                string fileName = Path.GetFileNameWithoutExtension(filePath);
+                string outputPath = Path.Combine(binDir, $"{fileName}.ll");
+                string assemblyFilePath = Path.ChangeExtension(outputPath, ".s");
+                string executablePath = Path.Combine(binDir, resultPath);
                 File.WriteAllText(outputPath, llvmCode);
 
-                Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyPath}")?.WaitForExit();
-                Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyPath} -o {resultPath} -no-pie")?.WaitForExit();
-                File.Delete(assemblyPath);
+                Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyFilePath}")?.WaitForExit();
+                Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyFilePath} -o {executablePath} -no-pie")?.WaitForExit();
+                File.Delete(assemblyFilePath);
 
                 if (dontSaveDotLL)
                 {
@@ -181,6 +187,13 @@ namespace Three_Musketeers
                 Console.ResetColor();
                 return 1;
             }
+        }
+        
+        private static void WriteError(string msg)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(msg);
+            Console.ResetColor();
         }
     }
     
