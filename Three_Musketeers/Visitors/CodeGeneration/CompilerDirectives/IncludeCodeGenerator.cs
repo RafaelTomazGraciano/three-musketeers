@@ -66,9 +66,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives
             }
 
             // scanf declaration
-            if (!declarations.ToString().Contains("declare i32 @__isoc99_scanf"))
+            if (!declarations.ToString().Contains("declare i32 @scanf"))
             {
-                declarations.AppendLine("declare i32 @__isoc99_scanf(i8*, ...)");
+                declarations.AppendLine("declare i32 @scanf(i8*, ...)");
             }
 
             // gets declaration

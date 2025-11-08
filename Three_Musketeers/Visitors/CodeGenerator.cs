@@ -184,15 +184,16 @@ namespace Three_Musketeers.Visitors
 
         public override string VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context)
         {
-            registerTypes["true"] = "i1";
+            registerTypes["true"] = "i32";
             return "1";
         }
 
         public override string VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context)
         {
-            registerTypes["false"] = "i1";
+            registerTypes["false"] = "i32";
             return "0";
         }
+
         public override string VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
@@ -240,6 +241,7 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
         {
+            Console.WriteLine("[CODEGEN] VisitScanfStatement called!");
             return scanfCodeGenerator.VisitScanfStatement(context);
         }
 

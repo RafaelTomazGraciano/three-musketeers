@@ -87,18 +87,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
         {
             if (!registerTypes.ContainsKey(value))
             {
-                if (value == "1" || value == "true")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else if (value == "0" || value == "false")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else
-                {
-                    registerTypes[value] = "i32";
-                }
+
+                registerTypes[value] = "i32";
+
             }
             return registerTypes[value];
         }

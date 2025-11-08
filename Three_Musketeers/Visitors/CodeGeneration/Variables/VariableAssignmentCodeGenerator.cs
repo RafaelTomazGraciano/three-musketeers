@@ -220,22 +220,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             if (!isPointer && context.intIndex() != null && context.intIndex().Length > 0)
             {
                 var indexes = context.intIndex();
-                List<int> dimensions = new ArrayList<int>();
-                int totalSize = 1;
+                List<int> dimensions = new List<int>();
 
                 foreach (var index in indexes)
                 {
                     int size = int.Parse(index.INT().GetText());
-                    totalSize *= size;
                     dimensions.Add(size);
                 }
 
-                if (varType == "string")
+                string arrayType = llvmType;
+                for (int i = dimensions.Count - 1; i >= 0; i--)
                 {
-                    totalSize *= 256;
+                    arrayType = $"[{dimensions[i]} x {arrayType}]";
                 }
 
-                string arrayType = $"[{totalSize} x {llvmType}]";
                 string register = isGlobal ? $"@{varName}" : nextRegister();
 
                 if (isGlobal)
@@ -245,6 +243,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 else
                 {
                     WriteAlloca(register, arrayType, GetAlignment(llvmType));
+                }
+
+                // Calculate total size for ArrayVariable
+                int totalSize = 1;
+                foreach (var dim in dimensions)
+                {
+                    totalSize *= dim;
                 }
 
                 variables[varKey] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType);

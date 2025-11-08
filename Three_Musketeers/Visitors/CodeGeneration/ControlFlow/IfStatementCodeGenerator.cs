@@ -173,7 +173,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
                 return value;
             }
 
-            // Need to convert to boolean
             string convReg = nextRegister();
 
             if (currentType == "i32")
@@ -201,18 +200,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             if (!registerTypes.ContainsKey(value))
             {
-                if (value == "1" || value == "true")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else if (value == "0" || value == "false")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else
-                {
-                    registerTypes[value] = "i32";
-                }
+                registerTypes[value] = "i32";
             }
             return registerTypes[value];
         }

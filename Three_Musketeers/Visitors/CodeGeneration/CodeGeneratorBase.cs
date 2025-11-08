@@ -44,7 +44,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             {
                 "int" => "i32",
                 "double" => "double",
-                "bool" => "i1",
+                "bool" => "i32",
                 "char" => "i8",
                 "string" => "i8*",
                 var t when structTypes.TryGetValue(t, out var structModel) => structModel.GetLLVMName(),
@@ -60,16 +60,29 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                 var t when structTypes.ContainsKey(t) => 4,
                 "i32" => 4,
                 "double" => 8,
-                "i1" or "i8" => 1,
+                "i8" => 1,
                 _ => 4
             };
         }
 
         protected int GetSize(string type)
         {
+            // Structs/Unions (tipos LLVM começam com %)
+            if (type.StartsWith("%"))
+            {
+                string structName = type.TrimStart('%');
+                if (structTypes.ContainsKey(structName))
+                {
+                    return structTypes[structName].totalSize;
+                }
+                return 4; // fallback
+            }
+            
             if (type.Contains('*') || type == "double") return 8;
             if (type == "i1" || type == "i8") return 1;
             if (type == "i32") return 4;
+            
+            // Arrays
             int total = 1;
             var splits = Regex.Split(type, @"[\[\]x]+");
             foreach (var split in splits)
@@ -80,6 +93,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                     continue;
                 }
                 if (split.Contains('i'))
+                {
+                    total *= GetSize(split.Trim());
+                }
+                else if (split.StartsWith("%"))
                 {
                     total *= GetSize(split.Trim());
                 }

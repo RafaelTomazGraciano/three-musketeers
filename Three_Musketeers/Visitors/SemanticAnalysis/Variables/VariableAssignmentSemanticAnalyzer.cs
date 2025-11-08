@@ -120,13 +120,21 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 }
         
                 if (hasErrors) return null;
-        
+
                 // Determine the element type for the array
                 string elementType = IsStructType(type) ? $"struct_{type}" : type;
+                
+                // ✅ DEBUG AQUI
+                Console.WriteLine($"[DEBUG] Creating ArraySymbol: name={varName}, elementType={elementType}, type={type}");
+   
                 
                 // Create array symbol with pointer level
                 var arraySymbol = new ArraySymbol(varName, elementType, line, dimensions, pointerCount);
                 arraySymbol.isInitializated = true;
+
+                // ✅ DEBUG AQUI TAMBÉM
+                Console.WriteLine($"[DEBUG] ArraySymbol created: arraySymbol.type={arraySymbol.type}");
+    
                 symbolTable.AddSymbol(arraySymbol);
                 
                 // Return type description
@@ -201,19 +209,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
-            if (indexes.Length == 0)
-            {
-                string exprType = visitExpression(context.expr());
-            }
-
-            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
-            {
-                reportError(line, $"Variable '{varName}' is not an array nor Pointer");
-                return null;
-            }
-
-            // Se há índices, verificar se é array ou ponteiro
-            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
+            if (symbol is not ArraySymbol && symbol is not PointerSymbol && indexes.Length > 0)
             {
                 reportError(line, $"Variable '{varName}' is not an array or pointer");
                 return null;
@@ -221,8 +217,28 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             bool hasErrors = false;
 
+            if (indexes.Length == 0)
+            {
+                string exprType = visitExpression(context.expr());
+                if (exprType == null)
+                {
+                    return null;
+                }
+
+                if (!AreTypesCompatible(symbol.type, exprType))
+                {
+                    reportError(line, $"Type mismatch: cannot assign '{exprType}' to '{symbol.type}'");
+                    return null;
+                }
+
+                return symbol.type;
+            }
+
             if (symbol is ArraySymbol arraySymbol)
             {
+                // ✅ DEBUG
+                Console.WriteLine($"[DEBUG] SingleArrayAtt: varName={varName}, arraySymbol.type={arraySymbol.type}, indexes.Length={indexes.Length}, dimensions.Count={arraySymbol.dimensions.Count}");
+    
                 if (indexes.Length > arraySymbol.dimensions.Count)
                 {
                     reportError(line, $"Too many indices for array '{varName}': expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
@@ -245,7 +261,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                         hasErrors = true;
                     }
 
-                    // Validar valor literal se for constante
                     if (indexes[i].expr() is ExprParser.IntLiteralContext intLiteralContext)
                     {
                         int value = int.Parse(intLiteralContext.INT().GetText());
@@ -273,7 +288,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     return null;
                 }
 
-                string elementType = arraySymbol.type;
+                string elementType = arraySymbol.elementType;
+
+                // ✅ DEBUG
+                Console.WriteLine($"[DEBUG] elementType={elementType}, exprType={exprType}");
+    
 
                 if (indexes.Length == arraySymbol.dimensions.Count)
                 {
@@ -291,6 +310,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     reportWarning(line, $"Partial array access on '{varName}'");
                     return $"array_of_{elementType}";
                 }
+            }
+
+            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
+            {
+                reportError(line, $"Variable '{varName}' is not an array nor Pointer");
+                return null;
             }
 
             if (symbol is PointerSymbol pointerSymbol)

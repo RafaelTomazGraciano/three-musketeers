@@ -64,11 +64,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             {
                 // Get pointer to the variable/member and its type
                 var (pointerReg, llvmType, varType) = GetVariablePointer(arg);
-                
+
+                // Debug temporário
+                string argName = arg.ID()?.GetText() ?? "struct_member";
+
                 if (pointerReg == null || llvmType == null || varType == null)
                 {
-                    continue; // Skip invalid arguments
+                    string argText = arg.ID()?.GetText() ?? arg.structGet()?.GetText() ?? "unknown";
+                    Console.WriteLine($"[ERROR] Failed to resolve: {argText}");
+                    throw new Exception($"Failed to resolve scanf argument: {argText}");
                 }
+                
+                Console.WriteLine($"[SCANF-GEN] Arg: {argName}, Reg: {pointerReg}, LLVM: {llvmType}, Type: {varType}");
 
                 // Get format specifier based on the variable type
                 string formatSpec = GetFormatSpecifier(varType);
@@ -83,23 +90,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             string strLabel = nextStringLabel();
             int strLen = formatStr.Length + 1;
 
+            // ✅ Debug do format string gerado
+            Console.WriteLine($"[SCANF-GEN] Format string: '{formatStr}'");
+            Console.WriteLine($"[SCANF-GEN] Args: {string.Join(", ", variablePointers)}");
+
             globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{formatStr}\\00\", align 1");
 
             // Get pointer to format string
             string ptrReg = nextRegister();
             currentBody.AppendLine($"  {ptrReg} = getelementptr inbounds [{strLen} x i8], [{strLen} x i8]* {strLabel}, i32 0, i32 0");
 
-            // Build scanf call
-            var scanfArgs = new StringBuilder();
-            scanfArgs.Append($"i8* {ptrReg}");
-
-            foreach (var varPtr in variablePointers)
-            {
-                scanfArgs.Append($", {varPtr}");
-            }
-
+            // Build scanf call with all arguments
             string resultReg = nextRegister();
-            currentBody.AppendLine($"  {resultReg} = call i32 (i8*, ...) @scanf({scanfArgs})");
+            string allArgs = string.Join(", ", variablePointers);
+            currentBody.AppendLine($"  {resultReg} = call i32 (i8*, ...) @scanf(i8* {ptrReg}, {allArgs})");
 
             return null;
         }
@@ -108,7 +112,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         {
             var currentBody = getCurrentBody();
 
-            // Case 1: Struct/Union member access (e.g., structTest.a, unionTest.ms.b[0])
+            // Struct/Union member access 
             if (context.structGet() != null)
             {
                 var structGetCtx = context.structGet();
@@ -127,7 +131,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 return (memberPtrReg, llvmType, varType);
             }
 
-            // Case 2: Simple variable or array element (e.g., a, array[0][1])
+            // Simple variable or array element 
             string varName = context.ID().GetText();
             Variable? variable = variableResolver.FindVariable(varName);
 
@@ -138,7 +142,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
             var indexes = context.index();
 
-            // Case 2a: Simple variable (no indexes)
+            // Simple variable 
             if (indexes.Length == 0)
             {
                 string llvmType = variable.LLVMType;
@@ -147,7 +151,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 return (variable.register, llvmType, varType);
             }
 
-            // Case 2b: Array element access
+            // Array element access
             if (variable is ArrayVariable arrayVar)
             {
                 string arrayPositions = calculateArrayPosition(indexes);
@@ -160,7 +164,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 return (gepReg, elementType, varType);
             }
 
-            // Case 2c: Pointer indexing
+            // Pointer indexing
             if (variable.LLVMType.Contains('*'))
             {
                 // Load the pointer first
@@ -195,7 +199,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
         private string LLVMTypeToVarType(string llvmType)
         {
-            // Remove array notation if present (e.g., "[5 x i32]" -> "i32")
+            // Remove array notation if present 
             string cleanType = llvmType;
             if (cleanType.Contains('['))
             {
@@ -211,7 +215,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 "i32" => "int",
                 "double" => "double",
                 "i8" => "char",
-                "i1" => "bool",
                 var t when t.StartsWith("%") => t.TrimStart('%'), // struct type
                 _ => "int"
             };

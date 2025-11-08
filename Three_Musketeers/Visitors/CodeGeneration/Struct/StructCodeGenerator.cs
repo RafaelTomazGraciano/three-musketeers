@@ -68,10 +68,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                 members.Add(new HeterogenousMember(decName, llvmType));
             }
             
-            // UnionType calculará automaticamente o maior tipo e tamanho
-            structsTypes[unionName] = new UnionType(LLVMName, members, getSize);
+            // Create the UnionType - it will calculate the largest type automatically
+            var unionType = new UnionType(LLVMName, members, getSize);
+            structsTypes[unionName] = unionType;
             
-            // Unions não precisam de declaração de tipo no LLVM - usamos bitcast diretamente
+            // Declare the union as a struct with a single field of the largest type
+            string largestType = unionType.GetLargestMemberType();
+            structDeclaration.AppendLine($"{LLVMName} = type {{");
+            structDeclaration.AppendLine($"   {largestType}");
+            structDeclaration.AppendLine("}");
+            
             return null;
         }
         

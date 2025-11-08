@@ -242,7 +242,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         private string ConvertToBool(string value)
         {
             string currentType = GetExpressionType(value);
-            
+
             if (currentType == "i1")
             {
                 return value;
@@ -275,18 +275,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             if (!registerTypes.ContainsKey(value))
             {
-                if (value == "1" || value == "true")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else if (value == "0" || value == "false")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else
-                {
-                    registerTypes[value] = "i32";
-                }
+                registerTypes[value] = "i32";
             }
             return registerTypes[value];
         }

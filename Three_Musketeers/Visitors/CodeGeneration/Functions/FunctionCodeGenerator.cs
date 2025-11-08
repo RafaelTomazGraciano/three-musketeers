@@ -385,6 +385,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                         ? registerTypes[returnValue]
                         : getLLVMType(currentFunction.returnType ?? "i32");
 
+                    if (returnType == "i1")
+                    {
+                        string convertedReg = nextRegister();
+                        currentFunctionBody.AppendLine($"  {convertedReg} = zext i1 {returnValue} to i32");
+                        returnValue = convertedReg;
+                        returnType = "i32";
+                    }
+
                     currentFunctionBody.AppendLine($"  ret {returnType} {returnValue}");
                     // Only set flag for unconditional returns (not inside control flow)
                     if (!isInControlFlow)

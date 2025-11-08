@@ -226,9 +226,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
 
         private string? NavigateStructChain(ExprParser.StructContinueContext context, string currentType, int line)
         {
-            string fieldId = context.ID().GetText();
-            var indexes = context.index();
-
             // Clean up type name
             if (currentType.StartsWith("struct_"))
             {
@@ -246,57 +243,50 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                 return null;
             }
 
-            // Check if the field exists
-            if (!currentHetType.HasMember(fieldId))
-            {
-                var availableMembers = string.Join(", ", currentHetType.members.Keys);
-                reportError(line, $"Struct or Union '{currentType}' does not have a member '{fieldId}'. Available members: {availableMembers}");
-                return null;
-            }
-
-            Symbol fieldSymbol = currentHetType.GetMember(fieldId)!;
-            string fieldType = fieldSymbol.type;
-
-            // Handle array indexing on the field
-            if (indexes.Length > 0)
-            {
-                if (fieldSymbol is ArraySymbol arrayField)
-                {
-                    // Verify index count
-                    if (indexes.Length > arrayField.dimensions.Count)
-                    {
-                        reportError(line, $"Too many indices for field '{fieldId}'. Expected {arrayField.dimensions.Count}, got {indexes.Length}");
-                        return null;
-                    }
-                    
-                    // After indexing, type is the inner type
-                    fieldType = arrayField.elementType;
-                }
-                else
-                {
-                    reportError(line, $"Field '{fieldId}' is not an array but is being indexed");
-                    return null;
-                }
-            }
-
-            // Check if there's nested struct access
+            // Check if this structContinue is a nested structGet (recursive case)
             var nestedStructGet = context.structGet();
             if (nestedStructGet != null)
             {
-                var nestedStructContinue = nestedStructGet.structContinue();
-                
-                // Check if structContinue exists before proceeding
-                if (nestedStructContinue == null)
+                // This is a nested access like "ms.a" in "unionTest.ms.a"
+                string memberId = nestedStructGet.ID().GetText();
+                var indexes = nestedStructGet.index();
+
+                // Check if the field exists
+                if (!currentHetType.HasMember(memberId))
                 {
-                    reportError(line, $"Invalid struct/union access syntax");
+                    var availableMembers = string.Join(", ", currentHetType.members.Keys);
+                    reportError(line, $"Struct or Union '{currentType}' does not have a member '{memberId}'. Available members: {availableMembers}");
                     return null;
                 }
-                
-                var nestedIndexes = nestedStructGet.index();
+
+                Symbol fieldSymbol = currentHetType.GetMember(memberId)!;
+                string fieldType = fieldSymbol.type;
+
+                // Handle array indexing on the field
+                if (indexes.Length > 0)
+                {
+                    if (fieldSymbol is ArraySymbol arrayField)
+                    {
+                        // Verify index count
+                        if (indexes.Length > arrayField.dimensions.Count)
+                        {
+                            reportError(line, $"Too many indices for field '{memberId}'. Expected {arrayField.dimensions.Count}, got {indexes.Length}");
+                            return null;
+                        }
+                        
+                        // After indexing, type is the inner type
+                        fieldType = arrayField.elementType;
+                    }
+                    else
+                    {
+                        reportError(line, $"Field '{memberId}' is not an array but is being indexed");
+                        return null;
+                    }
+                }
+
+                // Check for arrow operator
                 bool isArrowOp = false;
-                
-                // Safely check for arrow operator
-                int childIndex = nestedIndexes.Length + 1;
+                int childIndex = indexes.Length + 1;
                 if (nestedStructGet.ChildCount > childIndex)
                 {
                     var child = nestedStructGet.GetChild(childIndex);
@@ -312,12 +302,20 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     }
                     else
                     {
-                        reportError(line, $"Arrow operator '->' used on non-pointer field '{fieldId}'");
+                        reportError(line, $"Arrow operator '->' used on non-pointer field '{memberId}'");
                         return null;
                     }
                 }
 
-                // Clean up field type prefix
+                // Get the nested structContinue
+                var nestedStructContinue = nestedStructGet.structContinue();
+                if (nestedStructContinue == null)
+                {
+                    reportError(line, $"Invalid struct/union access syntax");
+                    return null;
+                }
+
+                // Clean up field type prefix before recursion
                 if (fieldType.StartsWith("struct_"))
                 {
                     fieldType = fieldType.Substring(7);
@@ -327,16 +325,58 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     fieldType = fieldType.Substring(6);
                 }
 
+                // Check if the field type is a struct/union for nested access
                 if (!heterogenousInfo.ContainsKey(fieldType))
                 {
-                    reportError(line, $"Field '{fieldId}' is not a struct or union type. Cannot access nested members.");
+                    reportError(line, $"Field '{memberId}' is not a struct or union type. Cannot access nested members.");
                     return null;
                 }
 
+                // Recursive call with the nested struct continue
                 return NavigateStructChain(nestedStructContinue, fieldType, line);
             }
+            else
+            {
+                // This is a terminal ID (simple field access like "a" or "b[1]")
+                string fieldId = context.ID().GetText();
+                var indexes = context.index();
 
-            return fieldType;
+                // Check if the field exists
+                if (!currentHetType.HasMember(fieldId))
+                {
+                    var availableMembers = string.Join(", ", currentHetType.members.Keys);
+                    reportError(line, $"Struct or Union '{currentType}' does not have a member '{fieldId}'. Available members: {availableMembers}");
+                    return null;
+                }
+
+                Symbol fieldSymbol = currentHetType.GetMember(fieldId)!;
+                string fieldType = fieldSymbol.type;
+
+                // Handle array indexing on the field
+                if (indexes.Length > 0)
+                {
+                    if (fieldSymbol is ArraySymbol arrayField)
+                    {
+                        // Verify index count
+                        if (indexes.Length > arrayField.dimensions.Count)
+                        {
+                            reportError(line, $"Too many indices for field '{fieldId}'. Expected {arrayField.dimensions.Count}, got {indexes.Length}");
+                            return null;
+                        }
+                        
+                        // After indexing, type is the inner type
+                        fieldType = arrayField.elementType;
+                    }
+                    else
+                    {
+                        reportError(line, $"Field '{fieldId}' is not an array but is being indexed");
+                        return null;
+                    }
+                }
+
+                // Terminal case - return the final field type
+                return fieldType;
+            }
         }
     }
 }

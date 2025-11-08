@@ -20,7 +20,9 @@ int main() {
     myStruct structTest;
     myUnion unionTest;
 
-    scanf(a, b, c, d, array[0][1], structTest.a, structTest.b[1], unionTest.e, unionTest.ms.a, unionTest.ms.b[0]);
+    scanf(a, b, c, d);
+    scanf(array[0][1], structTest.a, structTest.b[1]);  
+    scanf(unionTest.e); 
 
     printf("int: %d\n", a);
     printf("double: %f\n", b);
@@ -30,9 +32,13 @@ int main() {
     printf("array: %d\n", array[0][1]);
 
     printf("struct: a = %d\n", structTest.a);
-    printf("struct: b = %d \n", structTest.b[1]);
+    printf("struct: b = %d\n", structTest.b[1]);
 
     printf("union: e = %d\n", unionTest.e);
+
+    scanf(unionTest.ms.a);
+    scanf(unionTest.ms.b[0]);
+
     printf("union: ms.a = %d\n", unionTest.ms.a);
     printf("union: ms.b[0] = %d\n", unionTest.ms.b[0]);
 
