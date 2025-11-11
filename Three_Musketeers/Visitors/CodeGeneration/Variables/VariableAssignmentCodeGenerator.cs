@@ -76,9 +76,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                         else
                         {
                             // Other types: store value directly
-                            string valueType = registerTypes[initValue];
-                            declarations.AppendLine($"{globalReg} = global {valueType} {initValue}, align {GetAlignment(valueType)}");
-                            variables[varName] = new Variable(varName, varType, valueType, globalReg);
+                            string valType = registerTypes[initValue];
+                            declarations.AppendLine($"{globalReg} = global {valType} {initValue}, align {GetAlignment(valType)}");
+                            variables[varName] = new Variable(varName, varType, valType, globalReg);
                         }
                     }
                     else
@@ -134,6 +134,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
 
             string value = visitExpression(context.expr());
+            
+            // Check if we need to convert i1 to i32 (for bool variables)
+            string valueType = registerTypes.ContainsKey(value) ? registerTypes[value] : llvmType;
+
+            if (llvmType == "i32" && valueType == "i1")
+            {
+                // Convert i1 to i32 for bool variables
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = zext i1 {value} to i32");
+                registerTypes[convertedReg] = "i32";
+                value = convertedReg;
+                valueType = "i32";
+            }
+
             getCurrentBody().AppendLine($"  store {llvmType} {value}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
             return null;
         }
@@ -434,7 +448,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                     string loadedPointer;
                     if (variable.isDirectPointerParam)
                     {
-                        loadedPointer = variable.register;  // Usar diretamente
+                        loadedPointer = variable.register; 
                     }
                     else
                     {
@@ -480,8 +494,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             // Store the value
             string valueType = registerTypes.ContainsKey(exprValue) ? registerTypes[exprValue] : targetType;
-            currentBody.AppendLine($"  store {valueType} {exprValue}, {targetType}* {targetRegister}, align {GetAlignment(targetType)}");
+            
+            // Convert i1 to i32 if needed (for bool variables/arrays)
+            if (targetType == "i32" && valueType == "i1")
+            {
+                string convertedReg = nextRegister();
+                currentBody.AppendLine($"  {convertedReg} = zext i1 {exprValue} to i32");
+                registerTypes[convertedReg] = "i32";
+                exprValue = convertedReg;
+                valueType = "i32";
+            }
 
+            currentBody.AppendLine($"  store {valueType} {exprValue}, {targetType}* {targetRegister}, align {GetAlignment(targetType)}");
             return null;
         }
 

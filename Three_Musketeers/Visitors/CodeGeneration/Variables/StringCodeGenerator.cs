@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using System.Collections.Generic;
 using System.Text;
 using Three_Musketeers.Grammar;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 {
@@ -25,25 +26,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         {
             string rawString = context.STRING_LITERAL().GetText();
             string content = rawString.Substring(1, rawString.Length - 2);
-            content = ProcessEscapeSequences(content);
+            
+            var (processedString, byteCount) = EscapeSequenceProcessor.Process(content);
             
             string strLabel = nextStringLabel();
-            int strLen = content.Length + 1;
+            int strLen = byteCount + 1; // +1 for null terminator
             
-            globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{content}\\00\", align 1");
+            globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{processedString}\\00\", align 1");
             
             registerTypes[strLabel] = "i8*";
             
             return strLabel;
-        }
-
-        private string ProcessEscapeSequences(string str)
-        {
-            return str.Replace("\\n", "\\0A")
-                      .Replace("\\t", "\\09")
-                      .Replace("\\r", "\\0D")
-                      .Replace("\\\"", "\\22")
-                      .Replace("\\\\", "\\5C");
         }
     }
 }

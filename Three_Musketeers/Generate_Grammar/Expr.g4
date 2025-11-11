@@ -122,11 +122,6 @@ expr:
 	| '--' ID index+						# PrefixDecrementArray
 	| ID index+ '++'						# PostfixIncrementArray
 	| ID index+ '--'						# PostfixDecrementArray
-	| expr ('+' | '-') expr					# AddSub
-	| expr ('*' | '/' | '%') expr			# MulDivMod
-	| expr ('&&' | '||') expr				# LogicalAndOr
-	| expr ('==' | '!=') expr				# Equality
-	| expr ('>' | '<' | '>=' | '<=') expr	# Comparison
 	| '(' expr ')'							# Parens
 	| '!' expr								# LogicalNot
 	| '-' expr								# UnaryMinus
@@ -145,7 +140,13 @@ expr:
 	| STRING_LITERAL						# StringLiteral
 	| CHAR_LITERAL							# CharLiteral
 	| TRUE									# TrueLiteral
-	| FALSE									# FalseLiteral;
+	| FALSE									# FalseLiteral
+	| expr ('*' | '/' | '%') expr			# MulDivMod
+	| expr ('+' | '-') expr					# AddSub
+	| expr ('>' | '<' | '>=' | '<=') expr	# Comparison
+	| expr ('==' | '!=') expr				# Equality
+	| expr ('&&' | '||') expr				# LogicalAndOr
+	;
 
 structGet:
 	ID index* '.' structContinue

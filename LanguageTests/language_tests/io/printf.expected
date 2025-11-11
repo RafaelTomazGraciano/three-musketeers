@@ -2,4 +2,12 @@ int x = 10
 double y = 5.5
 bool z = 1
 char c = a
-Resultado: fim
+string msg = Hello World
+x + y = 15.5
+x * 2 = 20
+y / 2.0 = 2.75
+x + y * 2 = 21.0
+(x + y) * 2 = 31.0
+x + y * 0.5 - 1 = 11.75
+x * 2 + y / 2 = 22.75
+(x + 5) * (y - 2) = 52.50

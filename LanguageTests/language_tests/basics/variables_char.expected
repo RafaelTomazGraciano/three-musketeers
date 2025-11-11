@@ -1,0 +1,7 @@
+a = A
+b = z
+newline test:
+after newline
+tab test:	between tabs
+a after assignment = X
+digit char = 5

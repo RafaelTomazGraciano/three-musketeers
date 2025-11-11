@@ -33,8 +33,9 @@ class TestRunner
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"[FAIL] {testFile}");
-                    Console.ResetColor();
+                    Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine("Expected:\n" + expectedOutput);
+                    Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine("Got:\n" + actualOutput);
                     failed++;
                 }

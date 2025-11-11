@@ -1,0 +1,26 @@
+#include <stdio.tm>
+
+int main(){
+    int a = 10;
+    int b = 5;
+    int c = 2;
+    
+    // Test operator precedence
+    printf("a + b * c = %d\n", a + b * c);        // 10 + (5 * 2) = 20
+    printf("(a + b) * c = %d\n", (a + b) * c);    // (10 + 5) * 2 = 30
+    printf("a * b + c = %d\n", a * b + c);        // (10 * 5) + 2 = 52
+    printf("a * (b + c) = %d\n", a * (b + c));    // 10 * (5 + 2) = 70
+    
+    // Division and subtraction
+    printf("a - b / c = %d\n", a - b / c);        // 10 - (5 / 2) = 10 - 2 = 8
+    printf("(a - b) / c = %d\n", (a - b) / c);    // (10 - 5) / 2 = 5 / 2 = 2
+    
+    // Multiple operations
+    printf("a + b * c - b / c = %d\n", a + b * c - b / c);  // 10 + 10 - 2 = 18
+    
+    // Modulo
+    printf("a %% b + c = %d\n", a % b + c);       // (10 % 5) + 2 = 0 + 2 = 2
+    printf("a %% (b + c) = %d\n", a % (b + c));   // 10 % (5 + 2) = 10 % 7 = 3
+    
+    return 0;
+}

@@ -32,7 +32,7 @@ namespace Three_Musketeers.Utils
                             i++;
                             break;
                         case '\\':
-                            result.Append("\\\\"); //backslash
+                            result.Append("\\5C"); //backslash
                             byteCount++;
                             i++;
                             break;

@@ -5,13 +5,32 @@ int main(){
     double y = 5.5;
     bool z = true;
     char c = 'a';
-    string msg = "fim";
+    string msg = "Hello World";
 
+    // Basic types
     printf("int x = %d\n", x);
     printf("double y = %.1f\n", y);
     printf("bool z = %d\n", z);
     printf("char c = %c\n", c);
-    printf("Resultado: %s", msg);
+    printf("string msg = %s\n", msg);
+
+    // Arithmetic operations with precedence
+    printf("x + y = %.1f\n", x + y);
+    printf("x * 2 = %d\n", x * 2);
+    printf("y / 2.0 = %.2f\n", y / 2.0);
+    
+    // Test precedence: multiplication before addition
+    printf("x + y * 2 = %.1f\n", x + y * 2);
+    printf("(x + y) * 2 = %.1f\n", (x + y) * 2);
+    
+    // Complex expression
+    printf("x + y * 0.5 - 1 = %.2f\n", x + y * 0.5 - 1);
+    
+    // Multiple operations
+    printf("x * 2 + y / 2 = %.2f\n", x * 2 + y / 2);
+    
+    // With parentheses
+    printf("(x + 5) * (y - 2) = %.2f\n", (x + 5) * (y - 2));
 
     return 0;
 }
