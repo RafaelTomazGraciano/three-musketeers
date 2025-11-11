@@ -104,6 +104,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             // Handle array declarations
             if (indexes.Length > 0)
             {
+                if (type == "string")
+                {
+                    reportError(line, "Cannot declare arrays of type 'string'");
+                    return null;
+                }
+       
                 List<int> dimensions = new List<int>();
                 bool hasErrors = false;
                 
@@ -124,16 +130,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 // Determine the element type for the array
                 string elementType = IsStructType(type) ? $"struct_{type}" : type;
                 
-                // ✅ DEBUG AQUI
-                Console.WriteLine($"[DEBUG] Creating ArraySymbol: name={varName}, elementType={elementType}, type={type}");
-   
-                
                 // Create array symbol with pointer level
                 var arraySymbol = new ArraySymbol(varName, elementType, line, dimensions, pointerCount);
                 arraySymbol.isInitializated = true;
-
-                // ✅ DEBUG AQUI TAMBÉM
-                Console.WriteLine($"[DEBUG] ArraySymbol created: arraySymbol.type={arraySymbol.type}");
     
                 symbolTable.AddSymbol(arraySymbol);
                 
@@ -193,6 +192,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
+            // Arrays used as expressions decay to pointers
+            if (symbol is ArraySymbol)
+            {
+                return "pointer";
+            }
+
             return symbol.type;
         }
 
@@ -236,9 +241,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
             if (symbol is ArraySymbol arraySymbol)
             {
-                // ✅ DEBUG
-                Console.WriteLine($"[DEBUG] SingleArrayAtt: varName={varName}, arraySymbol.type={arraySymbol.type}, indexes.Length={indexes.Length}, dimensions.Count={arraySymbol.dimensions.Count}");
-    
                 if (indexes.Length > arraySymbol.dimensions.Count)
                 {
                     reportError(line, $"Too many indices for array '{varName}': expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
@@ -289,9 +291,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 }
 
                 string elementType = arraySymbol.elementType;
-
-                // ✅ DEBUG
-                Console.WriteLine($"[DEBUG] elementType={elementType}, exprType={exprType}");
     
 
                 if (indexes.Length == arraySymbol.dimensions.Count)

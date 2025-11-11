@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Utils;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 {
@@ -10,15 +11,18 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
         private readonly SymbolTable symbolTable;
         private readonly Action<int, string> reportError;
         private readonly LibraryDependencyTracker libraryTracker;
+        private readonly StructSemanticAnalyzer structSemanticAnalyzer;
 
         public PutsSemanticAnalyzer(
             Action<int, string> reportError,
             SymbolTable symbolTable,
-            LibraryDependencyTracker libraryTracker)
+            LibraryDependencyTracker libraryTracker,
+            StructSemanticAnalyzer structSemanticAnalyzer)
         {
             this.reportError = reportError;
             this.symbolTable = symbolTable;
             this.libraryTracker = libraryTracker;
+            this.structSemanticAnalyzer = structSemanticAnalyzer;
         }
 
         public string? VisitPutsStatement([NotNull] ExprParser.PutsStatementContext context)
@@ -29,6 +33,20 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
             }
     
             int line = context.Start.Line;
+
+            // puts(STRING_LITERAL)
+            if (context.STRING_LITERAL() != null)
+            {
+                // String literals are always valid
+                return null;
+            }
+
+            // puts(structGet)
+            if (context.structGet() != null)
+            {
+                ValidateStructGetAccess(context.structGet(), line);
+                return null;
+            }
 
             // puts(ID) or puts(ID[index])
             if (context.ID() != null)
@@ -61,13 +79,50 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
                 return null;
             }
 
-            // STRING_LITERAL
-            if (context.STRING_LITERAL() != null)
+            return null;
+        }
+
+        private void ValidateStructGetAccess(ExprParser.StructGetContext structGetCtx, int line)
+        {
+            string varName = structGetCtx.ID().GetText();
+            
+            Symbol? symbol = symbolTable.GetSymbol(varName);
+            if (symbol == null)
             {
-                // string are always valid
+                reportError(line, $"Variable '{varName}' not declared before use in puts()");
+                return;
             }
 
-            return null;
+            if (!symbol.isInitializated)
+            {
+                reportError(line, $"Variable '{varName}' may not have been initialized before use in puts()");
+            }
+
+            // Use the struct analyzer to validate and get the final member type
+            string? finalType = structSemanticAnalyzer.VisitStructGet(structGetCtx);
+            
+            if (finalType == null)
+            {
+                // Error already reported by StructSemanticAnalyzer
+                return;
+            }
+
+            // Clean up type name if it has "struct_" or "union_" prefix
+            if (finalType.StartsWith("struct_"))
+            {
+                finalType = finalType.Substring(7);
+            }
+            else if (finalType.StartsWith("union_"))
+            {
+                finalType = finalType.Substring(6);
+            }
+
+            // Validate that the final type is string or char
+            if (finalType != "string")
+            {
+                reportError(line, 
+                    $"puts() can only print string members from structs/unions, but member is '{finalType}'. Use individual character access for char arrays.");
+            }
         }
 
         private void ValidateArrayElementAccess(Symbol symbol, string varName, int line)
@@ -94,13 +149,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
                 if (arraySymbol.elementType == "char")
                 {
                     // char array can be printed as a whole (it's a string)
-                    return;
-                }
-                else if (arraySymbol.elementType == "string")
-                {
-                    // string array without index - not allowed
-                    reportError(line,
-                        $"Cannot print entire string array '{varName}', use index access: puts({varName}[index])");
                     return;
                 }
                 else

@@ -63,9 +63,9 @@ scanfStatement: 'scanf' '(' scanfArg (',' scanfArg)* ')' EOL;
 
 scanfArg: ID index* | structGet;
 
-getsStatement: 'gets' '(' ID ')' EOL;
+getsStatement: 'gets' '(' (ID | structGet) ')' EOL;
 
-putsStatement: 'puts' '(' (ID index? | STRING_LITERAL) ')' EOL;
+putsStatement: 'puts' '(' (ID index? | STRING_LITERAL | structGet) ')' EOL;
 
 att
     : (type POINTER*)? ID '=' expr					# GenericAtt
@@ -122,11 +122,11 @@ expr:
 	| '--' ID index+						# PrefixDecrementArray
 	| ID index+ '++'						# PostfixIncrementArray
 	| ID index+ '--'						# PostfixDecrementArray
+	| expr ('+' | '-') expr					# AddSub
+	| expr ('*' | '/' | '%') expr			# MulDivMod
 	| expr ('&&' | '||') expr				# LogicalAndOr
 	| expr ('==' | '!=') expr				# Equality
 	| expr ('>' | '<' | '>=' | '<=') expr	# Comparison
-	| expr ('*' | '/' | '%') expr			# MulDivMod
-	| expr ('+' | '-') expr					# AddSub
 	| '(' expr ')'							# Parens
 	| '!' expr								# LogicalNot
 	| '-' expr								# UnaryMinus

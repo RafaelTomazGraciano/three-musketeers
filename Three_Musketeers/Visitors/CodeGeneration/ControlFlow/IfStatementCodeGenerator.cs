@@ -167,7 +167,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         private string ConvertToBool(string value)
         {
             string currentType = GetExpressionType(value);
-            
+
             if (currentType == "i1")
             {
                 return value;

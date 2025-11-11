@@ -65,17 +65,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 // Get pointer to the variable/member and its type
                 var (pointerReg, llvmType, varType) = GetVariablePointer(arg);
 
-                // Debug temporário
                 string argName = arg.ID()?.GetText() ?? "struct_member";
 
                 if (pointerReg == null || llvmType == null || varType == null)
                 {
                     string argText = arg.ID()?.GetText() ?? arg.structGet()?.GetText() ?? "unknown";
-                    Console.WriteLine($"[ERROR] Failed to resolve: {argText}");
                     throw new Exception($"Failed to resolve scanf argument: {argText}");
                 }
-                
-                Console.WriteLine($"[SCANF-GEN] Arg: {argName}, Reg: {pointerReg}, LLVM: {llvmType}, Type: {varType}");
 
                 // Get format specifier based on the variable type
                 string formatSpec = GetFormatSpecifier(varType);
@@ -89,10 +85,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             string formatStr = string.Join(" ", formatSpecifiers);
             string strLabel = nextStringLabel();
             int strLen = formatStr.Length + 1;
-
-            // ✅ Debug do format string gerado
-            Console.WriteLine($"[SCANF-GEN] Format string: '{formatStr}'");
-            Console.WriteLine($"[SCANF-GEN] Args: {string.Join(", ", variablePointers)}");
 
             globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{formatStr}\\00\", align 1");
 

@@ -9,35 +9,49 @@ class TestRunner
         string testsDir = "language_tests";
         var testFiles = Directory.GetFiles(testsDir, "*.3m", SearchOption.AllDirectories);
         int passed = 0, failed = 0;
+        string testingFile = "";
 
-        foreach (var testFile in testFiles)
+        try
         {
-            string expectedFile = Path.ChangeExtension(testFile, ".expected");
-            string inputFile = Path.ChangeExtension(testFile, ".input");
-            string expectedOutput = File.Exists(expectedFile) ? File.ReadAllText(expectedFile).Trim() : "";
-            string inputData = File.Exists(inputFile) ? File.ReadAllText(inputFile) : "";
-
-            string actualOutput = RunCompiler(testFile, inputData).Trim();
-
-            if (actualOutput == expectedOutput)
+            foreach (var testFile in testFiles)
             {
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine($"[PASS] {testFile}");
-                passed++;
-            }
-            else
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine($"[FAIL] {testFile}");
-                Console.ResetColor();
-                Console.WriteLine("Expected:\n" + expectedOutput);
-                Console.WriteLine("Got:\n" + actualOutput);
-                failed++;
+                testingFile = testFile;
+                string expectedFile = Path.ChangeExtension(testFile, ".expected");
+                string inputFile = Path.ChangeExtension(testFile, ".input");
+                string expectedOutput = File.Exists(expectedFile) ? File.ReadAllText(expectedFile).Trim() : "";
+                string inputData = File.Exists(inputFile) ? File.ReadAllText(inputFile) : "";
+
+                string actualOutput = RunCompiler(testFile, inputData).Trim();
+
+                if (actualOutput == expectedOutput)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"[PASS] {testFile}");
+                    passed++;
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"[FAIL] {testFile}");
+                    Console.ResetColor();
+                    Console.WriteLine("Expected:\n" + expectedOutput);
+                    Console.WriteLine("Got:\n" + actualOutput);
+                    failed++;
+                }
+
             }
         }
-
-        Console.ResetColor();
-        Console.WriteLine($"\nTotal: {passed + failed}, Passed: {passed}, Failed: {failed}");
+        catch (Exception e)
+        {
+            Console.WriteLine($"[FAIL] {testingFile}");
+            Console.WriteLine(e.Message);
+            failed++;
+        }
+        finally
+        {
+            Console.WriteLine($"\nTotal: {passed + failed}, Passed: {passed}, Failed: {failed}");
+            Console.ResetColor();
+        }
     }
 
     static string RunCompiler(string file, string input)
@@ -57,20 +71,12 @@ class TestRunner
         string compilerOutput = compile.StandardOutput.ReadToEnd();
         string compilerError = compile.StandardError.ReadToEnd();
         compile.WaitForExit();
-
-        if (!string.IsNullOrEmpty(compilerError))
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(compilerError);
-            Console.ResetColor();
-        }
         
         // check if compilation succeeded
         if (compile.ExitCode != 0)
         {
-            Console.WriteLine("Compiler output: " + compilerOutput);
-            Console.WriteLine("Compiler error: " + compilerError);
-            throw new Exception($"Compilation failed with exit code {compile.ExitCode}");
+            Console.ForegroundColor = ConsoleColor.Red;
+            throw new Exception($"Compiler output: {compilerOutput}");
         }
         
         // path to binary

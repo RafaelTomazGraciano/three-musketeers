@@ -53,36 +53,130 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
                 for (int i = 0; i < providedArgs.Length; i++)
                 {
                     visitExpression(providedArgs[i]);
-                    string? argType = getExpressionType(providedArgs[i]);
+
                     var (expectedType, expectedName, expectedPointerLevel) = functionInfo.parameters[i];
 
-                    // Determine pointer level of provided argument
+                    // Determine pointer level and base type of provided argument
                     int argPointerLevel = GetArgumentPointerLevel(providedArgs[i]);
+                    string? argBaseType = GetArgumentBaseType(providedArgs[i]);
 
                     // Validate pointer level first
                     if (argPointerLevel != expectedPointerLevel)
                     {
-                        string expectedTypeStr = $"{expectedType}{new string('*', expectedPointerLevel)}";
+                        string expectedTypeStr = expectedPointerLevel > 0
+                            ? $"{expectedType}{new string('*', expectedPointerLevel)}"
+                            : expectedType;
                         string gotTypeStr = argPointerLevel > 0
-                            ? $"{argType}{new string('*', argPointerLevel)}"
-                            : argType ?? "unknown";
+                            ? $"{argBaseType ?? "unknown"}{new string('*', argPointerLevel)}"
+                            : argBaseType ?? "unknown";
 
                         reportError(line, $"Argument {i + 1} of function '{functionName}': expected '{expectedTypeStr}', but got '{gotTypeStr}'");
                         continue;
                     }
 
-                    if (argType != expectedType && argType != null)
+                    // Validate base type
+                    if (argBaseType != expectedType && argBaseType != null)
                     {
-                        reportError(line, $"Argument {i + 1} of function '{functionName}': expected base type '{expectedType}', but got '{argType}'");
+                        string expectedTypeStr = expectedPointerLevel > 0
+                            ? $"{expectedType}{new string('*', expectedPointerLevel)}"
+                            : expectedType;
+                        string gotTypeStr = argPointerLevel > 0
+                            ? $"{argBaseType}{new string('*', argPointerLevel)}"
+                            : argBaseType;
+
+                        reportError(line, $"Argument {i + 1} of function '{functionName}': expected '{expectedTypeStr}', but got '{gotTypeStr}'");
                     }
                 }
             }
             return functionInfo.GetFullReturnType();
         }
 
+        private string? GetArgumentBaseType(ExprParser.ExprContext expr)
+        {
+            // Variable: get its base type
+            if (expr is ExprParser.VarContext varCtx)
+            {
+                string varName = varCtx.ID().GetText();
+                Symbol? symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol is PointerSymbol pointerSymbol)
+                {
+                    return pointerSymbol.pointeeType;
+                }
+
+                if (symbol is ArraySymbol arraySymbol)
+                {
+                    return arraySymbol.elementType;
+                }
+
+                return symbol?.type;
+            }
+
+            // Address-of operator: get type of inner expression
+            if (expr is ExprParser.ExprAddressContext addressCtx)
+            {
+                if (addressCtx.expr() is ExprParser.VarArrayContext arrayAccess)
+                {
+                    string varName = arrayAccess.ID().GetText();
+                    Symbol? symbol = symbolTable.GetSymbol(varName);
+
+                    if (symbol is ArraySymbol arraySymbol)
+                    {
+                        return arraySymbol.elementType;
+                    }
+                }
+
+                return GetArgumentBaseType(addressCtx.expr());
+            }
+
+            // Dereference operator: get type of what's pointed to
+            if (expr is ExprParser.DerrefExprContext derrefCtx)
+            {
+                var derrefNode = derrefCtx.derref();
+                if (derrefNode?.expr() != null)
+                {
+                    return GetArgumentBaseType(derrefNode.expr());
+                }
+                return null;
+            }
+
+            // Array access: get element type
+            if (expr is ExprParser.VarArrayContext varArrayCtx)
+            {
+                string varName = varArrayCtx.ID().GetText();
+                Symbol? symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol is ArraySymbol arraySymbol)
+                {
+                    return arraySymbol.elementType;
+                }
+
+                if (symbol is PointerSymbol pointerSymbol)
+                {
+                    return pointerSymbol.pointeeType;
+                }
+
+                return symbol?.type;
+            }
+
+            // Function call: check return type
+            if (expr is ExprParser.FunctionCallContext funcCallCtx)
+            {
+                string funcName = funcCallCtx.ID().GetText();
+                if (declaredFunctions.ContainsKey(funcName))
+                {
+                    return declaredFunctions[funcName].returnType;
+                }
+                return null;
+            }
+
+            // Literal or expression: use getExpressionType
+            return getExpressionType(expr);
+        }
+
         private int GetArgumentPointerLevel(ExprParser.ExprContext expr)
         {
-            // Variable: check if it's a pointer
+            // Variable: check if it's a pointer or array
             if (expr is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
@@ -93,12 +187,32 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
                     return pointerSymbol.pointerLevel;
                 }
 
+                // Arrays decay to pointers when passed to functions
+                if (symbol is ArraySymbol arraySymbol)
+                {
+                    // Array passed to function = pointer to first element
+                    return arraySymbol.pointerLevel > 0 ? arraySymbol.pointerLevel : 1;
+                }
+
                 return 0; // Not a pointer
             }
 
             // Address-of operator: increases pointer level by 1
             if (expr is ExprParser.ExprAddressContext addressCtx)
             {
+                // Special case: &arr[i] where arr is an array
+                if (addressCtx.expr() is ExprParser.VarArrayContext arrayAccess)
+                {
+                    string varName = arrayAccess.ID().GetText();
+                    Symbol? symbol = symbolTable.GetSymbol(varName);
+
+                    if (symbol is ArraySymbol)
+                    {
+                        // &arr[i] gives pointer to element
+                        return 1;
+                    }
+                }
+
                 int innerLevel = GetArgumentPointerLevel(addressCtx.expr());
                 return innerLevel + 1;
             }
@@ -106,22 +220,28 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
             // Dereference operator: decreases pointer level by 1
             if (expr is ExprParser.DerrefExprContext derrefCtx)
             {
-                // Extract the inner expression from derref
                 var derrefNode = derrefCtx.derref();
                 if (derrefNode?.expr() != null)
                 {
                     int innerLevel = GetArgumentPointerLevel(derrefNode.expr());
-                    return Math.Max(0, innerLevel - 1); // Can't go below 0
+                    return Math.Max(0, innerLevel - 1);
                 }
                 return 0;
             }
 
-            // Array access: if it's a pointer array, reduces level
+            // Array access: arr[i] where arr is array or pointer
             if (expr is ExprParser.VarArrayContext varArrayCtx)
             {
                 string varName = varArrayCtx.ID().GetText();
                 Symbol? symbol = symbolTable.GetSymbol(varName);
 
+                // Array element access returns the element, not a pointer
+                if (symbol is ArraySymbol)
+                {
+                    return 0; // arr[i] is not a pointer, it's an element
+                }
+
+                // Pointer array access: ptr[i]
                 if (symbol is PointerSymbol pointerSymbol)
                 {
                     return Math.Max(0, pointerSymbol.pointerLevel - 1);

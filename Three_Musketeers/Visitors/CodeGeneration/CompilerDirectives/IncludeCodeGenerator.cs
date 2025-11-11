@@ -77,6 +77,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives
                 declarations.AppendLine("declare i8* @gets(i8*)");
             }
 
+            // for gets/fgets
+            if (!declarations.ToString().Contains("declare i8* @fgets"))
+            {
+                declarations.AppendLine("%struct._IO_FILE = type opaque");
+                declarations.AppendLine("@stdin = external global %struct._IO_FILE*");
+                declarations.AppendLine("declare i8* @fgets(i8*, i32, %struct._IO_FILE*)");
+            }
+
             // puts declaration
             if (!declarations.ToString().Contains("declare i32 @puts"))
             {

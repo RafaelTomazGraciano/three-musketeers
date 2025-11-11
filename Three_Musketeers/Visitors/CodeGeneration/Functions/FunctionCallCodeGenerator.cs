@@ -71,8 +71,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                         return null;
                     }
 
-                    string argType = registerTypes.ContainsKey(argReg) 
-                        ? registerTypes[argReg] 
+                    string argType = registerTypes.ContainsKey(argReg)
+                        ? registerTypes[argReg]
                         : "i32";
 
                     argRegisters.Add(argReg);

@@ -1,0 +1,31 @@
+#include <stdio.tm>
+
+struct myStruct {
+    string str,
+    string anotherStr
+};
+
+union myUnion {
+    string str,
+    myStruct ms
+};
+
+int main() {
+    string str = "tests";
+
+    myStruct structTest;
+    structTest.str = "testing";
+    structTest.anotherStr = "puts works";
+
+    myUnion unionTest;
+    unionTest.str = "union string";
+
+    puts("puts");
+    puts(str);
+    puts(structTest.str);
+    puts(structTest.anotherStr);
+    puts(unionTest.ms.str);
+    puts(unionTest.str);
+
+    return 0;
+}

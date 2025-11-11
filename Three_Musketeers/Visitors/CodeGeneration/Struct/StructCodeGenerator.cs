@@ -110,7 +110,22 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             string expr = visit(context.expr());
             string exprType = registerTypes[expr];
 
-            currentBody.AppendLine($"   store {exprType} {expr}, {registerType}* {register}");
+            // Check if we're assigning a string (i8*) to a char array ([256 x i8])
+            if (registerType == "[256 x i8]" && exprType == "i8*")
+            {
+                // Need to use strcpy instead of store
+                string destPtr = nextRegister();
+                currentBody.AppendLine($"   {destPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {register}, i32 0, i32 0");
+                
+                string strcpyResult = nextRegister();
+                currentBody.AppendLine($"   {strcpyResult} = call i8* @strcpy(i8* {destPtr}, i8* {expr})");
+            }
+            else
+            {
+                // Regular store for other types
+                currentBody.AppendLine($"   store {exprType} {expr}, {registerType}* {register}");
+            }
+            
             return null;
         }
 
@@ -312,6 +327,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             string register = VisitStructGet(structGetContext);
             string registerType = registerTypes[register];
             var currentBody = getCurrentBody();
+
+            if (registerType == "[256 x i8]")
+            {
+                string ptrReg = nextRegister();
+                currentBody.AppendLine($"   {ptrReg} = getelementptr inbounds [256 x i8], [256 x i8]* {register}, i32 0, i32 0");
+                registerTypes[ptrReg] = "i8*";
+                return ptrReg;
+            }
+
             string loadReg = nextRegister();
             currentBody.AppendLine($"   {loadReg} = load {registerType}, {registerType}* {register}");
             registerTypes[loadReg] = registerType;

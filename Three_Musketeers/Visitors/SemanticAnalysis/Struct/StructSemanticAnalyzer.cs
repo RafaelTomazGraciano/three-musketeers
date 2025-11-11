@@ -107,6 +107,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
 
             if (indexes.Length > 0)
             {
+                if (type == "string")
+                {
+                    reportError(line, "Cannot declare arrays of type 'string'");
+                    return null;
+                }
+                
                 List<int> dimensions = [];
                 foreach (var index in indexes)
                 {
@@ -221,7 +227,21 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             }
 
             // Navigate through the struct chain and return the final field type
-            return NavigateStructChain(context.structContinue(), currentType, line);
+            string? finalType = NavigateStructChain(context.structContinue(), currentType, line);
+
+            if (finalType != null)
+            {
+                if (finalType.StartsWith("struct_"))
+                {
+                    finalType = finalType.Substring(7);
+                }
+                else if (finalType.StartsWith("union_"))
+                {
+                    finalType = finalType.Substring(6);
+                }
+            }
+            
+            return finalType;
         }
 
         private string? NavigateStructChain(ExprParser.StructContinueContext context, string currentType, int line)
@@ -243,11 +263,10 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                 return null;
             }
 
-            // Check if this structContinue is a nested structGet (recursive case)
+            // Check if this structContinue is a nested structGet 
             var nestedStructGet = context.structGet();
             if (nestedStructGet != null)
             {
-                // This is a nested access like "ms.a" in "unionTest.ms.a"
                 string memberId = nestedStructGet.ID().GetText();
                 var indexes = nestedStructGet.index();
 
@@ -337,7 +356,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             }
             else
             {
-                // This is a terminal ID (simple field access like "a" or "b[1]")
+                // This is a terminal ID 
                 string fieldId = context.ID().GetText();
                 var indexes = context.index();
 

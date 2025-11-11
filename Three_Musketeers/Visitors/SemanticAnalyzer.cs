@@ -17,6 +17,7 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
 using Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow;
 using Three_Musketeers.Utils;
+using Three_Musketeers.Models;
 
 namespace Three_Musketeers.Visitors
 {
@@ -74,8 +75,8 @@ namespace Three_Musketeers.Visitors
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit, libraryTracker);
             scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable, libraryTracker, structSemanticAnalyzer);
-            getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
-            putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
+            getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable, libraryTracker, structSemanticAnalyzer);
+            putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable, libraryTracker, structSemanticAnalyzer);
             
             // string conversion
             atoiSemanticAnalyzer = new AtoiSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
@@ -191,6 +192,43 @@ namespace Three_Musketeers.Visitors
             string? variableType = pointerSemanticAnalyzer.VisitDerref(context);
             string? expr = Visit(context.expr());
             return "int";
+        }
+
+        public override string? VisitDerrefExpr([NotNull] ExprParser.DerrefExprContext context)
+        {
+            var derrefNode = context.derref();
+            if (derrefNode?.expr() == null)
+            {
+                return null;
+            }
+
+            var exprContext = derrefNode.expr();
+            
+            if (exprContext is ExprParser.VarContext varContext)
+            {
+                string varName = varContext.ID().GetText();
+                Symbol? symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol == null)
+                {
+                    ReportError(context.Start.Line, $"Variable '{varName}' was not declared");
+                    return null;
+                }
+
+                if (symbol is PointerSymbol pointerSymbol)
+                {
+                    if (!pointerSymbol.isInitializated)
+                    {
+                        ReportWarning(context.Start.Line, $"Dereferencing potentially uninitialized pointer '{varName}'");
+                    }
+                    return pointerSymbol.pointeeType;
+                }
+
+                ReportError(context.Start.Line, $"Cannot dereference variable '{varName}' of type '{symbol.type}'");
+                return null;
+            }
+
+            return Visit(exprContext);
         }
         public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
         {

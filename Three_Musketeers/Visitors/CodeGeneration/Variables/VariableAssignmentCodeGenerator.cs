@@ -156,13 +156,27 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         public string VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
-
             Variable variable = GetVariableWithScope(varName)!;
 
             if (variable == null)
             {
                 // Return a default value or throw a more meaningful error
                 return "0";
+            }
+
+            if (variable is ArrayVariable arrayVar)
+            {
+                string ptrReg = nextRegister();
+                string elementType = arrayVar.innerType;
+                getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds {arrayVar.LLVMType}, {arrayVar.LLVMType}* {variable.register}, i32 0, i32 0");
+                registerTypes[ptrReg] = elementType + "*";
+                return ptrReg;
+            }
+
+            if (variable.isDirectPointerParam)
+            {
+                registerTypes[variable.register] = variable.LLVMType;
+                return variable.register;
             }
 
             if (variable.type == "string")
@@ -334,7 +348,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             var currentBody = getCurrentBody();
             Variable variable = GetVariableWithScope(name)!;
 
-
             var llvmType = variable.LLVMType;
 
             // Check if this is a pointer variable (not an array)
@@ -342,13 +355,21 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             if (isPointer)
             {
-                // For pointer variables: load the pointer first, then use single index
-                string loadedPointer = nextRegister();
-                currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+
+                string loadedPointer;
+                if (variable.isDirectPointerParam)
+                {
+                    loadedPointer = variable.register;  
+                }
+                else
+                {
+                    loadedPointer = nextRegister();
+                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+                }
 
                 // Get element address with single index (no i32 0)
-                string gepReg = nextRegister();
                 string expr = visitExpression(indexes[0].expr());
+                string gepReg = nextRegister();
                 string elementType = llvmType.TrimEnd('*');
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
 
@@ -362,8 +383,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             else
             {
                 // For arrays: use getelementptr with i32 0 as first index
-                string gepReg = nextRegister();
                 string result = calculateArrayPosition(indexes);
+                string gepReg = nextRegister();
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, {result}");
 
                 string elementType;
@@ -393,6 +414,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Variable variable = GetVariableWithScope(varName)!;
             var currentBody = getCurrentBody();
 
+            var llvmType = variable.LLVMType;
+
             if (variable == null)
             {
                 return null;
@@ -408,23 +431,31 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             {
                 if (isPointer)
                 {
-                    // For pointer variables: load pointer, then GEP
-                    string loadedPointer = nextRegister();
-                    currentBody.AppendLine($"  {loadedPointer} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+                    string loadedPointer;
+                    if (variable.isDirectPointerParam)
+                    {
+                        loadedPointer = variable.register;  // Usar diretamente
+                    }
+                    else
+                    {
+                        loadedPointer = nextRegister();
+                        currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+                    }
 
+                    // Get element address with single index (no i32 0)
+                    string expr = visitExpression(indexes[0].expr());
                     string gepReg = nextRegister();
-                    string position = calculateArrayPosition(indexes);
-                    string elementType = variable.LLVMType.TrimEnd('*');
-                    currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {variable.LLVMType} {loadedPointer}, {position}");
-
+                    string elementType = llvmType.TrimEnd('*');
+                    currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
+                    
                     targetRegister = gepReg;
                     targetType = elementType;
                 }
                 else
                 {
                     // For arrays: GEP with i32 0 prefix
-                    string gepReg = nextRegister();
                     string position = calculateArrayPosition(indexes);
+                    string gepReg = nextRegister();
 
                     if (variable is ArrayVariable arrayVar)
                     {
@@ -469,12 +500,21 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             if (isPointer)
             {
-                // Load pointer, then GEP
-                string loadedPointer = nextRegister();
-                currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
-                string gepReg = nextRegister();
+                string loadedPointer;
+                if (variable.isDirectPointerParam)
+                {
+                    loadedPointer = variable.register; 
+                }
+                else
+                {
+                    loadedPointer = nextRegister();
+                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
+                }
+
+                // Get element address with single index (no i32 0)
                 string expr = visitExpression(indexes[0].expr());
+                string gepReg = nextRegister();
                 string elementType = llvmType.TrimEnd('*');
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
 
@@ -484,8 +524,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             else
             {
                 // For arrays
-                string gepReg = nextRegister();
                 string result = calculateArrayPosition(indexes);
+                string gepReg = nextRegister();
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, {result}");
 
                 string elementType;

@@ -28,12 +28,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
         {
             string leftValue = GetExpressionValue(context.expr(0));
             string rightValue = GetExpressionValue(context.expr(1));
+            string op = context.GetChild(1).GetText();
             
             string leftType = GetExpressionType(leftValue);
             string rightType = GetExpressionType(rightValue);
-            
-            // Get the operation symbol
-            string op = context.GetChild(1).GetText();
             
             // Convert both operands to the same type for comparison
             string leftConverted = ConvertToComparisonType(leftValue, leftType);

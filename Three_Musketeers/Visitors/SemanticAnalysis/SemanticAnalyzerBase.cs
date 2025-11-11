@@ -292,6 +292,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return symbol?.type ?? "int";
             }
 
+            if (expr is ExprParser.VarStructContext varStructCtx)
+            {
+                string? structType = structSemanticAnalyzer.VisitStructGet(varStructCtx.structGet());
+                return structType ?? "int";
+            }
+
             if (expr is ExprParser.AddSubContext addSubCtx)
             {
                 var leftType = GetExpressionType(addSubCtx.expr(0));

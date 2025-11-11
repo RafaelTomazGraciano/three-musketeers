@@ -87,9 +87,10 @@ namespace Three_Musketeers.Visitors
             scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
                 NextRegister, NextStringLabel, GetLLVMType, variableResolver, CalculateArrayPosition,
                 (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx), registerTypes, GetAlignment);
-            getsCodeGenerator = new GetsCodeGenerator(GetCurrentBody, NextRegister, variableResolver);
+            getsCodeGenerator = new GetsCodeGenerator(GetCurrentBody, NextRegister, variableResolver,
+                (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx), registerTypes);
             putsCodeGenerator = new PutsCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister,
-                variableResolver, defineCodeGenerator, CalculateArrayPosition);
+                variableResolver, defineCodeGenerator, CalculateArrayPosition, (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx));
 
 
             //string conversion
@@ -241,7 +242,6 @@ namespace Three_Musketeers.Visitors
 
         public override string? VisitScanfStatement([NotNull] ExprParser.ScanfStatementContext context)
         {
-            Console.WriteLine("[CODEGEN] VisitScanfStatement called!");
             return scanfCodeGenerator.VisitScanfStatement(context);
         }
 

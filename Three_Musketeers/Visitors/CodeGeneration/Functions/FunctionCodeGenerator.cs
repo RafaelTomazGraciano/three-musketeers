@@ -21,7 +21,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
         private string? currentFunctionName = null;
         private FunctionInfo? currentFunction = null;
         private StringBuilder? currentFunctionBody = null;
-        private int functionRegisterCounter = 0;
         private bool hasReturnedInCurrentBlock = false;
 
         public FunctionCodeGenerator(
@@ -173,7 +172,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             currentFunctionName = functionName;
             currentFunction = declaredFunctions[functionName];
             currentFunctionBody = new StringBuilder();
-            functionRegisterCounter = 0;
             hasReturnedInCurrentBlock = false;
 
             //build parameter
@@ -266,21 +264,36 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                         llvmParamType += "*";
                     }
 
-                    string allocaReg = NextFunctionRegister();
                     string paramReg = $"%param.{paramName}";
 
-                    functionDefinitions.AppendLine($"  {allocaReg} = alloca {llvmParamType}");
-                    functionDefinitions.AppendLine($"  store {llvmParamType} {paramReg}, {llvmParamType}* {allocaReg}");
+                    if (pointerLevel > 0)
+                    {
+                        variables[$"@{functionName}.{paramName}"] = new Variable(
+                            paramName,
+                            paramType,
+                            llvmParamType,
+                            paramReg,
+                            isDirectPointerParam: true  
+                        );
+                        
+                        registerTypes[paramReg] = llvmParamType;
+                    }
+                    else
+                    {
+                        string allocaReg = nextRegister();
+                        
+                        functionDefinitions.AppendLine($"  {allocaReg} = alloca {llvmParamType}");
+                        functionDefinitions.AppendLine($"  store {llvmParamType} {paramReg}, {llvmParamType}* {allocaReg}");
 
-                    // register parameter as variable
-                    variables[$"@{functionName}.{paramName}"] = new Variable(
-                        paramName,
-                        paramType,
-                        llvmParamType,
-                        allocaReg
-                    );
+                        variables[$"@{functionName}.{paramName}"] = new Variable(
+                            paramName,
+                            paramType,
+                            llvmParamType,
+                            allocaReg
+                        );
 
-                    registerTypes[allocaReg] = llvmParamType + "*";
+                        registerTypes[allocaReg] = llvmParamType + "*";
+                    }
                 }
             }
 
@@ -478,11 +491,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             }
             
             return "unknown";
-        }
-
-        private string NextFunctionRegister()
-        {
-            return $"%{functionRegisterCounter++}";
         }
 
         public bool IsInsideFunction()
