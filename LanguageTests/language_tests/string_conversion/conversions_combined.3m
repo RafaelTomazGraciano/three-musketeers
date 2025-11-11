@@ -1,0 +1,49 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Numbers {
+    string intStr,
+    string doubleStr,
+    int intVal,
+    double doubleVal
+};
+
+union NumUnion {
+    int uInt,
+    double uDouble
+};
+
+int main() {
+    Numbers nums;
+    nums.intStr = "100";
+    nums.doubleStr = "3.14";
+    nums.intVal = 200;
+    nums.doubleVal = 2.71;
+
+    NumUnion u;
+    u.uInt = 700;
+    string unionIntStr = itoa(u.uInt);
+    
+    u.uDouble = 8.88;
+    string unionDoubleStr = dtoa(u.uDouble);
+    
+    int fromStr = atoi(nums.intStr);
+    double fromDblStr = atod(nums.doubleStr);
+
+    string intToStr = itoa(nums.intVal);
+    string dblToStr = dtoa(nums.doubleVal);
+
+    string chainStr = itoa(atoi("500"));
+    int chainInt = atoi(itoa(300));
+    
+    printf("atoi: %d\n", fromStr);
+    printf("atod: %f\n", fromDblStr);
+    puts(intToStr);
+    puts(dblToStr);
+    puts(chainStr);
+    printf("chain: %d\n", chainInt);
+    puts(unionIntStr);
+    puts(unionDoubleStr);
+    
+    return 0;
+}

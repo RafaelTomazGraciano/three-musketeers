@@ -86,7 +86,10 @@ class TestRunner
         string exePath = Path.Combine(binDir, baseName);
         
         if (!File.Exists(exePath))
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
             throw new FileNotFoundException($"Executable not found: {exePath}");
+        }
         
         // run binary
         var run = new Process();

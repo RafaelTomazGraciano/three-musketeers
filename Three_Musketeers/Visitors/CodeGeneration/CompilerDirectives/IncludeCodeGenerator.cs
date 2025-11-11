@@ -123,6 +123,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives
             {
                 declarations.AppendLine("declare i32 @sprintf(i8*, i8*, ...)");
             }
+            
+            // Format strings for sprintf (itoa/dtoa)
+            if (!declarations.ToString().Contains("@.fmt.d"))
+            {
+                declarations.AppendLine("@.fmt.d = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1");
+            }
+            
+            if (!declarations.ToString().Contains("@.fmt.lf"))
+            {
+                declarations.AppendLine("@.fmt.lf = private unnamed_addr constant [4 x i8] c\"%lf\\00\", align 1");
+            }
         }
     }
 }

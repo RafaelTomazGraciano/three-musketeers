@@ -1,0 +1,47 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct myStruct {
+    int num1,
+    int num2
+};
+
+union myUnion {
+    int u1,
+    int u2
+};
+
+int main() {
+    int n1 = 123;
+    int n2 = -456;
+    int n3 = 0;
+    
+    myStruct s;
+    s.num1 = 789;
+    s.num2 = -999;
+    
+    myUnion u;
+    u.u1 = 111;
+    string str7 = itoa(u.u1);
+    
+    u.u2 = -222;
+    string str8 = itoa(u.u2);
+    
+    string str1 = itoa(n1);
+    string str2 = itoa(n2);
+    string str3 = itoa(n3);
+    string str4 = itoa(s.num1);
+    string str5 = itoa(s.num2);
+    string str6 = itoa(42);
+    
+    puts(str1);
+    puts(str2);
+    puts(str3);
+    puts(str4);
+    puts(str5);
+    puts(str6);
+    puts(str7);
+    puts(str8);
+    
+    return 0;
+}

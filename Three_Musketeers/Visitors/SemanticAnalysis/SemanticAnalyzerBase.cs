@@ -285,6 +285,27 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return "bool";
             }
 
+            // String conversions
+            if (expr is ExprParser.AtoiConversionContext)
+            {
+                return "int";
+            }
+
+            if (expr is ExprParser.AtodConversionContext)
+            {
+                return "double";
+            }
+
+            if (expr is ExprParser.ItoaConversionContext)
+            {
+                return "string";
+            }
+
+            if (expr is ExprParser.DtoaConversionContext)
+            {
+                return "string";
+            }
+
             if (expr is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
@@ -313,12 +334,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 {
                     return "int"; // Modulo always returns int
                 }
-                
+
                 var leftType = GetExpressionType(mulDivModCtx.expr(0));
                 var rightType = GetExpressionType(mulDivModCtx.expr(1));
                 return PromoteTypes(leftType, rightType);
             }
-            
+
             if (expr is ExprParser.UnaryMinusContext unaryMinusCtx)
             {
                 return GetExpressionType(unaryMinusCtx.expr());
@@ -343,7 +364,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 return "bool";
             }
-            
+
+            if (expr is ExprParser.FunctionCallContext funcCallCtx)
+            {
+                string funcName = funcCallCtx.ID().GetText();
+                if (declaredFunctions.ContainsKey(funcName))
+                {
+                    return declaredFunctions[funcName].returnType ?? "int";
+                }
+            }
+
             return "int";
         }
 
