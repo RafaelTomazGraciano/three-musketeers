@@ -1,0 +1,83 @@
+#include <stdio.tm>
+
+int main() {
+    int option;
+    
+    printf("Testing break in switch:\n\n");
+    
+    option = 1;
+    printf("Option %d: ", option);
+    switch (option) {
+        case 1:
+            printf("First\n");
+            break;
+        case 2:
+            printf("Second\n");
+            break;
+        case 3:
+            printf("Third\n");
+            break;
+    }
+    
+    option = 2;
+    printf("Option %d: ", option);
+    switch (option) {
+        case 1:
+            printf("First\n");
+            break;
+        case 2:
+            printf("Second\n");
+            break;
+        case 3:
+            printf("Third\n");
+            break;
+    }
+    
+    option = 3;
+    printf("Option %d: ", option);
+    switch (option) {
+        case 1:
+            printf("First\n");
+            break;
+        case 2:
+            printf("Second\n");
+            break;
+        case 3:
+            printf("Third\n");
+            break;
+    }
+    
+    printf("\nSwitch with default:\n");
+    option = 5;
+    printf("Option %d: ", option);
+    switch (option) {
+        case 1:
+            printf("One\n");
+            break;
+        case 2:
+            printf("Two\n");
+            break;
+        default:
+            printf("Other\n");
+            break;
+    }
+    
+    printf("\nSwitch inside loop with break:\n");
+    int i;
+    for (i = 1; i <= 3; i = i + 1) {
+        printf("Iteration %d: ", i);
+        switch (i) {
+            case 1:
+                printf("One\n");
+                break;
+            case 2:
+                printf("Two\n");
+                break;
+            case 3:
+                printf("Three\n");
+                break;
+        }
+    }
+    
+    return 0;
+}
