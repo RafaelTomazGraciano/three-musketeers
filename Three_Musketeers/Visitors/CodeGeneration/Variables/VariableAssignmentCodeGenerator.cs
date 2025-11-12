@@ -525,6 +525,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 valueType = "i32";
             }
 
+            // Convert i32 to i8 (for char arrays/variables)**
+            if (targetType == "i8" && valueType == "i32")
+            {
+                string convertedReg = nextRegister();
+                currentBody.AppendLine($"  {convertedReg} = trunc i32 {exprValue} to i8");
+                registerTypes[convertedReg] = "i8";
+                exprValue = convertedReg;
+                valueType = "i8";
+            }
+
             // Convert double to i32 (for int variables)
             if (llvmType == "i32" && valueType == "double")
             {

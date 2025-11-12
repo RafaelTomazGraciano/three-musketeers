@@ -31,14 +31,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
             
             string leftType = GetExpressionType(leftValue);
             string rightType = GetExpressionType(rightValue);
-            
+
             // Get the operation symbol
             string op = context.GetChild(1).GetText();
             
-            // Convert both operands to the same type for comparison
-            string leftConverted = ConvertToComparisonType(leftValue, leftType);
-            string rightConverted = ConvertToComparisonType(rightValue, rightType);
+            // Determine comparison type FIRST
             string comparisonType = GetComparisonType(leftType, rightType);
+            
+            // Convert both operands to the same type for comparison
+            string leftConverted = ConvertToType(leftValue, leftType, comparisonType);
+            string rightConverted = ConvertToType(rightValue, rightType, comparisonType);
             
             string resultReg = nextRegister();
             
@@ -106,34 +108,100 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
             return registerTypes[value];
         }
 
-        private string ConvertToComparisonType(string value, string currentType)
+        private string ConvertToType(string value, string fromType, string toType)
         {
-            if (currentType == "i1")
-            {
-                // Convert boolean to integer for comparison
-                string convReg = nextRegister();
-                getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i32");
-                registerTypes[convReg] = "i32";
-                return convReg;
-            }
-            else if (currentType == "i8")
-            {
-                // Convert char to integer for comparison
-                string convReg = nextRegister();
-                getCurrentBody().AppendLine($"  {convReg} = zext i8 {value} to i32");
-                registerTypes[convReg] = "i32";
-                return convReg;
-            }
-            else if (currentType == "double")
-            {
-                // For double, keep as double
+            if (fromType == toType)
                 return value;
-            }
-            else
+
+            string convReg = nextRegister();
+
+            // From i1 (bool)
+            if (fromType == "i1")
             {
-                // For i32, return as is
-                return value;
+                if (toType == "i32")
+                {
+                    getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i32");
+                    registerTypes[convReg] = "i32";
+                    return convReg;
+                }
+                else if (toType == "i8")
+                {
+                    getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i8");
+                    registerTypes[convReg] = "i8";
+                    return convReg;
+                }
+                else if (toType == "double")
+                {
+                    string tempReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {tempReg} = zext i1 {value} to i32");
+                    registerTypes[tempReg] = "i32";
+
+                    convReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {tempReg} to double");
+                    registerTypes[convReg] = "double";
+                    return convReg;
+                }
             }
+            // From i8 (char)
+            else if (fromType == "i8")
+            {
+                if (toType == "i32")
+                {
+                    getCurrentBody().AppendLine($"  {convReg} = zext i8 {value} to i32");
+                    registerTypes[convReg] = "i32";
+                    return convReg;
+                }
+                else if (toType == "double")
+                {
+                    string tempReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {tempReg} = zext i8 {value} to i32");
+                    registerTypes[tempReg] = "i32";
+
+                    convReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {tempReg} to double");
+                    registerTypes[convReg] = "double";
+                    return convReg;
+                }
+            }
+            // From i32 (int)
+            else if (fromType == "i32")
+            {
+                if (toType == "i8")
+                {
+                    getCurrentBody().AppendLine($"  {convReg} = trunc i32 {value} to i8");
+                    registerTypes[convReg] = "i8";
+                    return convReg;
+                }
+                else if (toType == "double")
+                {
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp i32 {value} to double");
+                    registerTypes[convReg] = "double";
+                    return convReg;
+                }
+            }
+            // From double
+            else if (fromType == "double")
+            {
+                if (toType == "i32")
+                {
+                    getCurrentBody().AppendLine($"  {convReg} = fptosi double {value} to i32");
+                    registerTypes[convReg] = "i32";
+                    return convReg;
+                }
+                else if (toType == "i8")
+                {
+                    string tempReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {tempReg} = fptosi double {value} to i32");
+                    registerTypes[tempReg] = "i32";
+
+                    convReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {convReg} = trunc i32 {tempReg} to i8");
+                    registerTypes[convReg] = "i8";
+                    return convReg;
+                }
+            }
+
+            return value;
         }
 
         private string GetComparisonType(string type1, string type2)

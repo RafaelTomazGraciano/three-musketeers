@@ -56,11 +56,37 @@ namespace Three_Musketeers.Utils
                 }
                 else
                 {
-                    result.Append(str[i]);
-                    byteCount++;
+                    char c = str[i];
+                    
+                    // Check if character is multi-byte UTF-8
+                    int charByteCount = GetUtf8ByteCount(c);
+                    
+                    if (charByteCount == 1)
+                    {
+                        // ASCII character - use as is
+                        result.Append(c);
+                        byteCount += 1;
+                    }
+                    else
+                    {
+                        // Multi-byte UTF-8 character - encode as hex escape sequences
+                        byte[] utf8Bytes = Encoding.UTF8.GetBytes(new char[] { c });
+                        foreach (byte b in utf8Bytes)
+                        {
+                            result.Append($"\\{b:X2}");
+                            byteCount += 1;
+                        }
+                    }
                 }
             }
+            
             return (result.ToString(), byteCount);
+        }
+        
+        private static int GetUtf8ByteCount(char c)
+        {
+            // Get the UTF-8 byte count for a character
+            return Encoding.UTF8.GetByteCount(new char[] { c });
         }
     }
 }

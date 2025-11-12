@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 {
@@ -422,25 +423,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 
         private bool AreTypesCompatible(string targetType, string sourceType)
         {
-            if (targetType == sourceType)
-            {
-                return true;
-            }
-
-            // Permitir conversões numéricas implícitas
-            if ((targetType == "double" && sourceType == "int") ||
-                (targetType == "int" && sourceType == "double"))
-            {
-                return true;
-            }
-
-            // Comparação de tipos struct
-            if (targetType.StartsWith("struct_") && sourceType.StartsWith("struct_"))
-            {
-                return targetType == sourceType;
-            }
-
-            return false;
+            return CastTypes.TwoTypesArePermitedToCast(targetType, sourceType);
         }
 
         private bool IsStructType(string typeName)

@@ -1,0 +1,25 @@
+Letters array:
+letters[0] = A
+letters[1] = B
+letters[2] = C
+letters[3] = D
+letters[4] = E
+letters[5] = F
+letters[6] = G
+letters[7] = H
+letters[8] = I
+letters[9] = J
+
+Converting to lowercase:
+letters[0] = a
+letters[1] = b
+letters[2] = c
+letters[3] = d
+letters[4] = e
+letters[5] = f
+letters[6] = g
+letters[7] = h
+letters[8] = i
+letters[9] = j
+
+Vowel count: 3

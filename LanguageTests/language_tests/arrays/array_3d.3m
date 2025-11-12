@@ -1,0 +1,61 @@
+#include <stdio.tm>
+
+int main() {
+    int cube[2][3][4];
+    int i;
+    int j;
+    int k;
+    
+    // Initialize 3D array
+    int counter;
+    counter = 1;
+    for (i = 0; i < 2; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            for (k = 0; k < 4; k = k + 1) {
+                cube[i][j][k] = counter;
+                counter = counter + 1;
+            }
+        }
+    }
+    
+    // Print 3D array layer by layer
+    printf("3D Array (2x3x4):\n");
+    for (i = 0; i < 2; i = i + 1) {
+        printf("Layer %d:\n", i);
+        for (j = 0; j < 3; j = j + 1) {
+            printf("  Row %d: ", j);
+            for (k = 0; k < 4; k = k + 1) {
+                printf("%d ", cube[i][j][k]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
+    
+    // Calculate total sum
+    int totalSum;
+    totalSum = 0;
+    for (i = 0; i < 2; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            for (k = 0; k < 4; k = k + 1) {
+                totalSum = totalSum + cube[i][j][k];
+            }
+        }
+    }
+    printf("Total sum of all elements: %d\n", totalSum);
+    
+    // Calculate sum per layer
+    printf("\nSum per layer:\n");
+    for (i = 0; i < 2; i = i + 1) {
+        int layerSum;
+        layerSum = 0;
+        for (j = 0; j < 3; j = j + 1) {
+            for (k = 0; k < 4; k = k + 1) {
+                layerSum = layerSum + cube[i][j][k];
+            }
+        }
+        printf("Layer %d sum: %d\n", i, layerSum);
+    }
+    
+    return 0;
+}
