@@ -1,0 +1,93 @@
+#include <stdio.tm>
+
+int main() {
+    int day;
+    day = 8;
+    
+    printf("Day number: %d\n", day);
+    printf("Day type: ");
+    
+    switch (day) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            printf("Weekday\n");
+            break;
+        case 6:
+        case 7:
+            printf("Weekend\n");
+            break;
+        default:
+            printf("Invalid day\n");
+    }
+    
+    char letter;
+    letter = 'x';
+    printf("\nLetter: %c\n", letter);
+    printf("Type: ");
+    
+    switch (letter) {
+        case 'a':
+        case 'e':
+        case 'i':
+        case 'o':
+        case 'u':
+            printf("Vowel\n");
+            break;
+        default:
+            printf("Consonant or other\n");
+    }
+    
+    int month;
+    month = 15;
+    printf("\nMonth: %d\n", month);
+    printf("Season: ");
+    
+    switch (month) {
+        case 12:
+        case 1:
+        case 2:
+            printf("Winter\n");
+            break;
+        case 3:
+        case 4:
+        case 5:
+            printf("Spring\n");
+            break;
+        case 6:
+        case 7:
+        case 8:
+            printf("Summer\n");
+            break;
+        case 9:
+        case 10:
+        case 11:
+            printf("Fall\n");
+            break;
+        default:
+            printf("Invalid month\n");
+    }
+    
+    int option;
+    option = 0;
+    printf("\nMenu option: %d\n", option);
+    printf("Action: ");
+    
+    switch (option) {
+        case 1:
+            printf("New file\n");
+            break;
+        case 2:
+            printf("Open file\n");
+            break;
+        case 3:
+            printf("Save file\n");
+            break;
+        default:
+            printf("Unknown option\n");
+    }
+    
+    return 0;
+}

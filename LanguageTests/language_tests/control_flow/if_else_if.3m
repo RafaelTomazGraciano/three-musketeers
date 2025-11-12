@@ -1,0 +1,50 @@
+#include <stdio.tm>
+
+int main() {
+    int score;
+    score = 85;
+    
+    printf("Grade Calculator\n");
+    printf("Score: %d\n", score);
+    printf("Grade: ");
+    
+    if (score >= 90) {
+        printf("A\n");
+    } else if (score >= 80) {
+        printf("B\n");
+    } else if (score >= 70) {
+        printf("C\n");
+    } else if (score >= 60) {
+        printf("D\n");
+    } else {
+        printf("F\n");
+    }
+    
+    int num;
+    num = 0;
+    printf("\nNumber: %d is ", num);
+    
+    if (num > 0) {
+        printf("positive\n");
+    } else if (num < 0) {
+        printf("negative\n");
+    } else {
+        printf("zero\n");
+    }
+    
+    int time;
+    time = 14;
+    printf("\nTime: %d:00 - ", time);
+    
+    if (time < 12) {
+        printf("Good morning\n");
+    } else if (time < 18) {
+        printf("Good afternoon\n");
+    } else if (time < 22) {
+        printf("Good evening\n");
+    } else {
+        printf("Good night\n");
+    }
+    
+    return 0;
+}

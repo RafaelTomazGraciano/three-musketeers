@@ -1,0 +1,79 @@
+#include <stdio.tm>
+
+int main() {
+    int day;
+    day = 3;
+    
+    printf("Day of the week (1-7): %d\n", day);
+    printf("Day name: ");
+    
+    switch (day) {
+        case 1:
+            printf("Monday\n");
+            break;
+        case 2:
+            printf("Tuesday\n");
+            break;
+        case 3:
+            printf("Wednesday\n");
+            break;
+        case 4:
+            printf("Thursday\n");
+            break;
+        case 5:
+            printf("Friday\n");
+            break;
+        case 6:
+            printf("Saturday\n");
+            break;
+        case 7:
+            printf("Sunday\n");
+            break;
+    }
+    
+    int month;
+    month = 12;
+    printf("\nMonth number: %d\n", month);
+    printf("Days in month: ");
+    
+    switch (month) {
+        case 1:
+            printf("31\n");
+            break;
+        case 2:
+            printf("28 or 29\n");
+            break;
+        case 3:
+            printf("31\n");
+            break;
+        case 4:
+            printf("30\n");
+            break;
+        case 5:
+            printf("31\n");
+            break;
+        case 6:
+            printf("30\n");
+            break;
+        case 7:
+            printf("31\n");
+            break;
+        case 8:
+            printf("31\n");
+            break;
+        case 9:
+            printf("30\n");
+            break;
+        case 10:
+            printf("31\n");
+            break;
+        case 11:
+            printf("30\n");
+            break;
+        case 12:
+            printf("31\n");
+            break;
+    }
+    
+    return 0;
+}

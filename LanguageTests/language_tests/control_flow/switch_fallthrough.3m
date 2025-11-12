@@ -1,0 +1,50 @@
+#include <stdio.tm>
+
+int main() {
+    int level;
+    level = 2;
+    
+    printf("Access level: %d\n", level);
+    printf("Permissions:\n");
+    
+    switch (level) {
+        case 3:
+            printf("- Can delete\n");
+        case 2:
+            printf("- Can write\n");
+        case 1:
+            printf("- Can read\n");
+    }
+    
+    int score;
+    score = 85;
+    printf("\nScore: %d\n", score);
+    printf("Categories:\n");
+    
+    switch (score / 10) {
+        case 10:
+        case 9:
+            printf("- Excellent range\n");
+        case 8:
+            printf("- Good range\n");
+        case 7:
+            printf("- Acceptable range\n");
+    }
+    
+    int number;
+    number = 5;
+    printf("\nNumber: %d\n", number);
+    printf("Properties:\n");
+    
+    switch (number) {
+        case 5:
+            printf("- Equal to 5\n");
+        case 4:
+        case 3:
+        case 2:
+        case 1:
+            printf("- Less than or equal to 5\n");
+    }
+    
+    return 0;
+}
