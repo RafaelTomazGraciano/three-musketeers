@@ -1,0 +1,30 @@
+#include <stdio.tm>
+
+int main() {
+    bool t = true;
+    bool f = false;
+    
+    printf("true = %d, false = %d\n", t, f);
+    printf("true && true = %d\n", t && t);
+    printf("true && false = %d\n", t && f);
+    printf("false && false = %d\n", f && f);
+    
+    printf("true || true = %d\n", t || t);
+    printf("true || false = %d\n", t || f);
+    printf("false || false = %d\n", f || f);
+    
+    printf("!true = %d\n", !t);
+    printf("!false = %d\n", !f);
+    
+    int a = 10;
+    int b = 5;
+    
+    printf("(a > b) && (a > 0) = %d\n", (a > b) && (a > 0));
+    printf("(a < b) || (b > 0) = %d\n", (a < b) || (b > 0));
+    printf("!(a == b) = %d\n", !(a == b));
+    
+    bool complex = (a > b) && !(b < 0) || (a == 10);
+    printf("complex expression = %d\n", complex);
+    
+    return 0;
+}

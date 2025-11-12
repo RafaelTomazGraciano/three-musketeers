@@ -3,8 +3,8 @@ grammar Expr;
 start: include* define* prog* mainFunction prog* EOF;
 
 include
-    : INCLUDE ANGLE_STRING		# IncludeSystem
-	| INCLUDE STRING_LITERAL	# IncludeUser;
+    : INCLUDE '<' ID ('.' ID)* '>'		# IncludeSystem
+	| INCLUDE STRING_LITERAL	        # IncludeUser;
 
 define
     : DEFINE ID INT				# DefineInt
@@ -143,9 +143,9 @@ expr:
 	| FALSE									# FalseLiteral
 	| expr ('*' | '/' | '%') expr			# MulDivMod
 	| expr ('+' | '-') expr					# AddSub
-	| expr ('>' | '<' | '>=' | '<=') expr	# Comparison
-	| expr ('==' | '!=') expr				# Equality
-	| expr ('&&' | '||') expr				# LogicalAndOr
+	| expr (GR | LE | GRT | LET) expr		# Comparison
+	| expr (EQ | NE) expr					# Equality
+	| expr (AND | OR) expr					# LogicalAndOr
 	;
 
 structGet:
@@ -190,7 +190,6 @@ DOUBLE: [0-9]+ '.' [0-9]* | [0-9]* '.' [0-9]+;
 EOL: ';';
 WS: [ \t\r\n]+ -> skip;
 LINE_COMMENT: '//' ~[\r\n]* -> skip;
-ANGLE_STRING: '<' (~[>\r\n])+ '>';
 BLOCK_COMMENT: '/*' .*? '*/' -> skip;
 STRING_LITERAL: '"' (~["\\\r\n] | '\\' .)* '"';
 CHAR_LITERAL: '\'' ( ~['\\] | '\\' [0trn'\\]) '\'';

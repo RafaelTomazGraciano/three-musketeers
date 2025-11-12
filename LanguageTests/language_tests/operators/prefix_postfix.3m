@@ -1,0 +1,35 @@
+#include <stdio.tm>
+
+int main() {
+    int i = 5;
+    printf("i = %d\n", i);
+    
+    int a = i++;
+    printf("a = i++: a = %d, i = %d\n", a, i);
+    
+    i = 5;
+    int b = ++i;
+    printf("b = ++i: b = %d, i = %d\n", b, i);
+    
+    i = 5;
+    int c = i--;
+    printf("c = i--: c = %d, i = %d\n", c, i);
+    
+    i = 5;
+    int d = --i;
+    printf("d = --i: d = %d, i = %d\n", d, i);
+    
+    i = 10;
+    int result = i++ + ++i;
+    printf("i++ + ++i: result = %d, i = %d\n", result, i);
+    
+    i = 10;
+    result = ++i + i++;
+    printf("++i + i++: result = %d, i = %d\n", result, i);
+    
+    i = 5;
+    result = i-- - --i;
+    printf("i-- - --i: result = %d, i = %d\n", result, i);
+    
+    return 0;
+}

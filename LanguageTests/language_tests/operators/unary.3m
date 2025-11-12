@@ -1,0 +1,42 @@
+#include <stdio.tm>
+
+int main() {
+    int a = 10;
+    int b = -a;
+    
+    printf("a = %d\n", a);
+    printf("-a = %d\n", -a);
+    printf("b = %d\n", b);
+    printf("-b = %d\n", -b);
+    
+    double x = 5.5;
+    double y = -x;
+    
+    printf("x = %f\n", x);
+    printf("-x = %f\n", -x);
+    printf("y = %f\n", y);
+    printf("-y = %f\n", -y);
+    
+    int c = 0;
+    printf("c = %d\n", c);
+    printf("-c = %d\n", -c);
+    
+    int result = -a + 20;
+    printf("-a + 20 = %d\n", result);
+    
+    result = -(a + 5);
+    printf("-(a + 5) = %d\n", result);
+    
+    int i = 5;
+    printf("i = %d\n", i);
+    i++;
+    printf("after i++: %d\n", i);
+    i--;
+    printf("after i--: %d\n", i);
+    ++i;
+    printf("after ++i: %d\n", i);
+    --i;
+    printf("after --i: %d\n", i);
+    
+    return 0;
+}

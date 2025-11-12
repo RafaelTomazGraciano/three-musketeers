@@ -148,6 +148,26 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 valueType = "i32";
             }
 
+            // Convert double to i32 (for int variables)
+            if (llvmType == "i32" && valueType == "double")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = fptosi double {value} to i32");
+                registerTypes[convertedReg] = "i32";
+                value = convertedReg;
+                valueType = "i32";
+            }
+
+            // Convert i32 to double (for double variables)
+            if (llvmType == "double" && valueType == "i32")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = sitofp i32 {value} to double");
+                registerTypes[convertedReg] = "double";
+                value = convertedReg;
+                valueType = "double";
+            }
+
             getCurrentBody().AppendLine($"  store {llvmType} {value}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
             return null;
         }
@@ -494,7 +514,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             // Store the value
             string valueType = registerTypes.ContainsKey(exprValue) ? registerTypes[exprValue] : targetType;
-            
+
             // Convert i1 to i32 if needed (for bool variables/arrays)
             if (targetType == "i32" && valueType == "i1")
             {
@@ -503,6 +523,26 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 registerTypes[convertedReg] = "i32";
                 exprValue = convertedReg;
                 valueType = "i32";
+            }
+
+            // Convert double to i32 (for int variables)
+            if (llvmType == "i32" && valueType == "double")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = fptosi double {exprValue} to i32");
+                registerTypes[convertedReg] = "i32";
+                exprValue = convertedReg;
+                valueType = "i32";
+            }
+
+            // Convert i32 to double (for double variables)
+            if (llvmType == "double" && valueType == "i32")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = sitofp i32 {exprValue} to double");
+                registerTypes[convertedReg] = "double";
+                exprValue = convertedReg;
+                valueType = "double";
             }
 
             currentBody.AppendLine($"  store {valueType} {exprValue}, {targetType}* {targetRegister}, align {GetAlignment(targetType)}");

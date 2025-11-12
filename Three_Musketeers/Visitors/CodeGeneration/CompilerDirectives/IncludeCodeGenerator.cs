@@ -19,8 +19,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives
 
         public string? VisitIncludeSystem([NotNull] ExprParser.IncludeSystemContext context)
         {
-            string angleString = context.ANGLE_STRING().GetText();
-            string libraryName = angleString.Substring(1, angleString.Length - 2);
+            // Build library name from ID tokens
+            var ids = context.ID();
+            string libraryName = string.Join(".", ids.Select(id => id.GetText()));
 
             if (includedLibraries.Contains(libraryName))
             {

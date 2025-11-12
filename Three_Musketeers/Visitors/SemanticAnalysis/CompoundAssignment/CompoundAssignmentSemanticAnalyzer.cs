@@ -32,6 +32,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             var indexes = context.index();
             int line = context.Start.Line;
 
+            // Se não tem índices, é uma variável simples
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ValidateCompoundAssignment(varName, context.expr(), line);
+            }
+
+            // Se tem índices, é um array
             return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
         }
 
@@ -41,6 +48,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             string varName = context.ID().GetText();
             var indexes = context.index();
             int line = context.Start.Line;
+
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ValidateCompoundAssignment(varName, context.expr(), line);
+            }
 
             return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
         }
@@ -53,6 +65,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             var indexes = context.index();
             int line = context.Start.Line;
 
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ValidateCompoundAssignment(varName, context.expr(), line);
+            }
+
             return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
         }
 
@@ -62,6 +79,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment
             string varName = context.ID().GetText();
             var indexes = context.index();
             int line = context.Start.Line;
+
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ValidateCompoundAssignment(varName, context.expr(), line);
+            }
 
             return ValidateArrayCompoundAssignment(varName, indexes, context.expr(), line);
         }
