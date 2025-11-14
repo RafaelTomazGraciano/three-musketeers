@@ -1,5 +1,6 @@
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
 {
@@ -60,31 +61,18 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
                     int argPointerLevel = GetArgumentPointerLevel(providedArgs[i]);
                     string? argBaseType = GetArgumentBaseType(providedArgs[i]);
 
-                    // Validate pointer level first
-                    if (argPointerLevel != expectedPointerLevel)
+                    // Build full type strings with pointers
+                    string expectedFullType = expectedPointerLevel > 0
+                        ? $"{expectedType}{new string('*', expectedPointerLevel)}"
+                        : expectedType;
+                    string argFullType = argPointerLevel > 0
+                        ? $"{argBaseType ?? "unknown"}{new string('*', argPointerLevel)}"
+                        : argBaseType ?? "unknown";
+
+                    // **USE CastTypes.TwoTypesArePermitedToCast**
+                    if (!CastTypes.TwoTypesArePermitedToCast(expectedFullType, argFullType))
                     {
-                        string expectedTypeStr = expectedPointerLevel > 0
-                            ? $"{expectedType}{new string('*', expectedPointerLevel)}"
-                            : expectedType;
-                        string gotTypeStr = argPointerLevel > 0
-                            ? $"{argBaseType ?? "unknown"}{new string('*', argPointerLevel)}"
-                            : argBaseType ?? "unknown";
-
-                        reportError(line, $"Argument {i + 1} of function '{functionName}': expected '{expectedTypeStr}', but got '{gotTypeStr}'");
-                        continue;
-                    }
-
-                    // Validate base type
-                    if (argBaseType != expectedType && argBaseType != null)
-                    {
-                        string expectedTypeStr = expectedPointerLevel > 0
-                            ? $"{expectedType}{new string('*', expectedPointerLevel)}"
-                            : expectedType;
-                        string gotTypeStr = argPointerLevel > 0
-                            ? $"{argBaseType}{new string('*', argPointerLevel)}"
-                            : argBaseType;
-
-                        reportError(line, $"Argument {i + 1} of function '{functionName}': expected '{expectedTypeStr}', but got '{gotTypeStr}'");
+                        reportError(line, $"Argument {i + 1} of function '{functionName}': expected '{expectedFullType}', but got '{argFullType}'");
                     }
                 }
             }

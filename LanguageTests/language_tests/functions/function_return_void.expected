@@ -1,0 +1,17 @@
+====================
+Testing void functions
+====================
+
+Countdown from 5:
+5 4 3 2 1 
+
+Multiplication table for 3:
+3 x 1 = 3
+3 x 2 = 6
+3 x 3 = 9
+3 x 4 = 12
+3 x 5 = 15
+
+Testing pointer modification:
+Before: 10
+After: 20

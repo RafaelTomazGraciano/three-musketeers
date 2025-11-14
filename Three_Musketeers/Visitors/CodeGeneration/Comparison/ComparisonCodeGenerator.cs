@@ -33,37 +33,81 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
             string leftType = GetExpressionType(leftValue);
             string rightType = GetExpressionType(rightValue);
             
-            // Convert both operands to the same type for comparison
-            string leftConverted = ConvertToComparisonType(leftValue, leftType);
-            string rightConverted = ConvertToComparisonType(rightValue, rightType);
-            string comparisonType = GetComparisonType(leftType, rightType);
-            
             string resultReg = nextRegister();
             
-            if (comparisonType == "double")
+            bool isPointerComparison = leftType.Contains('*') || rightType.Contains('*');
+            
+            // DEBUG: Log comparison types
+            Console.WriteLine($"[DEBUG] Comparison: {leftValue}({leftType}) {op} {rightValue}({rightType})");
+            
+            if (isPointerComparison)
+            {
+                // Pointer comparison - use the pointer type
+                string pointerType = leftType.Contains('*') ? leftType : rightType;
+                
+                // Convert integer literals to pointers if needed
+                string leftForComparison = leftValue;
+                string rightForComparison = rightValue;
+                
+                if (!leftType.Contains('*') && leftValue == "0")
+                {
+                    leftForComparison = "null";
+                }
+                
+                if (!rightType.Contains('*') && rightValue == "0")
+                {
+                    rightForComparison = "null";
+                }
+                
+                string llvmOp = op switch
+                {
+                    ">" => "icmp ugt",   
+                    "<" => "icmp ult",   
+                    ">=" => "icmp uge",
+                    "<=" => "icmp ule",
+                    "==" => "icmp eq",
+                    "!=" => "icmp ne",
+                    _ => "icmp eq"
+                };
+                
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} {pointerType} {leftForComparison}, {rightForComparison}");
+            }
+            else if (leftType == "double" || rightType == "double")
             {
                 // Floating point comparison
+                string leftConverted = ConvertToComparisonType(leftValue, leftType, "double");
+                string rightConverted = ConvertToComparisonType(rightValue, rightType, "double");
+                
                 string llvmOp = op switch
                 {
                     ">" => "fcmp ogt",
                     "<" => "fcmp olt",
                     ">=" => "fcmp oge",
                     "<=" => "fcmp ole",
+                    "==" => "fcmp oeq",
+                    "!=" => "fcmp one",
                     _ => "fcmp oeq"
                 };
+                
                 getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {leftConverted}, {rightConverted}");
             }
             else
             {
                 // Integer comparison
+                string leftConverted = ConvertToComparisonType(leftValue, leftType, "i32");
+                string rightConverted = ConvertToComparisonType(rightValue, rightType, "i32");
+                
                 string llvmOp = op switch
                 {
                     ">" => "icmp sgt",
                     "<" => "icmp slt",
                     ">=" => "icmp sge",
                     "<=" => "icmp sle",
+                    "==" => "icmp eq",
+                    "!=" => "icmp ne",
                     _ => "icmp eq"
                 };
+                
                 getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {leftConverted}, {rightConverted}");
             }
             
@@ -85,51 +129,60 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
         {
             if (!registerTypes.ContainsKey(value))
             {
-
                 registerTypes[value] = "i32";
-
             }
             return registerTypes[value];
         }
 
-        private string ConvertToComparisonType(string value, string currentType)
+        private string ConvertToComparisonType(string value, string currentType, string targetType)
         {
-            if (currentType == "i1")
+            // If already the target type, return as is
+            if (currentType == targetType)
             {
-                // Convert boolean to integer for comparison
-                string convReg = nextRegister();
-                getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i32");
-                registerTypes[convReg] = "i32";
-                return convReg;
-            }
-            else if (currentType == "i8")
-            {
-                // Convert char to integer for comparison
-                string convReg = nextRegister();
-                getCurrentBody().AppendLine($"  {convReg} = zext i8 {value} to i32");
-                registerTypes[convReg] = "i32";
-                return convReg;
-            }
-            else if (currentType == "double")
-            {
-                // For double, keep as double
                 return value;
             }
-            else
-            {
-                // For i32, return as is
-                return value;
-            }
-        }
-
-        private string GetComparisonType(string type1, string type2)
-        {
-            // If either is double, use double comparison
-            if (type1 == "double" || type2 == "double")
-                return "double";
             
-            // Default to i32 for integer comparisons
-            return "i32";
+            // Convert to target type
+            if (targetType == "double")
+            {
+                if (currentType == "i32" || currentType == "i1" || currentType == "i8")
+                {
+                    string convReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {convReg} = sitofp {currentType} {value} to double");
+                    registerTypes[convReg] = "double";
+                    return convReg;
+                }
+            }
+            else if (targetType == "i32")
+            {
+                if (currentType == "i1")
+                {
+                    // Convert boolean to integer
+                    string convReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {convReg} = zext i1 {value} to i32");
+                    registerTypes[convReg] = "i32";
+                    return convReg;
+                }
+                else if (currentType == "i8")
+                {
+                    // Convert char to integer
+                    string convReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {convReg} = sext i8 {value} to i32");
+                    registerTypes[convReg] = "i32";
+                    return convReg;
+                }
+                else if (currentType == "double")
+                {
+                    // Convert double to integer
+                    string convReg = nextRegister();
+                    getCurrentBody().AppendLine($"  {convReg} = fptosi double {value} to i32");
+                    registerTypes[convReg] = "i32";
+                    return convReg;
+                }
+            }
+            
+            // If no conversion needed or supported, return as is
+            return value;
         }
     }
 }

@@ -1,0 +1,18 @@
+Testing struct array functions:
+
+Array[5]: 7 7 7 7 7 
+Sum: 35
+
+Filling with sequence starting at 10:
+Array[5]: 10 11 12 13 14 
+Sum: 60
+
+Matrix 3x3:
+1 1 1 
+1 1 1 
+1 1 1 
+
+Creating 2x3 matrix with value 5:
+Matrix 2x3:
+5 5 5 
+5 5 5

@@ -243,5 +243,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             // Fallback
             return new StringBuilder();
         }
+
+        public static string RemoveOneAsterisk(string type)
+        {
+            return type.EndsWith("*") ? type.Substring(0, type.Length - 1) : type;
+        }
     }
 }

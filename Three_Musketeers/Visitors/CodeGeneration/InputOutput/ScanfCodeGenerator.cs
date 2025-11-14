@@ -165,7 +165,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
 
                 // Calculate position
                 string arrayPositions = calculateArrayPosition(indexes);
-                string elementType = variable.LLVMType.TrimEnd('*');
+                string elementType = CodeGeneratorBase.RemoveOneAsterisk(variable.LLVMType);
                 
                 string gepReg = nextRegister();
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {variable.LLVMType} {loadedPointer}, {arrayPositions}");

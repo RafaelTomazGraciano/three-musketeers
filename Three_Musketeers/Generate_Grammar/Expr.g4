@@ -23,8 +23,7 @@ mainFunction: 'int' 'main' '(' mainArgs? ')' '{' func_body '}';
 mainArgs: 'int' ID ',' 'char' ID '[' ']';
 
 stm
-    : expr EOL
-	| declaration EOL
+	: declaration EOL
 	| att EOL
 	| attVar EOL
 	| printfStatement
@@ -39,7 +38,9 @@ stm
 	| whileStatement
 	| doWhileStatement
 	| BREAK EOL
-	| CONTINUE EOL;
+	| CONTINUE EOL
+    | expr EOL
+	;
 
 heteregeneousDeclaration
     : structStatement 
@@ -150,7 +151,9 @@ expr:
 
 structGet:
 	ID index* '.' structContinue
-	| ID index* '->' structContinue;
+	| ID index* '->' structContinue
+	| '(' POINTER expr ')' '.' structContinue
+	;
 
 structContinue: ID index* | structGet;
 

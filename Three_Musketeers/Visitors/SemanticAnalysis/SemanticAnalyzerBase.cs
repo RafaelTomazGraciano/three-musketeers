@@ -306,10 +306,44 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return "string";
             }
 
+            if (expr is ExprParser.ParensContext parensCtx)
+            {
+                return GetExpressionType(parensCtx.expr());
+            }
+            
+            if (expr is ExprParser.DerrefExprContext derrefCtx)
+            {
+                var derrefNode = derrefCtx.derref();
+                if (derrefNode?.expr() == null)
+                {
+                    return "int";
+                }
+                
+                string innerType = GetExpressionType(derrefNode.expr());
+
+                if (innerType.EndsWith("*"))
+                {
+                    return innerType.Substring(0, innerType.Length - 1);
+                }
+                
+                return innerType;
+            }
+
             if (expr is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
                 var symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol is PointerSymbol pointerSymbol)
+                {
+                    string fullType = pointerSymbol.pointeeType;
+                    if (pointerSymbol.pointerLevel > 0)
+                    {
+                        fullType += new string('*', pointerSymbol.pointerLevel);
+                    }
+                    return fullType;
+                }
+
                 return symbol?.type ?? "int";
             }
 
@@ -370,7 +404,13 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 string funcName = funcCallCtx.ID().GetText();
                 if (declaredFunctions.ContainsKey(funcName))
                 {
-                    return declaredFunctions[funcName].returnType ?? "int";
+                    var funcInfo = declaredFunctions[funcName];
+                    string returnType = funcInfo.returnType ?? "int";
+                    if (funcInfo.returnPointerLevel > 0)
+                    {
+                        return returnType + new string('*', funcInfo.returnPointerLevel);
+                    }
+                    return returnType;
                 }
             }
 

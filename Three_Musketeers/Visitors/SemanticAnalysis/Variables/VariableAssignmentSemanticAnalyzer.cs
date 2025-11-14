@@ -45,7 +45,19 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     reportError(line, $"Variable '{varName}' was not declared");
                     return null;
                 }
+
                 existingSymbol.isInitializated = true;
+        
+                if (existingSymbol is PointerSymbol pointerSymbol)
+                {
+                    string fullType = pointerSymbol.pointeeType;
+                    if (pointerSymbol.pointerLevel > 0)
+                    {
+                        fullType += new string('*', pointerSymbol.pointerLevel);
+                    }
+                    return fullType;
+                }
+                
                 return existingSymbol.type;
             }
 
@@ -191,6 +203,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             {
                 reportError(line, $"Variable '{varName}' is empty");
                 return null;
+            }
+
+            if (symbol is PointerSymbol pointerSymbol)
+            {
+                string fullType = pointerSymbol.pointeeType;
+                if (pointerSymbol.pointerLevel > 0)
+                {
+                    fullType += new string('*', pointerSymbol.pointerLevel);
+                }
+                return fullType;
             }
 
             // Arrays used as expressions decay to pointers

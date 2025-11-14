@@ -20,9 +20,18 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
         {
             string structName = context.ID().GetText();
             int line = context.Start.Line;
-            var declarationContexts = context.declaration();
-            var members = new Dictionary<string, Symbol>();
 
+            // Register the struct in the dictionary
+            if (heterogenousInfo.ContainsKey(structName))
+            {
+                reportError(line, $"Struct '{structName}' already declared");
+                return;
+            }
+
+            var members = new Dictionary<string, Symbol>();
+            heterogenousInfo[structName] = new StructInfo(structName, members, line);
+
+            var declarationContexts = context.declaration();
             foreach (var declarationContext in declarationContexts)
             {
                 Symbol? symbol = ProcessDeclaration(declarationContext, declarationContext.Start.Line);
@@ -39,15 +48,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     members[symbol.name] = symbol;
                 }
             }
-
-            // Register the struct in the dictionary
-            if (!heterogenousInfo.ContainsKey(structName))
-            {
-                heterogenousInfo[structName] = new StructInfo(structName, members, line);
-                return;
-            }
-            reportError(line, $"Struct '{structName}' already declared");
-            return;
         }
         
         public void VisitUnionStatement(ExprParser.UnionStatementContext context)
@@ -151,61 +151,122 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
 
         public string? VisitStructGet(ExprParser.StructGetContext context)
         {
-            string id = context.ID().GetText();
             int line = context.Start.Line;
+            string currentType;
+            Symbol? baseSymbol = null;
             var indexes = context.index();
-
-            // Get the base variable
-            var symbol = symbolTable.GetSymbol(id);
-            if (symbol == null)
-            {
-                reportError(line, $"Variable '{id}' not found");
-                return null;
-            }
-
-            // Check if variable has been initialized
-            if (!symbol.isInitializated)
-            {
-                reportError(line, $"Variable '{id}' is used before being initialized");
-            }
-
-            // Determine the current type after array indexing (if any)
-            string currentType = symbol.type;
             
-            // Handle array indexing on base variable
-            if (indexes.Length > 0)
+            // Check if this is a dereferenced pointer access: (*ptr).member
+            if (context.GetChild(0).GetText() == "(")
             {
-                if (symbol is ArraySymbol arraySymbol)
+                // This is: '(' POINTER expr ')' '.' structContinue
+                var pointerToken = context.POINTER();
+                if (pointerToken == null)
                 {
-                    // Verify index count
-                    if (indexes.Length > arraySymbol.dimensions.Count)
+                    reportError(line, "Invalid dereference syntax in struct access");
+                    return null;
+                }
+                
+                var exprContext = context.expr();
+                if (exprContext == null)
+                {
+                    reportError(line, "Missing expression in dereference");
+                    return null;
+                }
+                
+                // Get the variable being dereferenced
+                string? varName = null;
+                if (exprContext is ExprParser.VarContext varCtx)
+                {
+                    varName = varCtx.ID().GetText();
+                }
+                else
+                {
+                    reportError(line, "Complex expressions in dereference not yet supported");
+                    return null;
+                }
+                
+                // Get the symbol
+                baseSymbol = symbolTable.GetSymbol(varName);
+                if (baseSymbol == null)
+                {
+                    reportError(line, $"Variable '{varName}' not found");
+                    return null;
+                }
+                
+                // Check if variable has been initialized
+                if (!baseSymbol.isInitializated)
+                {
+                    reportError(line, $"Variable '{varName}' is used before being initialized");
+                }
+                
+                // Must be a pointer
+                if (!(baseSymbol is PointerSymbol pointerSymbol))
+                {
+                    reportError(line, $"Cannot dereference non-pointer variable '{varName}'");
+                    return null;
+                }
+                
+                // Get the pointee type
+                currentType = pointerSymbol.pointeeType;
+            }
+            else
+            {
+                // Original code for regular struct access (ID.member or ID->member)
+                string id = context.ID().GetText();
+
+                // Get the base variable
+                baseSymbol = symbolTable.GetSymbol(id);
+                if (baseSymbol == null)
+                {
+                    reportError(line, $"Variable '{id}' not found");
+                    return null;
+                }
+
+                // Check if variable has been initialized
+                if (!baseSymbol.isInitializated)
+                {
+                    reportError(line, $"Variable '{id}' is used before being initialized");
+                }
+
+                // Determine the current type after array indexing (if any)
+                currentType = baseSymbol.type;
+                
+                // Handle array indexing on base variable
+                if (indexes.Length > 0)
+                {
+                    if (baseSymbol is ArraySymbol arraySymbol)
                     {
-                        reportError(line, $"Too many indices for array '{id}'. Expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
+                        // Verify index count
+                        if (indexes.Length > arraySymbol.dimensions.Count)
+                        {
+                            reportError(line, $"Too many indices for array '{id}'. Expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
+                            return null;
+                        }
+                        
+                        // After indexing, the type is the inner type
+                        currentType = arraySymbol.elementType;
+                    }
+                    else
+                    {
+                        reportError(line, $"Variable '{id}' is not an array but is being indexed");
                         return null;
                     }
-                    
-                    // After indexing, the type is the inner type
-                    currentType = arraySymbol.elementType;
                 }
-                else
-                {
-                    reportError(line, $"Variable '{id}' is not an array but is being indexed");
-                    return null;
-                }
-            }
 
-            bool isArrowOp = context.GetChild(indexes.Length + 1).GetText() == "->";
-            
-            if (isArrowOp)
-            {
-                if (symbol is PointerSymbol pointerSymbol)
+                bool isArrowOp = context.GetChild(indexes.Length + 1).GetText() == "->";
+                
+                if (isArrowOp)
                 {
-                    currentType = pointerSymbol.pointeeType;
-                }
-                else
-                {
-                    reportError(line, $"Arrow operator '->' used on non-pointer variable '{id}'");
-                    return null;
+                    if (baseSymbol is PointerSymbol pointerSymbol)
+                    {
+                        currentType = pointerSymbol.pointeeType;
+                    }
+                    else
+                    {
+                        reportError(line, $"Arrow operator '->' used on non-pointer variable '{id}'");
+                        return null;
+                    }
                 }
             }
 
@@ -222,7 +283,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             // Verify the type is a struct or union
             if (!heterogenousInfo.ContainsKey(currentType))
             {
-                reportError(line, $"Variable '{id}' is not a struct or union type. Cannot access members.");
+                string? varIdentifier = baseSymbol?.name ?? "dereferenced pointer";
+                reportError(line, $"Variable '{varIdentifier}' is not a struct or union type. Cannot access members.");
                 return null;
             }
 

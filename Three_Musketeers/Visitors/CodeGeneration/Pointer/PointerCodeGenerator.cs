@@ -81,7 +81,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                     // Get element address with single index (no i32 0)
                     string indexExpr = visitExpression(indexes[0].expr());
                     string gepReg = nextRegister();
-                    string elementType = llvmType.TrimEnd('*');
+                    string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
                     currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {indexExpr}");
 
                     registerTypes[gepReg] = elementType + "*";

@@ -1,0 +1,10 @@
+Testing union functions:
+
+Union as int: 42
+Union as double: 3.14
+Union as char: Z
+
+Tagged union tests:
+Integer: 100
+Double: 2.71
+Char: A

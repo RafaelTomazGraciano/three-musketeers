@@ -37,6 +37,22 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
             
             // Determine comparison type FIRST
             string comparisonType = GetComparisonType(leftType, rightType);
+
+            // Handle pointer comparisons
+            if (comparisonType.Contains('*'))
+            {
+                // Convert 0 to null for pointer comparisons
+                if (leftValue == "0" && !leftType.Contains('*'))
+                    leftValue = "null";
+                if (rightValue == "0" && !rightType.Contains('*'))
+                    rightValue = "null";
+                
+                string resultRegister = nextRegister();
+                string llvmOp = op == "==" ? "icmp eq" : "icmp ne";
+                getCurrentBody().AppendLine($"  {resultRegister} = {llvmOp} {comparisonType} {leftValue}, {rightValue}");
+                registerTypes[resultRegister] = "i1";
+                return resultRegister;
+            }   
             
             // Convert both operands to the same type for comparison
             string leftConverted = ConvertToType(leftValue, leftType, comparisonType);
@@ -206,15 +222,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Equality
 
         private string GetComparisonType(string type1, string type2)
         {
-            // If either is double, use double comparison
+            // Check for pointer types first
+            if (type1.Contains('*') || type2.Contains('*'))
+            {
+                // Return the pointer type (preferably the one that has *)
+                return type1.Contains('*') ? type1 : type2;
+            }
+            
+            // Existing logic
             if (type1 == "double" || type2 == "double")
                 return "double";
-            
-            // If either is char, use i8 comparison
             if (type1 == "i8" || type2 == "i8")
                 return "i8";
-            
-            // Default to i32
             return "i32";
         }
     }

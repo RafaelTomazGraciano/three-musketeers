@@ -1,0 +1,18 @@
+Testing struct pointer functions:
+
+Initialized vector:
+Vector: (1, 2, 3)
+
+Scaling by 3:
+Vector: (3, 6, 9)
+
+Dynamic vector:
+Vector: (10, 20, 30)
+Scaling dynamic vector by 2:
+Vector: (20, 40, 60)
+
+Box operations:
+Original box: 5x3x2
+Volume: 30
+After doubling: 10x6x4
+New volume: 240

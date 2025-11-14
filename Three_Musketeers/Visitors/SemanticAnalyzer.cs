@@ -148,7 +148,7 @@ namespace Three_Musketeers.Visitors
             var result = variableAssignmentSemanticAnalyzer.VisitSingleArrayAtt(context);
             var exprType = Visit(context.expr());
             if (result == null || exprType == null) return null;
-            if(!TwoTypesArePermitedToCast(result, exprType))
+            if(!CastTypes.TwoTypesArePermitedToCast(result, exprType))
             {
                 ReportError(context.Start.Line,
                     $"Cannot assign value of type '{exprType}' to array element of type '{result}'");
@@ -226,6 +226,23 @@ namespace Three_Musketeers.Visitors
 
                 ReportError(context.Start.Line, $"Cannot dereference variable '{varName}' of type '{symbol.type}'");
                 return null;
+            }
+
+            if (exprContext is ExprParser.ParensContext parensCtx)
+            {
+                return Visit(parensCtx.expr());
+            }
+            
+            if (exprContext is ExprParser.DerrefExprContext nestedDerrefCtx)
+            {
+                string? innerType = Visit(nestedDerrefCtx);
+                
+                if (innerType != null && innerType.EndsWith("*"))
+                {
+                    return innerType.Substring(0, innerType.Length - 1);
+                }
+                
+                return innerType;
             }
 
             return Visit(exprContext);
@@ -495,27 +512,13 @@ namespace Three_Musketeers.Visitors
             }
 
             // Check type compatibility
-            if (!TwoTypesArePermitedToCast(fieldType, exprType))
+            if (!CastTypes.TwoTypesArePermitedToCast(fieldType, exprType))
             {
                 ReportError(line, $"Cannot assign value of type '{exprType}' to struct field of type '{fieldType}'");
                 return null;
             }
 
             return fieldType;
-        }
-    
-        private static bool TwoTypesArePermitedToCast(string type1, string type2)
-        {
-            bool anyIsDouble = type1 == "double" || type2 == "double";
-            bool anyIsChar = type1 == "char" || type2 == "char";
-            bool anyIsInt = type1 == "int" || type2 == "int";
-            bool anyIsBool = type1 == "bool" || type2 == "bool";
-            bool anyIsString = type1 == "string" || type2 == "string";
-            if (type1 == type2) return true;
-            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
-            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
-            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
-            return false;
         }
 
         public override string? VisitIncludeSystem([NotNull] ExprParser.IncludeSystemContext context)
@@ -542,6 +545,7 @@ namespace Three_Musketeers.Visitors
         {
             return defineSemanticAnalyzer.VisitDefineString(context);
         }
+
     }
 }
 

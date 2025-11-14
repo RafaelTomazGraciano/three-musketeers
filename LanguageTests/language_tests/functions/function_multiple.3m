@@ -1,0 +1,53 @@
+#include <stdio.tm>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int subtract(int a, int b) {
+    return a - b;
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+int divide(int a, int b) {
+    return a / b;
+}
+
+int module(int a, int b){
+    return a % b;
+}
+
+void printResult(char op, int a, int b, int result) {
+    printf("%d %c %d = %d\n", a, op, b, result);
+}
+
+int main() {
+    int x;
+    int y;
+    int result;
+    
+    x = 15;
+    y = 3;
+    
+    printf("Calculator with x=%d, y=%d:\n", x, y);
+    
+    result = add(x, y);
+    printResult('+', x, y, result);
+    
+    result = subtract(x, y);
+    printResult('-', x, y, result);
+    
+    result = multiply(x, y);
+    printResult('*', x, y, result);
+    
+    result = divide(x, y);
+    printResult('/', x, y, result);
+
+    result = module(x, y);
+    printResult('%', x, y, result);
+    
+    return 0;
+}

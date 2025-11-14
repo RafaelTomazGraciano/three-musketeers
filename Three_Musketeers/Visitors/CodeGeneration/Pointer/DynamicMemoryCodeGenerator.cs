@@ -96,7 +96,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             llvmType = variable.LLVMType;
             
             // Remove the '*' to calculate the base type size
-            string baseType = llvmType.TrimEnd('*');
+            string baseType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
             size = getAlignment(baseType);
 
             mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");

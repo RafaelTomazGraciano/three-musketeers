@@ -138,6 +138,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             // Check if we need to convert i1 to i32 (for bool variables)
             string valueType = registerTypes.ContainsKey(value) ? registerTypes[value] : llvmType;
 
+            value = ConvertZeroToNullIfNeeded(value, llvmType);
+
             if (llvmType == "i32" && valueType == "i1")
             {
                 // Convert i1 to i32 for bool variables
@@ -404,7 +406,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 // Get element address with single index (no i32 0)
                 string expr = visitExpression(indexes[0].expr());
                 string gepReg = nextRegister();
-                string elementType = llvmType.TrimEnd('*');
+                string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
 
                 // Load the value at this address
@@ -479,7 +481,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                     // Get element address with single index (no i32 0)
                     string expr = visitExpression(indexes[0].expr());
                     string gepReg = nextRegister();
-                    string elementType = llvmType.TrimEnd('*');
+                    string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
                     currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
                     
                     targetRegister = gepReg;
@@ -589,7 +591,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 // Get element address with single index (no i32 0)
                 string expr = visitExpression(indexes[0].expr());
                 string gepReg = nextRegister();
-                string elementType = llvmType.TrimEnd('*');
+                string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
 
                 registerTypes[gepReg] = elementType + "*";
@@ -615,6 +617,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 registerTypes[gepReg] = elementType + "*";
                 return gepReg;
             }
+        }
+
+        private string ConvertZeroToNullIfNeeded(string value, string llvmType)
+        {
+            // If assigning 0 to a pointer type, convert to null
+            if (llvmType.Contains('*') && value == "0")
+            {
+                return "null";
+            }
+            return value;
         }
 
     }
