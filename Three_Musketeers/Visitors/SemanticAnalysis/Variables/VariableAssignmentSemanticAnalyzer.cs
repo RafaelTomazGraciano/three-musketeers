@@ -122,7 +122,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     reportError(line, "Cannot declare arrays of type 'string'");
                     return null;
                 }
-       
+
                 List<int> dimensions = new List<int>();
                 bool hasErrors = false;
                 
@@ -137,16 +137,37 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     }
                     dimensions.Add(dim);
                 }
-        
+
                 if (hasErrors) return null;
 
                 // Determine the element type for the array
-                string elementType = IsStructType(type) ? $"struct_{type}" : type;
+                string elementType;
+                var typeContext = context.type();
+
+                // Check if it's a struct or union type
+                if (typeContext.GetChild(0).GetText() == "struct" && typeContext.ID() != null)
+                {
+                    string structName = typeContext.ID().GetText();
+                    elementType = $"struct_{structName}";
+                }
+                else if (typeContext.GetChild(0).GetText() == "union" && typeContext.ID() != null)
+                {
+                    string unionName = typeContext.ID().GetText();
+                    elementType = $"union_{unionName}";
+                }
+                else if (IsStructType(type))
+                {
+                    elementType = $"struct_{type}";
+                }
+                else
+                {
+                    elementType = type;
+                }
                 
                 // Create array symbol with pointer level
                 var arraySymbol = new ArraySymbol(varName, elementType, line, dimensions, pointerCount);
                 arraySymbol.isInitializated = true;
-    
+
                 symbolTable.AddSymbol(arraySymbol);
                 
                 // Return type description
@@ -161,7 +182,30 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             // Handle pointer declarations (non-array)
             if (pointerCount > 0)
             {
-                string pointeeType = IsStructType(type) ? $"struct_{type}" : type;
+                string pointeeType;
+                var typeContext = context.type();
+                
+                // Check if it's a struct or union type
+                if (typeContext.GetChild(0).GetText() == "struct" && typeContext.ID() != null)
+                {
+                    string structName = typeContext.ID().GetText();
+                    pointeeType = $"struct_{structName}";
+                }
+                else if (typeContext.GetChild(0).GetText() == "union" && typeContext.ID() != null)
+                {
+                    string unionName = typeContext.ID().GetText();
+                    pointeeType = $"union_{unionName}";
+                }
+                else if (IsStructType(type))
+                {
+                    pointeeType = $"struct_{type}";
+                }
+                else
+                {
+                    pointeeType = type;
+                }
+                
+                // Always create a PointerSymbol when pointerCount > 0
                 var pointerSymbol = new PointerSymbol(varName, pointeeType, line, pointerCount);
                 symbolTable.AddSymbol(pointerSymbol);
                 

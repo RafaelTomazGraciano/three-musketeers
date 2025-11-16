@@ -1,0 +1,11 @@
+Testing malloc for integers:
+
+Allocated integer: 42
+After doubling: 84
+
+Second allocated integer: 100
+p + q = 184
+
+Memory freed successfully
+
+Computed value: 15

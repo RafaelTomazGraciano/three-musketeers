@@ -40,6 +40,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
         protected string GetLLVMType(string type)
         {
+            if (type.StartsWith("struct "))
+            {
+                string structName = type.Substring(7); // Remove "struct "
+                if (structTypes.TryGetValue(structName, out var structModel))
+                {
+                    return structModel.GetLLVMName();
+                }
+                // Even if struct is not registered yet, return the LLVM name
+                return '%' + structName;
+            }
+            
             return type switch
             {
                 "int" => "i32",

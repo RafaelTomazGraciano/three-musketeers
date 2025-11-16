@@ -41,44 +41,66 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             var declarations = context.declaration();
             List<HeterogenousMember> variables = [];
             
-            Console.WriteLine($"[DEBUG] Processing struct: {structName}");
-            
             structDeclaration.AppendLine($"{LLVMName} = type {{");
             
             foreach (var declaration in declarations)
             {
                 string decName = declaration.ID().GetText();
-                string declType = declaration.type().GetText();
-                
-                Console.WriteLine($"[DEBUG] Field: {decName}, raw type: {declType}");
+                var declType = declaration.type();
                 
                 // Get base LLVM type
                 string llvmType;
                 
-                // FIX: Handle forward reference to the same struct type
-                if (declType == structName)
+                // Handle "struct TypeName" syntax
+                if (declType.ChildCount >= 2 && 
+                    (declType.GetChild(0).GetText() == "struct" || declType.GetChild(0).GetText() == "union"))
                 {
-                    // Self-referential struct (like Node *next in Node)
-                    llvmType = LLVMName;
-                    Console.WriteLine($"[DEBUG] Self-referential struct detected");
+                    string keyword = declType.GetChild(0).GetText();
+                    string referencedName = declType.ID().GetText();
+                    
+                    if (keyword == "struct")
+                    {
+                        if (referencedName == structName)
+                        {
+                            // Self-referential struct
+                            llvmType = LLVMName;
+                        }
+                        else if (structsTypes.ContainsKey(referencedName))
+                        {
+                            llvmType = structsTypes[referencedName].GetLLVMName();
+                        }
+                        else
+                        {
+                            llvmType = '%' + referencedName;
+                        }
+                    }
+                    else // union
+                    {
+                        if (structsTypes.ContainsKey(referencedName))
+                        {
+                            llvmType = structsTypes[referencedName].GetLLVMName();
+                        }
+                        else
+                        {
+                            llvmType = '%' + referencedName;
+                        }
+                    }
                 }
-                else if (structsTypes.ContainsKey(declType))
+                else if (structsTypes.ContainsKey(declType.GetText()))
                 {
-                    // Reference to another already-defined struct
-                    llvmType = structsTypes[declType].GetLLVMName();
+                    llvmType = structsTypes[declType.GetText()].GetLLVMName();
                 }
                 else
                 {
                     // Primitive type
-                    llvmType = getLLVMType(declType);
-                    if (declType == "string") llvmType = "[256 x i8]";
+                    string primitiveType = declType.GetText();
+                    llvmType = getLLVMType(primitiveType);
+                    if (primitiveType == "string") llvmType = "[256 x i8]";
                 }
                 
                 // Process pointers
                 var pointerTokens = declaration.POINTER();
                 int pointerLevel = pointerTokens?.Length ?? 0;
-                
-                Console.WriteLine($"[DEBUG] Pointer level: {pointerLevel}");
                 
                 for (int i = 0; i < pointerLevel; i++)
                 {
@@ -99,8 +121,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                     }
                     llvmType = '[' + result + llvmType + new string(']', len);
                 }
-                
-                Console.WriteLine($"[DEBUG] Final field type: {llvmType}");
                 
                 structDeclaration.AppendLine($"   {llvmType},");
                 variables.Add(new HeterogenousMember(decName, llvmType));
@@ -149,20 +169,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             string llvmType = getLLVMType(type);
             if (type == "string") llvmType = "[256 x i8]";
             
-            // DEBUG: Log what we're processing
-            Console.WriteLine($"[DEBUG] Processing declaration: type='{type}', name='{varName}'");
-            
             // FIX: Check for pointer declarations
             var pointerTokens = context.POINTER();
             int pointerLevel = pointerTokens?.Length ?? 0;
-            
-            Console.WriteLine($"[DEBUG] Pointer level: {pointerLevel}");
             
             // If the type is a struct name (like "Node"), get its LLVM name
             if (structsTypes.ContainsKey(type))
             {
                 llvmType = structsTypes[type].GetLLVMName();
-                Console.WriteLine($"[DEBUG] Type is a struct, LLVM type: {llvmType}");
             }
             
             // Add pointer markers
@@ -170,8 +184,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             {
                 llvmType += "*";
             }
-            
-            Console.WriteLine($"[DEBUG] Final LLVM type (with pointers): {llvmType}");
             
             // Process array dimensions
             var indexes = context.intIndex();
@@ -186,13 +198,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                     result += $"{index} x [";
                 }
                 llvmType = '[' + result + llvmType + new string(']', len);
-                Console.WriteLine($"[DEBUG] Array type: {llvmType}");
             }
             
             return llvmType;
         }
 
-       public string? VisitStructAtt(ExprParser.StructAttContext context)
+        public string? VisitStructAtt(ExprParser.StructAttContext context)
         {
             var currentBody = getCurrentBody();
             string register = VisitStructGet(context.structGet());
@@ -202,47 +213,46 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                 throw new Exception($"Register type not found for {register}");
             }
             
-            string registerType = registerTypes[register];
-
-            // Remove only the LAST asterisk
-            string fieldType = registerType.EndsWith("*") 
-                ? registerType.Substring(0, registerType.Length - 1) 
-                : registerType;
+            // register is already a pointer to the field 
+            string fieldPtrType = registerTypes[register];  
+            
+            // Remove the pointer to get the actual field type
+            string fieldType = fieldPtrType.TrimEnd('*'); 
             
             string expr = visit(context.expr());
             
+            // Convert 0 to null for pointer fields
             if (fieldType.Contains('*') && expr == "0")
             {
                 expr = "null";
             }
             
             // Get the actual type of what we're storing
-            string valueType;
-            if (expr == "null")
+            string valueType = registerTypes.ContainsKey(expr) ? registerTypes[expr] : fieldType;
+
+            // Type conversion for struct pointers if needed
+            if (fieldType.StartsWith("%") && fieldType.EndsWith("*") && 
+                valueType.StartsWith("%") && valueType.EndsWith("*") && 
+                fieldType != valueType)
             {
-                valueType = fieldType; // null takes the type of the field
-            }
-            else if (registerTypes.ContainsKey(expr))
-            {
-                valueType = registerTypes[expr];
-            }
-            else
-            {
-                valueType = fieldType; // fallback to expected type
+                string bitcastReg = nextRegister();
+                currentBody.AppendLine($"   {bitcastReg} = bitcast {valueType} {expr} to {fieldType}");
+                expr = bitcastReg;
+                valueType = fieldType;  // Update valueType after bitcast
             }
 
-            // Check if we're assigning a string (i8*) to a char array ([256 x i8])
+            // Handle string copying to char arrays
             if (fieldType == "[256 x i8]" && valueType == "i8*")
             {
                 string destPtr = nextRegister();
                 currentBody.AppendLine($"   {destPtr} = getelementptr inbounds [256 x i8], [256 x i8]* {register}, i32 0, i32 0");
-                
                 string strcpyResult = nextRegister();
                 currentBody.AppendLine($"   {strcpyResult} = call i8* @strcpy(i8* {destPtr}, i8* {expr})");
             }
             else
             {
-                currentBody.AppendLine($"   store {fieldType} {expr}, {registerType} {register}");
+                // Store the value into the field pointer
+                currentBody.AppendLine($"   store {valueType} {expr}, {fieldPtrType} {register}");
             }
             
             return null;
@@ -260,7 +270,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
             // Check if this is a dereferenced pointer access: (*ptr).member
             if (context.GetChild(0).GetText() == "(")
             {
-                // This is: '(' POINTER expr ')' '.' structContinue
                 var pointerToken = context.POINTER();
                 if (pointerToken == null)
                 {
@@ -274,41 +283,68 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                 }
                 
                 // Get the variable being dereferenced
-                string? varName = null;
                 if (exprContext is ExprParser.VarContext varCtx)
                 {
-                    varName = varCtx.ID().GetText();
+                    string varName = varCtx.ID().GetText();
+                    Variable? variable = variableResolver.GetVariable(varName);
+                    if (variable == null)
+                    {
+                        throw new Exception($"Variable '{varName}' not found");
+                    }
+                    
+                    string pointerReg = variable.register;
+                    string pointerType = variable.LLVMType;  
+
+                    // Remove one * to get the base struct type
+                    string baseStructType = CodeGeneratorBase.RemoveOneAsterisk(pointerType);  
+                    
+                    if (variable.isDirectPointerParam)
+                    {
+                        // For direct pointer params, the register already holds the pointer value
+                        currentRegister = pointerReg;
+                        currentType = baseStructType;  // Keep the % prefix
+                        registerTypes[pointerReg] = pointerType;
+                    }
+                    else
+                    {
+                        // Load the pointer value from the pointer variable
+                        string loadedPtrReg = nextRegister();
+                        currentBody.AppendLine($"   {loadedPtrReg} = load {pointerType}, {pointerType}* {pointerReg}");
+                        
+                        currentRegister = loadedPtrReg;
+                        currentType = baseStructType; 
+                        registerTypes[loadedPtrReg] = pointerType;  // The loaded register contains a pointer
+                    }
+                }
+                else if (exprContext is ExprParser.VarStructContext varStructCtx)
+                {
+                    // Handle (*structExpr.member).field
+                    string innerStructReg = VisitStructGet(varStructCtx.structGet());
+                    string innerStructType = registerTypes[innerStructReg];
+                    
+                    // Remove the * to get the base type
+                    string innerBaseType = CodeGeneratorBase.RemoveOneAsterisk(innerStructType);
+                    
+                    // Load the pointer value
+                    string loadedPtrReg = nextRegister();
+                    currentBody.AppendLine($"   {loadedPtrReg} = load {innerBaseType}, {innerStructType} {innerStructReg}");
+                    
+                    currentRegister = loadedPtrReg;
+                    currentType = CodeGeneratorBase.RemoveOneAsterisk(innerBaseType);  // Remove one more *
+                    registerTypes[loadedPtrReg] = innerBaseType;
+                }
+                else if (exprContext is ExprParser.DerrefExprContext derrefExprCtx)
+                {
+                    // Handle nested dereferences: (*(*pp))
+                    string innerReg = visit(derrefExprCtx);
+                    string innerType = registerTypes[innerReg];
+                    
+                    currentRegister = innerReg;
+                    currentType = CodeGeneratorBase.RemoveOneAsterisk(innerType);
                 }
                 else
                 {
                     throw new Exception("Complex expressions in dereference not yet supported in code generation");
-                }
-                
-                // Get the variable
-                Variable? variable = variableResolver.GetVariable(varName);
-                if (variable == null)
-                {
-                    throw new Exception($"Variable '{varName}' not found");
-                }
-                
-                string pointerReg = variable.register;
-                string pointerType = variable.LLVMType; 
-
-                string baseType = CodeGeneratorBase.RemoveOneAsterisk(pointerType);
-                
-                if (variable.isDirectPointerParam)
-                {
-                    currentRegister = pointerReg;
-                    currentType = baseType;
-                }
-                else
-                {
-                    string loadedPtrReg = nextRegister();
-                    currentBody.AppendLine($"   {loadedPtrReg} = load {pointerType}, {pointerType}* {pointerReg}");
-                    
-                    currentRegister = loadedPtrReg;
-                    currentType = baseType;
-                    registerTypes[loadedPtrReg] = pointerType;
                 }
             }
             else
@@ -322,29 +358,84 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct
                     throw new Exception($"Variable '{id}' not found");
                 }
                 
-                currentRegister = variable.register;
-                currentType = variable.type;
+                string pointerReg = variable.register;
+                string pointerType = variable.LLVMType; 
+
+                // Check if this is a pointer type 
+                bool isPointerType = pointerType.EndsWith("*");
+                
+                if (isPointerType)
+                {
+                    // This is a pointer to a struct
+                    string baseType = CodeGeneratorBase.RemoveOneAsterisk(pointerType);
+                    
+                    if (variable.isDirectPointerParam)
+                    {
+                        currentRegister = pointerReg;
+                        currentType = baseType;
+                    }
+                    else
+                    {
+                        // Load the pointer value
+                        string loadedPtrReg = nextRegister();
+                        currentBody.AppendLine($"   {loadedPtrReg} = load {pointerType}, {pointerType}* {pointerReg}");
+                        
+                        currentRegister = loadedPtrReg;
+                        currentType = baseType;
+                        registerTypes[loadedPtrReg] = pointerType;
+                    }
+                }
+                else
+                {
+                    currentRegister = pointerReg;
+                    currentType = pointerType; 
+                }
 
                 if (indexes.Length > 0)
                 {
-                    string arrayPositions = CalculateArrayPosition(indexes);
-                    string ptrReg = nextRegister();
-                    
-                    string varLLVMType = variable.LLVMType;
-                    currentBody.AppendLine($"   {ptrReg} = getelementptr inbounds {varLLVMType}, {varLLVMType}* {currentRegister}, i32 0,{arrayPositions}");
-                    currentRegister = ptrReg;
-                    registerTypes[ptrReg] = currentType;
+                    if (isPointerType)
+                    {
+                        // Pointer indexing
+                        string indexExpr = visit(indexes[0].expr());
+                        string gepReg = nextRegister();
+                        
+                        // Use pointer arithmetic 
+                        currentBody.AppendLine($"   {gepReg} = getelementptr inbounds {currentType}, {currentType}* {currentRegister}, i32 {indexExpr}");
+                        
+                        currentRegister = gepReg;
+                        registerTypes[gepReg] = currentType + "*";
+                    }
+                    else
+                    {
+                        // Array indexing
+                        string arrayPositions = CalculateArrayPosition(indexes);
+                        string ptrReg = nextRegister();
+                        
+                        string varLLVMType = variable.LLVMType;
+                        currentBody.AppendLine($"   {ptrReg} = getelementptr inbounds {varLLVMType}, {varLLVMType}* {currentRegister}, i32 0,{arrayPositions}");
+                        currentRegister = ptrReg;
+                        registerTypes[ptrReg] = currentType + "*";
+                    }
                 }
             }
 
-            bool isPointerAccess = context.GetText().Contains("->");
-
-            return ProcessStructContinue(structContinueCtx, currentRegister, currentType, isPointerAccess);
+            return ProcessStructContinue(structContinueCtx, currentRegister, currentType, false);
         }
 
         private string ProcessStructContinue(ExprParser.StructContinueContext context, string currentRegister, string currentType, bool isPointerAccess)
         {
             var currentBody = getCurrentBody();
+
+            if (!currentType.StartsWith("%") && !currentType.StartsWith("struct") && !currentType.StartsWith("union"))
+            {
+                // This is a primitive type or pointer
+                if (!registerTypes.ContainsKey(currentRegister))
+                {
+                    // The register is a pointer to this primitive type
+                    registerTypes[currentRegister] = currentType + "*";
+                }
+                return currentRegister;
+            }
 
             string typeName = currentType.TrimStart('%');
 

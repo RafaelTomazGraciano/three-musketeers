@@ -1,0 +1,28 @@
+#include <stdio.tm>
+
+int main() {
+    int x;
+    int *p;
+    
+    x = 42;
+    p = &x;
+    
+    printf("Value of x: %d\n", x);
+    printf("Value at pointer p: %d\n", (*p));
+    
+    (*p) = 100;
+    printf("After changing via pointer:\n");
+    printf("Value of x: %d\n", x);
+    printf("Value at pointer p: %d\n", (*p));
+    
+    // Multiple pointers to same variable
+    int *q;
+    q = p;
+    (*q) = 200;
+    printf("\nAfter changing via q:\n");
+    printf("Value of x: %d\n", x);
+    printf("Value at pointer p: %d\n", (*p));
+    printf("Value at pointer q: %d\n", (*q));
+    
+    return 0;
+}

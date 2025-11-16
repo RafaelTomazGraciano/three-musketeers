@@ -70,7 +70,7 @@ putsStatement: 'puts' '(' (ID index? | STRING_LITERAL | structGet) ')' EOL;
 
 att
     : (type POINTER*)? ID '=' expr					# GenericAtt
-	| (type POINTER+)? ID '=' 'malloc' '(' expr ')'	# MallocAtt
+	| (type POINTER+)? ID index* '=' 'malloc' '(' expr ')'	# MallocAtt
 	| derref '=' expr								# DerrefAtt
 	| structGet '=' expr							# StructAtt;
 
@@ -87,7 +87,7 @@ index: '[' expr ']';
 
 intIndex: '[' INT ']';
 
-freeStatement: 'free' '(' ID ')' EOL;
+freeStatement: 'free' '(' ID index* ')' EOL;
 
 ifStatement:
 	IF '(' expr ')' '{' func_body '}' (
@@ -159,7 +159,7 @@ structContinue: ID index* | structGet;
 
 derref: '(' POINTER expr ')';
 
-type: 'int' | 'double' | 'bool' | 'char' | 'string' | ID;
+type: 'int' | 'double' | 'bool' | 'char' | 'string' | 'struct' ID | 'union' ID | ID;
 
 /* -------- TOKENS -------- */
 INCLUDE: '#include';

@@ -1,0 +1,17 @@
+Testing malloc for structs:
+
+Point:
+x = 10, y = 20
+
+After modification:
+x = 15, y = 40
+
+Person:
+age = 25, height = 180
+
+Structs freed successfully
+
+Array of structs:
+Point 0: (0, 0)
+Point 1: (10, 20)
+Point 2: (20, 40)

@@ -1,0 +1,81 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Node {
+    int value,
+    struct Node *next
+};
+
+int main() {
+    struct Node *head;
+    struct Node *second;
+    struct Node *third;
+    struct Node *current;
+    int count;
+    
+    printf("Testing malloc with pointer chains:\n\n");
+    
+    // Create linked list
+    head = malloc(8);
+    second = malloc(8);
+    third = malloc(8);
+    
+    (*head).value = 10;
+    (*head).next = second;
+    
+    (*second).value = 20;
+    (*second).next = third;
+    
+    (*third).value = 30;
+    (*third).next = 0;
+    
+    // Traverse and print
+    printf("Linked list:\n");
+    current = head;
+    count = 0;
+    while (current != 0) {
+        printf("Node %d: %d\n", count, (*current).value);
+        current = (*current).next;
+        count = count + 1;
+    }
+    
+    // Modify via chain
+    (*(*head).next).value = 200;
+    printf("\nAfter modifying second node:\n");
+    printf("Second value: %d\n", (*second).value);
+    
+    // Create pointer to pointer
+    struct Node **pp;
+    pp = malloc(1);
+    (*pp) = head;
+    
+    printf("\nAccessing via pointer to pointer:\n");
+    printf("First value: %d\n", (*(*pp)).value);
+    
+    // Free the chain
+    free(third);
+    free(second);
+    free(head);
+    free(pp);
+    
+    printf("\nChain freed successfully\n");
+    
+    // Test with array of pointers
+    int *ptrs[3];
+    int i;
+    
+    printf("\nArray of malloc'd pointers:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        ptrs[i] = malloc(1);
+        (*ptrs[i]) = i * 100;
+        printf("ptrs[%d] = %d\n", i, (*ptrs[i]));
+    }
+    
+    // Free array elements
+    for (i = 0; i < 3; i = i + 1) {
+        free(ptrs[i]);
+    }
+    printf("Array pointers freed\n");
+    
+    return 0;
+}

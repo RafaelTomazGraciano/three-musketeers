@@ -1,0 +1,74 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+union Data {
+    int i,
+    double d,
+    char c
+};
+
+union IntOrDouble {
+    int asInt,
+    double asDouble
+};
+
+int main() {
+    union Data *data;
+    union IntOrDouble *value;
+    
+    printf("Testing malloc with unions:\n\n");
+    
+    // Allocate union
+    data = malloc(8);
+    
+    // Use as int
+    (*data).i = 42;
+    printf("As int: %d\n", (*data).i);
+    
+    // Use as char
+    (*data).c = 65;
+    printf("As char: %d\n", (*data).c);
+    
+    // Use as double
+    (*data).d = 3.14;
+    printf("As double: %.2f\n", (*data).d);
+    
+    free(data);
+    
+    // Test with different union
+    printf("\nSecond union:\n");
+    value = malloc(8);
+    
+    (*value).asInt = 100;
+    printf("Stored as int: %d\n", (*value).asInt);
+    
+    (*value).asDouble = 99.99;
+    printf("Stored as double: %.2f\n", (*value).asDouble);
+    
+    free(value);
+    
+    // Array of unions
+    union Data *arr;
+    int i;
+    
+    printf("\nArray of unions:\n");
+    arr = malloc(3);
+    
+    arr[0].i = 10;
+    arr[1].i = 20;
+    arr[2].i = 30;
+    
+    for (i = 0; i < 3; i = i + 1) {
+        printf("arr[%d].i = %d\n", i, arr[i].i);
+    }
+    
+    // Change to use as double
+    arr[1].d = 2.5;
+    printf("\narr[1] as double: %.2f\n", arr[1].d);
+    
+    free(arr);
+    
+    printf("\nAll unions freed successfully\n");
+    
+    return 0;
+}

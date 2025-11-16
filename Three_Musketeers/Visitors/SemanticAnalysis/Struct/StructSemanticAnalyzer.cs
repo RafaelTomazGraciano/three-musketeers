@@ -85,29 +85,46 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
 
         private Symbol? ProcessDeclaration(ExprParser.DeclarationContext context, int line)
         {
-            string type = context.type().GetText();
+            var typeContext = context.type();
             string id = context.ID().GetText();
             var indexes = context.intIndex();
             int pointerCount = context.POINTER().Length;
-
-            string elementType = type;
-            if (heterogenousInfo.ContainsKey(type))
+            string elementType;
+            
+            // Check if it's a struct or union type
+            if (typeContext.GetChild(0).GetText() == "struct" && typeContext.ID() != null)
             {
-                // Check if it's a struct or union
-                var hetInfo = heterogenousInfo[type];
-                if (hetInfo is StructInfo)
+                string structName = typeContext.ID().GetText();
+                elementType = $"struct_{structName}";
+            }
+            else if (typeContext.GetChild(0).GetText() == "union" && typeContext.ID() != null)
+            {
+                string unionName = typeContext.ID().GetText();
+                elementType = $"union_{unionName}";
+            }
+            else
+            {
+                string type = typeContext.GetText();
+                elementType = type;
+                
+                // Check if type exists in heterogenousInfo
+                if (heterogenousInfo.ContainsKey(type))
                 {
-                    elementType = $"struct_{type}";
-                }
-                else if (hetInfo is UnionInfo)
-                {
-                    elementType = $"union_{type}";
+                    var hetInfo = heterogenousInfo[type];
+                    if (hetInfo is StructInfo)
+                    {
+                        elementType = $"struct_{type}";
+                    }
+                    else if (hetInfo is UnionInfo)
+                    {
+                        elementType = $"union_{type}";
+                    }
                 }
             }
 
             if (indexes.Length > 0)
             {
-                if (type == "string")
+                if (elementType == "string")
                 {
                     reportError(line, "Cannot declare arrays of type 'string'");
                     return null;
@@ -126,27 +143,35 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                 }
 
                 // Create array symbol with pointer level
-                // Examples: int[10], int*[10], struct MyStruct**[5][3]
                 return new ArraySymbol(id, elementType, line, dimensions, pointerCount);
             }
 
             // Handle standalone pointers (non-array)
             if (pointerCount > 0)
             {
-                // Examples: int*, struct MyStruct**, char***
                 return new PointerSymbol(id, elementType, line, pointerCount);
             }
 
             // Handle struct members (non-pointer, non-array)
-            if (heterogenousInfo.ContainsKey(type))
+            // Extract just the name without prefix for StructSymbol
+            string typeName = elementType;
+            if (elementType.StartsWith("struct_"))
+            {
+                typeName = elementType.Substring(7);
+            }
+            else if (elementType.StartsWith("union_"))
+            {
+                typeName = elementType.Substring(6);
+            }
+            
+            if (heterogenousInfo.ContainsKey(typeName))
             {
                 // Nested struct member
-                return new StructSymbol(id, type, line, new Dictionary<string, Symbol>());
+                return new StructSymbol(id, typeName, line, new Dictionary<string, Symbol>());
             }
 
             // Handle simple variable members
-            // Examples: int, float, char
-            return new Symbol(id, type, line);
+            return new Symbol(id, elementType, line);
         }
 
         public string? VisitStructGet(ExprParser.StructGetContext context)
@@ -159,7 +184,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
             // Check if this is a dereferenced pointer access: (*ptr).member
             if (context.GetChild(0).GetText() == "(")
             {
-                // This is: '(' POINTER expr ')' '.' structContinue
                 var pointerToken = context.POINTER();
                 if (pointerToken == null)
                 {
@@ -175,10 +199,81 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                 }
                 
                 // Get the variable being dereferenced
-                string? varName = null;
                 if (exprContext is ExprParser.VarContext varCtx)
                 {
-                    varName = varCtx.ID().GetText();
+                    string varName = varCtx.ID().GetText();
+                    baseSymbol = symbolTable.GetSymbol(varName);
+                    
+                    if (baseSymbol == null)
+                    {
+                        reportError(line, $"Variable '{varName}' not found");
+                        return null;
+                    }
+                    
+                    if (!baseSymbol.isInitializated)
+                    {
+                        reportError(line, $"Variable '{varName}' is used before being initialized");
+                    }
+                    
+                    if (!(baseSymbol is PointerSymbol pointerSymbol))
+                    {
+                        reportError(line, $"Cannot dereference non-pointer variable '{varName}'");
+                        return null;
+                    }
+                    
+                    currentType = pointerSymbol.pointeeType;
+                }
+                else if (exprContext is ExprParser.VarStructContext varStructCtx)
+                {
+                    string? structMemberType = VisitStructGet(varStructCtx.structGet());
+                    if (structMemberType == null) return null;
+                    currentType = structMemberType;
+                    
+                    // If the type is a pointer (ends with *), we need to dereference it
+                    if (currentType.EndsWith("*"))
+                    {
+                        currentType = currentType.Substring(0, currentType.Length - 1);
+                        
+                        // Add back the struct_ prefix if it's a struct type
+                        if (heterogenousInfo.ContainsKey(currentType))
+                        {
+                            var hetInfo = heterogenousInfo[currentType];
+                            if (hetInfo is StructInfo)
+                            {
+                                currentType = $"struct_{currentType}";
+                            }
+                            else if (hetInfo is UnionInfo)
+                            {
+                                currentType = $"union_{currentType}";
+                            }
+                        }
+                    }
+                }
+                else if (exprContext is ExprParser.DerrefExprContext nestedDerrefCtx)
+                {
+                    string? innerType = VisitDerrefExpr(nestedDerrefCtx);
+                    if (innerType == null) return null;
+                    currentType = innerType;
+                    
+                    // If the type is a pointer (ends with *), we need to dereference it
+                    if (currentType.EndsWith("*"))
+                    {
+                        currentType = currentType.Substring(0, currentType.Length - 1);
+                        
+                        // Add back the struct_ prefix if it's a struct type
+                        if (heterogenousInfo.ContainsKey(currentType))
+                        {
+                            var hetInfo = heterogenousInfo[currentType];
+                            if (hetInfo is StructInfo)
+                            {
+                                currentType = $"struct_{currentType}";
+                            }
+                            else if (hetInfo is UnionInfo)
+                            {
+                                currentType = $"union_{currentType}";
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -186,36 +281,27 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     return null;
                 }
                 
-                // Get the symbol
-                baseSymbol = symbolTable.GetSymbol(varName);
-                if (baseSymbol == null)
+                // Clean up type name BEFORE checking if it's a struct
+                if (currentType.StartsWith("struct_"))
                 {
-                    reportError(line, $"Variable '{varName}' not found");
+                    currentType = currentType.Substring(7);
+                }
+                else if (currentType.StartsWith("union_"))
+                {
+                    currentType = currentType.Substring(6);
+                }
+                
+                if (!heterogenousInfo.ContainsKey(currentType))
+                {
+                    reportError(line, $"Cannot dereference pointer to non-struct type '{currentType}'");
                     return null;
                 }
-                
-                // Check if variable has been initialized
-                if (!baseSymbol.isInitializated)
-                {
-                    reportError(line, $"Variable '{varName}' is used before being initialized");
-                }
-                
-                // Must be a pointer
-                if (!(baseSymbol is PointerSymbol pointerSymbol))
-                {
-                    reportError(line, $"Cannot dereference non-pointer variable '{varName}'");
-                    return null;
-                }
-                
-                // Get the pointee type
-                currentType = pointerSymbol.pointeeType;
             }
             else
             {
                 // Original code for regular struct access (ID.member or ID->member)
                 string id = context.ID().GetText();
 
-                // Get the base variable
                 baseSymbol = symbolTable.GetSymbol(id);
                 if (baseSymbol == null)
                 {
@@ -223,29 +309,33 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     return null;
                 }
 
-                // Check if variable has been initialized
                 if (!baseSymbol.isInitializated)
                 {
                     reportError(line, $"Variable '{id}' is used before being initialized");
                 }
 
-                // Determine the current type after array indexing (if any)
                 currentType = baseSymbol.type;
                 
-                // Handle array indexing on base variable
                 if (indexes.Length > 0)
                 {
                     if (baseSymbol is ArraySymbol arraySymbol)
                     {
-                        // Verify index count
                         if (indexes.Length > arraySymbol.dimensions.Count)
                         {
                             reportError(line, $"Too many indices for array '{id}'. Expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
                             return null;
                         }
-                        
-                        // After indexing, the type is the inner type
                         currentType = arraySymbol.elementType;
+                    }
+                    else if (baseSymbol is PointerSymbol pointerSymbol)
+                    {
+                        // Handle pointer indexing 
+                        currentType = pointerSymbol.pointeeType;
+                        
+                        if (pointerSymbol.pointerLevel > 1)
+                        {
+                            currentType += new string('*', pointerSymbol.pointerLevel - 1);
+                        }
                     }
                     else
                     {
@@ -268,24 +358,23 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                         return null;
                     }
                 }
-            }
+                
+                // Clean up type name
+                if (currentType.StartsWith("struct_"))
+                {
+                    currentType = currentType.Substring(7);
+                }
+                else if (currentType.StartsWith("union_"))
+                {
+                    currentType = currentType.Substring(6);
+                }
 
-            // Clean up type name if it has "struct_" or "union_" prefix
-            if (currentType.StartsWith("struct_"))
-            {
-                currentType = currentType.Substring(7);
-            }
-            else if (currentType.StartsWith("union_"))
-            {
-                currentType = currentType.Substring(6);
-            }
-
-            // Verify the type is a struct or union
-            if (!heterogenousInfo.ContainsKey(currentType))
-            {
-                string? varIdentifier = baseSymbol?.name ?? "dereferenced pointer";
-                reportError(line, $"Variable '{varIdentifier}' is not a struct or union type. Cannot access members.");
-                return null;
+                if (!heterogenousInfo.ContainsKey(currentType))
+                {
+                    string? varIdentifier = baseSymbol?.name ?? "dereferenced pointer";
+                    reportError(line, $"Variable '{varIdentifier}' is not a struct or union type. Cannot access members.");
+                    return null;
+                }
             }
 
             // Navigate through the struct chain and return the final field type
@@ -396,6 +485,28 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                     return null;
                 }
 
+                // If this is a pointer field and we're not using arrow operator, return pointer type
+                if (!isArrowOp && fieldSymbol is PointerSymbol pointerFieldNested)
+                {
+                    string fullPointerType = pointerFieldNested.pointeeType;
+                    if (pointerFieldNested.pointerLevel > 0)
+                    {
+                        fullPointerType += new string('*', pointerFieldNested.pointerLevel);
+                    }
+                    
+                    // Clean up the struct_ prefix before returning
+                    if (fullPointerType.StartsWith("struct_"))
+                    {
+                        fullPointerType = fullPointerType.Substring(7);
+                    }
+                    else if (fullPointerType.StartsWith("union_"))
+                    {
+                        fullPointerType = fullPointerType.Substring(6);
+                    }
+                    
+                    return fullPointerType;
+                }
+
                 // Clean up field type prefix before recursion
                 if (fieldType.StartsWith("struct_"))
                 {
@@ -456,8 +567,111 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Struct
                 }
 
                 // Terminal case - return the final field type
+                if (fieldSymbol is PointerSymbol pointerField)
+                {
+                    // If it's a pointer, return the full pointer type
+                    string pointerType = pointerField.pointeeType;
+                    if (pointerField.pointerLevel > 0)
+                    {
+                        pointerType += new string('*', pointerField.pointerLevel);
+                    }
+                    return pointerType;
+                }
                 return fieldType;
             }
+        }
+
+        private string? VisitDerrefExpr(ExprParser.DerrefExprContext context)
+        {
+            var derrefNode = context.derref();
+            if (derrefNode?.expr() == null) return null;
+            
+            var exprContext = derrefNode.expr();
+            
+            if (exprContext is ExprParser.VarContext varCtx)
+            {
+                string varName = varCtx.ID().GetText();
+                var symbol = symbolTable.GetSymbol(varName);
+                
+                if (symbol is PointerSymbol pointerSymbol)
+                {
+                    return pointerSymbol.pointeeType;
+                }
+            }
+            else if (exprContext is ExprParser.VarStructContext varStructCtx)
+            {
+                // Get the type from struct access
+                string? structMemberType = VisitStructGet(varStructCtx.structGet());
+                if (structMemberType == null) return null;
+                
+                // If the type ends with *, it's a pointer - remove one level of indirection
+                if (structMemberType.EndsWith("*"))
+                {
+                    // Remove the trailing *
+                    string dereferencedType = structMemberType.Substring(0, structMemberType.Length - 1);
+                    
+                    // If there are still more *, return with reduced pointer level
+                    if (dereferencedType.EndsWith("*"))
+                    {
+                        return dereferencedType;
+                    }
+                    
+                    // Otherwise, add back the struct_ prefix if it's a struct type
+                    if (heterogenousInfo.ContainsKey(dereferencedType))
+                    {
+                        var hetInfo = heterogenousInfo[dereferencedType];
+                        if (hetInfo is StructInfo)
+                        {
+                            return $"struct_{dereferencedType}";
+                        }
+                        else if (hetInfo is UnionInfo)
+                        {
+                            return $"union_{dereferencedType}";
+                        }
+                    }
+                    
+                    return dereferencedType;
+                }
+                
+                return structMemberType;
+            }
+            else if (exprContext is ExprParser.DerrefExprContext nestedDerref)
+            {
+                string? innerType = VisitDerrefExpr(nestedDerref);
+                if (innerType == null) return null;
+                
+                // If the type ends with *, remove one level of indirection
+                if (innerType.EndsWith("*"))
+                {
+                    string dereferencedType = innerType.Substring(0, innerType.Length - 1);
+                    
+                    // If there are still more *, return with reduced pointer level
+                    if (dereferencedType.EndsWith("*"))
+                    {
+                        return dereferencedType;
+                    }
+                    
+                    // Otherwise, add back the struct_ prefix if it's a struct type
+                    if (heterogenousInfo.ContainsKey(dereferencedType))
+                    {
+                        var hetInfo = heterogenousInfo[dereferencedType];
+                        if (hetInfo is StructInfo)
+                        {
+                            return $"struct_{dereferencedType}";
+                        }
+                        else if (hetInfo is UnionInfo)
+                        {
+                            return $"union_{dereferencedType}";
+                        }
+                    }
+                    
+                    return dereferencedType;
+                }
+                
+                return innerType;
+            }
+            
+            return null;
         }
     }
 }

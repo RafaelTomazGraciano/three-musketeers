@@ -85,16 +85,49 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 
             // Case 2: Assignment to existing variable (pointer = malloc(5))
 
-             Variable? variable = variableResolver.GetVariable(varName);
-    
+            Variable? variable = variableResolver.GetVariable(varName);
+
             if (variable == null)
             {
                 throw new Exception($"Variable '{varName}' not found in current scope");
             }
-            
+
+            var indexes = context.index();
+
+            // Handle array element assignment: ptrs[i] = malloc(...)
+            if (indexes != null && indexes.Length > 0)
+            {
+                // This is an array of pointers
+                if (variable is ArrayVariable arrayVar)
+                {
+                    string elementType = arrayVar.innerType; // This should be the pointer type (e.g., i32*)
+                    string arrBaseType = CodeGeneratorBase.RemoveOneAsterisk(elementType);
+                    size = getAlignment(arrBaseType);
+                    
+                    mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
+                    mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
+                    mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {elementType}");
+                    
+                    // Get pointer to array element
+                    string indexExpr = visitExpression(indexes[0].expr());
+                    string gepReg = nextRegister();
+                    mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {arrayVar.LLVMType}, {arrayVar.LLVMType}* {variable.register}, i32 0, i32 {indexExpr}");
+                    
+                    // Store the malloc'd pointer in the array element
+                    mainBody.AppendLine($"  store {elementType} {bitcastReg}, {elementType}* {gepReg}, align 8");
+                    
+                    return null;
+                }
+                else
+                {
+                    throw new Exception($"Variable '{varName}' is not an array but is being indexed in malloc assignment");
+                }
+            }
+
+            // Handle simple pointer assignment: pointer = malloc(...)
             register = variable.register;
             llvmType = variable.LLVMType;
-            
+
             // Remove the '*' to calculate the base type size
             string baseType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
             size = getAlignment(baseType);
@@ -103,24 +136,46 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
             mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
             mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}, align 8");
-            
+
             return null;
         }
 
         public string? VisitFreeStatment([NotNull] ExprParser.FreeStatementContext context)
         {
             var mainBody = getCurrentBody();
-
             string varName = context.ID().GetText();
+            var indexes = context.index();
 
             Variable variable = variableResolver.GetVariable(varName)!;
+
+            string loadReg;
+            string bitcastReg;
             
-            // load the pointer value first
-            string loadReg = nextRegister();
+            // Handle free(ptrs[i])
+            if (indexes != null && indexes.Length > 0)
+            {
+                if (variable is ArrayVariable arrayVar)
+                {
+                    string indexExpr = visitExpression(indexes[0].expr());
+                    string gepReg = nextRegister();
+                    mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {arrayVar.LLVMType}, {arrayVar.LLVMType}* {variable.register}, i32 0, i32 {indexExpr}");
+                    
+                    loadReg = nextRegister();
+                    mainBody.AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {gepReg}");
+                    
+                    bitcastReg = nextRegister();
+                    mainBody.AppendLine($"  {bitcastReg} = bitcast {arrayVar.innerType} {loadReg} to i8*");
+                    mainBody.AppendLine($"  call void @free(i8* {bitcastReg})");
+                    
+                    return null;
+                }
+            }
+            
+            // Handle free(ptr) - código existente
+            loadReg = nextRegister();
             mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}");
             
-            // bitcast the loaded value
-            string bitcastReg = nextRegister();
+            bitcastReg = nextRegister();
             mainBody.AppendLine($"  {bitcastReg} = bitcast {variable.LLVMType} {loadReg} to i8*");
             mainBody.AppendLine($"  call void @free(i8* {bitcastReg})");
             

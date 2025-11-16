@@ -1,0 +1,63 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Point {
+    int x,
+    int y
+};
+
+struct Person {
+    int age,
+    int height
+};
+
+int main() {
+    struct Point *p;
+    struct Person *person;
+    
+    printf("Testing malloc for structs:\n\n");
+    
+    // Allocate Point
+    p = malloc(8);
+    (*p).x = 10;
+    (*p).y = 20;
+    
+    printf("Point:\n");
+    printf("x = %d, y = %d\n", (*p).x, (*p).y);
+    
+    // Modify struct
+    (*p).x = (*p).x + 5;
+    (*p).y = (*p).y * 2;
+    printf("\nAfter modification:\n");
+    printf("x = %d, y = %d\n", (*p).x, (*p).y);
+    
+    free(p);
+    
+    // Allocate Person
+    person = malloc(8);
+    (*person).age = 25;
+    (*person).height = 180;
+    
+    printf("\nPerson:\n");
+    printf("age = %d, height = %d\n", (*person).age, (*person).height);
+    
+    free(person);
+    printf("\nStructs freed successfully\n");
+    
+    // Allocate array of structs
+    struct Point *points;
+    int i;
+    
+    points = malloc(3);
+    
+    printf("\nArray of structs:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        points[i].x = i * 10;
+        points[i].y = i * 20;
+        printf("Point %d: (%d, %d)\n", i, points[i].x, points[i].y);
+    }
+    
+    free(points);
+    
+    return 0;
+}

@@ -48,11 +48,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return null;
             }
 
-            if (VisitExpr(context.expr()) == "string")
-            {
-                reportError(line, $"Expected char, int or double not string");
-            }
-
             // Case 1: Malloc with type declaration (int *pointer = malloc(5))
             if (typeToken != null)
             {
@@ -71,7 +66,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return "pointer";
             }
 
-            // Case 2: Malloc assignment to existing variable (pointer = malloc(5))
+            // Case 2: Malloc assignment to existing variable
             Symbol? symbol = symbolTable.GetSymbol(varName);
 
             if (symbol == null)
@@ -80,6 +75,32 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return null;
             }
 
+            // Check if it's an array element being assigned (e.g., ptrs[i] = malloc(...))
+            var indexes = context.index();
+            if (indexes.Length > 0)
+            {
+                if (symbol is ArraySymbol arraySymbol)
+                {
+                    // Check if array elements are pointers
+                    if (arraySymbol.pointerLevel > 0)
+                    {
+                        // Valid: assigning to an element of array of pointers
+                        return "pointer";
+                    }
+                    else
+                    {
+                        reportError(line, $"Cannot assign malloc to array element of non-pointer type");
+                        return null;
+                    }
+                }
+                else
+                {
+                    reportError(line, $"Variable '{varName}' is not an array");
+                    return null;
+                }
+            }
+
+            // Regular pointer assignment
             if (symbol is not PointerSymbol)
             {
                 reportError(line, $"Variable '{varName}' is not a pointer type, cannot assign malloc result");
@@ -110,7 +131,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
             string varName = context.ID().GetText();
             int line = context.Start.Line;
 
-            // Check if variable exists
             Symbol? symbol = symbolTable.GetSymbol(varName);
             if (symbol == null)
             {
@@ -118,7 +138,23 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return null;
             }
 
-            // Check if variable is a pointer
+            // Handle array of pointers: free(ptrs[i])
+            if (symbol is ArraySymbol arraySymbol && context.index().Length > 0)
+            {
+                // Check if array elements are pointers
+                if (arraySymbol.pointerLevel > 0)
+                {
+                    // Valid: freeing an element of an array of pointers
+                    return null;
+                }
+                else
+                {
+                    reportError(line, $"Cannot free array element of non-pointer type");
+                    return null;
+                }
+            }
+
+            // Regular case: free(ptr)
             if (symbol is not PointerSymbol)
             {
                 reportError(line, $"Cannot free non-pointer variable '{varName}' (type: {symbol.type})");
@@ -127,19 +163,16 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
 
             PointerSymbol pointerSymbol = (PointerSymbol)symbol;
 
-            // Warn if pointer was not allocated with malloc
             if (!pointerSymbol.isDynamic)
             {
                 reportWarning(line, $"Freeing pointer '{varName}' that was not allocated with malloc - this may cause undefined behavior");
             }
 
-            // Warn if pointer is uninitialized
             if (!pointerSymbol.isInitializated)
             {
                 reportWarning(line, $"Attempting to free uninitialized pointer '{varName}' - this may cause undefined behavior");
             }
 
-            // Mark the pointer as freed (no longer dynamic and uninitialized)
             pointerSymbol.isDynamic = false;
             pointerSymbol.isInitializated = false;      
 

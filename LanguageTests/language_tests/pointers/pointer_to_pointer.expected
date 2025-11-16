@@ -1,0 +1,14 @@
+Value of x: 42
+Value via p: 42
+Value via pp: 42
+
+After (*(*pp)) = 100:
+x = 100
+(*p) = 100
+(*(*pp)) = 100
+
+After changing p to point to y:
+x = 100
+y = 200
+(*p) = 200
+(*(*pp)) = 200

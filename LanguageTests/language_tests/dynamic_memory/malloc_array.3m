@@ -1,0 +1,59 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+int main() {
+    int *arr;
+    int i;
+    int sum;
+    
+    printf("Testing malloc for arrays:\n\n");
+    
+    // Allocate array of 5 integers
+    arr = malloc(5);
+    
+    // Initialize array
+    printf("Initializing array:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        arr[i] = i * 10;
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    
+    // Compute sum
+    sum = 0;
+    for (i = 0; i < 5; i = i + 1) {
+        sum = sum + arr[i];
+    }
+    printf("\nSum of array: %d\n", sum);
+    
+    // Modify elements
+    arr[2] = 999;
+    printf("\nAfter arr[2] = 999:\n");
+    printf("arr[2] = %d\n", arr[2]);
+    
+    // Use pointer arithmetic
+    int *p;
+    p = arr;
+    printf("\nUsing pointer arithmetic:\n");
+    printf("(*p) = %d\n", (*p));
+    p = p + 1;
+    printf("(*(p+1)) = %d\n", (*p));
+    
+    free(arr);
+    printf("\nArray freed successfully\n");
+    
+    // Test with different size
+    int *arr2;
+    arr2 = malloc(3);
+    arr2[0] = 100;
+    arr2[1] = 200;
+    arr2[2] = 300;
+    
+    printf("\nSecond array:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        printf("arr2[%d] = %d\n", i, arr2[i]);
+    }
+    
+    free(arr2);
+    
+    return 0;
+}

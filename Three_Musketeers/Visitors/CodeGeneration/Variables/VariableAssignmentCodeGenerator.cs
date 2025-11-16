@@ -253,7 +253,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
         public string? VisitDec([NotNull] ExprParser.DeclarationContext context)
         {
-            string varType = context.type().GetText();
+            var typeContext = context.type();
             string varName = context.ID().GetText();
 
             bool isPointer = context.POINTER() != null && context.POINTER().Length > 0;
@@ -261,13 +261,30 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 ? context.POINTER().Aggregate("", (a, b) => a + b.GetText())
                 : "";
 
-            string llvmType = getLLVMType(varType) + pointers;
+            // Handle "struct TypeName" or "union TypeName" properly
+            string varType;
+            string llvmType;
+            if (typeContext.ChildCount >= 2 && 
+                (typeContext.GetChild(0).GetText() == "struct" || typeContext.GetChild(0).GetText() == "union"))
+            {
+                // This is "struct Name" or "union Name"
+                string typeName = typeContext.ID().GetText();
+                varType = typeContext.GetText(); // "structNode" ou similar
+                llvmType = getLLVMType("struct " + typeName);
+            }
+            else
+            {
+                varType = typeContext.GetText();
+                llvmType = getLLVMType(varType);
+            }
+            
+            llvmType = llvmType + pointers;
 
             string? currentFunc = getCurrentFunctionName();
             bool isGlobal = currentFunc == null;
             string varKey = isGlobal ? varName : $"@{currentFunc}.{varName}";
 
-            if (!isPointer && context.intIndex() != null && context.intIndex().Length > 0)
+            if (context.intIndex() != null && context.intIndex().Length > 0)
             {
                 var indexes = context.intIndex();
                 List<int> dimensions = new List<int>();

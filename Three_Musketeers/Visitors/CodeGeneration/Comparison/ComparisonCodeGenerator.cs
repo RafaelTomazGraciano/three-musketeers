@@ -37,9 +37,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Comparison
             
             bool isPointerComparison = leftType.Contains('*') || rightType.Contains('*');
             
-            // DEBUG: Log comparison types
-            Console.WriteLine($"[DEBUG] Comparison: {leftValue}({leftType}) {op} {rightValue}({rightType})");
-            
             if (isPointerComparison)
             {
                 // Pointer comparison - use the pointer type

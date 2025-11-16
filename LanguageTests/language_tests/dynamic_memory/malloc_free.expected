@@ -1,0 +1,21 @@
+Testing malloc and free cycle:
+
+Cycle 1:
+Allocated: 100
+Freed
+
+Cycle 2:
+Allocated: 200
+Freed
+
+Cycle 3 (array):
+Array allocated and initialized
+Array freed
+
+Multiple allocations:
+a = 10, b = 20, c = 30
+a freed
+b freed
+c freed
+
+All memory management successful
