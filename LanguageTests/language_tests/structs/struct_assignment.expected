@@ -1,0 +1,7 @@
+=== Struct Assignment Test ===
+Alice - Age: 25, Height: 165
+Bob (copy of Alice) - Age: 25, Height: 165
+
+After modifying Bob:
+Alice - Age: 25, Height: 165
+Bob - Age: 30, Height: 180

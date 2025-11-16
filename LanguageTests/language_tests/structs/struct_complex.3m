@@ -1,0 +1,70 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Date {
+    int day,
+    int month,
+    int year
+};
+
+struct Employee {
+    int id,
+    struct Date hireDate,
+    int salary
+};
+
+void printEmployee(struct Employee emp) {
+    printf("Employee ID: %d\n", emp.id);
+    printf("  Hire Date: %d/%d/%d\n", emp.hireDate.day, emp.hireDate.month, emp.hireDate.year);
+    printf("  Salary: %d\n", emp.salary);
+}
+
+int main() {
+    struct Employee *employees;
+    int i;
+    int totalSalary;
+    
+    printf("=== Complex Struct Test ===\n\n");
+    
+    employees = malloc(3);
+    
+    employees[0].id = 1001;
+    employees[0].hireDate.day = 15;
+    employees[0].hireDate.month = 3;
+    employees[0].hireDate.year = 2020;
+    employees[0].salary = 50000;
+    
+    employees[1].id = 1002;
+    employees[1].hireDate.day = 22;
+    employees[1].hireDate.month = 7;
+    employees[1].hireDate.year = 2021;
+    employees[1].salary = 60000;
+    
+    employees[2].id = 1003;
+    employees[2].hireDate.day = 10;
+    employees[2].hireDate.month = 1;
+    employees[2].hireDate.year = 2022;
+    employees[2].salary = 55000;
+    
+    printf("Employee List:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        printEmployee(employees[i]);
+        if (i < 2) {
+            printf("\n");
+        }
+    }
+    
+    totalSalary = 0;
+    for (i = 0; i < 3; i = i + 1) {
+        totalSalary = totalSalary + employees[i].salary;
+    }
+    
+    printf("\nTotal Payroll: %d\n", totalSalary);
+    printf("Average Salary: %d\n", totalSalary / 3);
+    
+    free(employees);
+    
+    printf("\nAll data processed successfully\n");
+    
+    return 0;
+}

@@ -1,0 +1,3 @@
+=== Simple Struct Test ===
+Point: (10, 20)
+After modification: (15, 17)

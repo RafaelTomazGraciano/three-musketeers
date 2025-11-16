@@ -1,0 +1,50 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Node {
+    int value,
+    struct Node *next
+};
+
+int main() {
+    struct Node *first;
+    struct Node *second;
+    struct Node *third;
+    struct Node *current;
+    int count;
+    
+    printf("=== Struct Pointer Test ===\n");
+    
+    first = malloc(16);
+    second = malloc(16);
+    third = malloc(16);
+    
+    (*first).value = 10;
+    (*first).next = second;
+    
+    (*second).value = 20;
+    (*second).next = third;
+    
+    (*third).value = 30;
+    (*third).next = 0;
+    
+    printf("Linked List:\n");
+    current = first;
+    count = 0;
+    
+    while (current != 0) {
+        printf("  Node %d: %d\n", count, (*current).value);
+        current = (*current).next;
+        count = count + 1;
+    }
+    
+    printf("Total nodes: %d\n", count);
+    
+    free(third);
+    free(second);
+    free(first);
+    
+    printf("Memory freed successfully\n");
+    
+    return 0;
+}

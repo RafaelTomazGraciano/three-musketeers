@@ -13,7 +13,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Pointer;
 using Three_Musketeers.Utils;
 using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
-using Three_Musketeers.Visitors.CodeGeneration.Struct;
+using Three_Musketeers.Visitors.CodeGeneration.Struct_Unions;
 using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 using Three_Musketeers.Visitors.CodeGeneration.ControlFlow;
 
@@ -61,6 +61,8 @@ namespace Three_Musketeers.Visitors
             //struct
             structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
                 variableResolver, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
+    
+            unionCodeGenerator = new UnionCodeGenerator(structTypes, structBuilder, GetLLVMType, GetSize);
 
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
@@ -114,7 +116,8 @@ namespace Three_Musketeers.Visitors
             //pointers & dynamic memory
             pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, variableResolver, CalculateArrayPosition);
             dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, 
-                GetAlignment, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables);
+                GetAlignment, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables,
+                (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx));
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit, CalculateArrayPosition);
@@ -431,6 +434,11 @@ namespace Three_Musketeers.Visitors
         public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
         {
             return dynamicMemoryCodeGenerator.VisitMallocAtt(context);
+        }
+
+        public override string? VisitMallocStructAtt([NotNull] ExprParser.MallocStructAttContext context)
+        {
+            return dynamicMemoryCodeGenerator.VisitMallocStructAtt(context);
         }
 
         public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)

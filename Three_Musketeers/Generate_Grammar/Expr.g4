@@ -69,10 +69,11 @@ getsStatement: 'gets' '(' (ID | structGet) ')' EOL;
 putsStatement: 'puts' '(' (ID index? | STRING_LITERAL | structGet) ')' EOL;
 
 att
-    : (type POINTER*)? ID '=' expr					# GenericAtt
-	| (type POINTER+)? ID index* '=' 'malloc' '(' expr ')'	# MallocAtt
-	| derref '=' expr								# DerrefAtt
-	| structGet '=' expr							# StructAtt;
+    : (type POINTER*)? ID '=' expr					         # GenericAtt
+	| (type POINTER+)? ID index* '=' 'malloc' '(' expr ')'	 # MallocAtt
+	| structGet '=' 'malloc' '(' expr ')'			         # MallocStructAtt
+	| derref '=' expr								         # DerrefAtt
+	| structGet '=' expr							         # StructAtt;
 
 attVar
     : ID index* '=' expr	# SingleArrayAtt
@@ -87,7 +88,7 @@ index: '[' expr ']';
 
 intIndex: '[' INT ']';
 
-freeStatement: 'free' '(' ID index* ')' EOL;
+freeStatement: 'free' '(' (ID index* | structGet) ')' EOL;
 
 ifStatement:
 	IF '(' expr ')' '{' func_body '}' (

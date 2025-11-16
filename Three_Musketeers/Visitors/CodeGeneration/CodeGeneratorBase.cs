@@ -4,7 +4,7 @@ using LLVMSharp;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Visitors.CodeGeneration.Functions;
-using Three_Musketeers.Visitors.CodeGeneration.Struct;
+using Three_Musketeers.Visitors.CodeGeneration.Struct_Unions;
 using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 
 namespace Three_Musketeers.Visitors.CodeGeneration
@@ -27,6 +27,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         protected DefineCodeGenerator? defineCodeGenerator;
 
         protected StructCodeGenerator? structCodeGenerator;
+        protected UnionCodeGenerator? unionCodeGenerator;
 
         //for structs
         protected Dictionary<string, HeterogenousType> structTypes = [];
@@ -68,12 +69,48 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             return type switch
             {
                 var t when t.Contains('*') => 8,
-                var t when structTypes.ContainsKey(t) => 4,
+                var t when t.StartsWith("%") => GetStructOrUnionAlignment(t), 
                 "i32" => 4,
                 "double" => 8,
                 "i8" => 1,
                 _ => 4
             };
+        }
+
+        private int GetStructOrUnionAlignment(string type)
+        {
+            string typeName = type.TrimStart('%');
+            
+            Console.WriteLine($"DEBUG ALIGNMENT: Getting alignment for type={type}, typeName={typeName}");
+            
+            if (structTypes.ContainsKey(typeName))
+            {
+                var hetType = structTypes[typeName];
+                
+                // For unions, return the MAXIMUM alignment of ALL members
+                if (hetType is UnionType unionType)
+                {
+                    int maxAlignment = 1;
+                    foreach (var member in unionType.GetMembers())
+                    {
+                        int memberAlignment = GetAlignment(member.LLVMType);
+                        Console.WriteLine($"  Member {member.name} type={member.LLVMType} alignment={memberAlignment}");
+                        if (memberAlignment > maxAlignment)
+                        {
+                            maxAlignment = memberAlignment;
+                        }
+                    }
+                    Console.WriteLine($"  Final union alignment={maxAlignment}");
+                    return maxAlignment;
+                }
+                
+                // For structs, return 4 (or calculate based on members)
+                Console.WriteLine($"  Struct alignment=4");
+                return 4;
+            }
+            
+            Console.WriteLine($"  Type not found, returning 4");
+            return 4;
         }
 
         protected int GetSize(string type)
@@ -138,6 +175,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         {
             var prog = context.prog();
             var heteregeneousDeclarationContexts = prog.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
+            
             foreach (var hetDecl in heteregeneousDeclarationContexts)
             {
                 if (hetDecl.structStatement() != null)
@@ -147,7 +185,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
 
                 if (hetDecl.unionStatement() != null)
                 {
-                    structCodeGenerator!.VisitUnionStatement(hetDecl.unionStatement());
+                    unionCodeGenerator!.VisitUnionStatement(hetDecl.unionStatement());
                 }
             }
 
@@ -224,16 +262,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration
             output.AppendLine();
             
             output.Append(structBuilder);
-
             output.Append(globalStrings);
             output.AppendLine();
-
             output.Append(declarations);
             output.AppendLine();
-            
             output.Append(functionDefinitions);
             output.AppendLine();
-
             output.Append(mainDefinition);
 
             return output.ToString();

@@ -1,0 +1,63 @@
+#include <stdio.tm>
+
+struct Point {
+    int x,
+    int y
+};
+
+union Shape {
+    int radius,
+    struct Point center,
+    double area
+};
+
+struct Container {
+    int id,
+    union Shape shape
+};
+
+int main() {
+    union Shape s1;
+    union Shape s2;
+    struct Container c;
+    
+    printf("=== Union with Nested Struct Test ===\n\n");
+    
+    // Test 1: Store radius
+    printf("Test 1 - Store radius:\n");
+    s1.radius = 10;
+    printf("  s1.radius = %d\n", s1.radius);
+    
+    // Test 2: Store point (overwrites radius)
+    printf("\nTest 2 - Store point:\n");
+    s1.center.x = 5;
+    s1.center.y = 7;
+    printf("  s1.center.x = %d\n", s1.center.x);
+    printf("  s1.center.y = %d\n", s1.center.y);
+    printf("  s1.radius = %d (corrupted)\n", s1.radius);
+    
+    // Test 3: Store area
+    printf("\nTest 3 - Store area:\n");
+    s1.area = 314.159;
+    printf("  s1.area = %f\n", s1.area);
+    
+    // Test 4: Union inside struct
+    printf("\nTest 4 - Union inside struct:\n");
+    c.id = 100;
+    c.shape.radius = 15;
+    printf("  Container ID: %d\n", c.id);
+    printf("  Shape radius: %d\n", c.shape.radius);
+    
+    c.shape.center.x = 20;
+    c.shape.center.y = 30;
+    printf("  Shape center: (%d, %d)\n", c.shape.center.x, c.shape.center.y);
+    printf("  Shape radius: %d (corrupted)\n", c.shape.radius);
+    
+    // Test 5: Multiple union instances
+    printf("\nTest 5 - Multiple instances:\n");
+    s2.radius = 25;
+    printf("  s2.radius = %d\n", s2.radius);
+    printf("  s1.area = %f (unchanged)\n", s1.area);
+    
+    return 0;
+}

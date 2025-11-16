@@ -17,6 +17,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         private Func<string?> getCurrentFunctionName;
         private VariableResolver variableResolver;
         private Dictionary<string, Variable> variables; 
+        private Func<ExprParser.StructGetContext, string> visitStructGet;
 
         public DynamicMemoryCodeGenerator(
             Func<StringBuilder> getCurrentBody,
@@ -27,8 +28,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             Func<string, string> getLLVMType,
             Func<string?> getCurrentFunctionName,
             VariableResolver variableResolver,
-            Dictionary<string, Variable> variables
-            ) 
+            Dictionary<string, Variable> variables,
+            Func<ExprParser.StructGetContext, string> visitStructGet 
+        ) 
         {
             this.getCurrentBody = getCurrentBody;
             this.registerTypes = registerTypes;
@@ -39,6 +41,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.variableResolver = variableResolver;
             this.variables = variables;
+            this.visitStructGet = visitStructGet;
         }
 
         public string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
@@ -140,16 +143,81 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             return null;
         }
 
+        public string? VisitMallocStructAtt([NotNull] ExprParser.MallocStructAttContext context)
+        {
+            var mainBody = getCurrentBody();
+            
+            // Get the struct member pointer register
+            string memberPtrReg = visitStructGet(context.structGet());
+            
+            if (!registerTypes.ContainsKey(memberPtrReg))
+            {
+                throw new Exception($"Register type not found for struct member in malloc");
+            }
+            
+            string memberPtrType = registerTypes[memberPtrReg];
+            string memberType = CodeGeneratorBase.RemoveOneAsterisk(memberPtrType);
+            
+            // Evaluate the size expression
+            string expr = visitExpression(context.expr());
+            string i64ToUse = CastToI64(expr, registerTypes[expr]);
+            
+            // Calculate size to allocate
+            string baseType = CodeGeneratorBase.RemoveOneAsterisk(memberType);
+            int size = getAlignment(baseType);
+            
+            string mulReg = nextRegister();
+            string mallocReg = nextRegister();
+            string bitcastReg = nextRegister();
+            
+            mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
+            mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
+            mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {memberType}");
+            mainBody.AppendLine($"  store {memberType} {bitcastReg}, {memberPtrType} {memberPtrReg}, align 8");
+            
+            return null;
+        }
+
         public string? VisitFreeStatment([NotNull] ExprParser.FreeStatementContext context)
         {
             var mainBody = getCurrentBody();
+            string loadReg;
+            string bitcastReg;
+            
+            // Check if it's a struct/union member access (e.g., ptr.iptr)
+            var structGet = context.structGet();
+            if (structGet != null)
+            {
+                // Visit the structGet to get the pointer register
+                string memberPtrReg = visitStructGet(structGet);
+                
+                if (!registerTypes.ContainsKey(memberPtrReg))
+                {
+                    throw new Exception($"Register type not found for struct member pointer");
+                }
+                
+                string memberPtrType = registerTypes[memberPtrReg];
+                string memberType = CodeGeneratorBase.RemoveOneAsterisk(memberPtrType);
+                
+                // Load the pointer value from the struct member
+                loadReg = nextRegister();
+                mainBody.AppendLine($"  {loadReg} = load {memberType}, {memberPtrType} {memberPtrReg}, align {getAlignment(memberPtrType)}");
+                
+                // Cast to i8* for free
+                bitcastReg = nextRegister();
+                mainBody.AppendLine($"  {bitcastReg} = bitcast {memberType} {loadReg} to i8*");
+                
+                // Call free
+                mainBody.AppendLine($"  call void @free(i8* {bitcastReg})");
+                
+                return null;
+            }
+            
+            // Handle regular variable or array element
             string varName = context.ID().GetText();
             var indexes = context.index();
 
             Variable variable = variableResolver.GetVariable(varName)!;
-
-            string loadReg;
-            string bitcastReg;
             
             // Handle free(ptrs[i])
             if (indexes != null && indexes.Length > 0)
@@ -161,7 +229,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                     mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {arrayVar.LLVMType}, {arrayVar.LLVMType}* {variable.register}, i32 0, i32 {indexExpr}");
                     
                     loadReg = nextRegister();
-                    mainBody.AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {gepReg}");
+                    mainBody.AppendLine($"  {loadReg} = load {arrayVar.innerType}, {arrayVar.innerType}* {gepReg}, align {getAlignment(arrayVar.innerType + "*")}");
                     
                     bitcastReg = nextRegister();
                     mainBody.AppendLine($"  {bitcastReg} = bitcast {arrayVar.innerType} {loadReg} to i8*");
@@ -171,9 +239,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 }
             }
             
-            // Handle free(ptr) - código existente
+            // Handle free(ptr)
             loadReg = nextRegister();
-            mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}");
+            mainBody.AppendLine($"  {loadReg} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {getAlignment(variable.LLVMType + "*")}");
             
             bitcastReg = nextRegister();
             mainBody.AppendLine($"  {bitcastReg} = bitcast {variable.LLVMType} {loadReg} to i8*");

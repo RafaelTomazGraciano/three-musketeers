@@ -1,0 +1,23 @@
+=== Union Size Test ===
+
+Union sizes (should be size of largest member):
+  Small union (char, int): stores int
+  Large union (int, double): stores double
+  Mixed union (char, int, double): stores double
+
+Memory sharing test:
+Small union:
+  Set s.i = 65
+  s.i = 65
+  s.c = A (shares memory with s.i)
+
+Large union:
+  Set l.i = 1078523331
+  l.i = 1078523331
+  l.d = 0.000000 (shares memory, different interpretation)
+
+Mixed union:
+  Set m.d = 0.0, then m.i = 255
+  m.i = 255
+  m.c = �
+  m.d = 0.000000 (corrupted by integer write)

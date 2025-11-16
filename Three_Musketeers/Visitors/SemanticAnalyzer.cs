@@ -13,7 +13,7 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
 using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
-using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct_Unions;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
 using Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow;
 using Three_Musketeers.Utils;
@@ -66,6 +66,7 @@ namespace Three_Musketeers.Visitors
 
             //structs and unions
             structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
+            unionSemanticAnalyzer = new UnionSemanticAnalyzer(symbolTable, structures, ReportError);
             
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable, ReportError, ReportWarning, structures, Visit);
@@ -132,6 +133,23 @@ namespace Three_Musketeers.Visitors
             string? type = variableAssignmentSemanticAnalyzer.VisitAtt(context);
             string? exprType = Visit(context.expr());
             if (type == null || exprType == null) return null;
+
+            // Handle struct-to-struct assignment
+            if (type.StartsWith("struct_") && exprType.StartsWith("struct_"))
+            {
+                // Extract struct names
+                string targetStructName = type.Substring(7);
+                string sourceStructName = exprType.Substring(7);
+                
+                if (targetStructName == sourceStructName)
+                {
+                    return type;
+                }
+                
+                ReportError(context.Start.Line,
+                    $"Cannot assign struct of type '{sourceStructName}' to struct of type '{targetStructName}'");
+                return null;
+            }
 
             if (!CastTypes.TwoTypesArePermitedToCast(type, exprType))
             {
@@ -544,6 +562,30 @@ namespace Three_Musketeers.Visitors
         public override string? VisitDefineString([NotNull] ExprParser.DefineStringContext context)
         {
             return defineSemanticAnalyzer.VisitDefineString(context);
+        }
+
+        public override string? VisitMallocStructAtt([NotNull] ExprParser.MallocStructAttContext context)
+        {
+            int line = context.Start.Line;
+            
+            // Validate the struct member access
+            string? fieldType = structSemanticAnalyzer.VisitStructGet(context.structGet());
+            if (fieldType == null)
+            {
+                return null;
+            }
+            
+            // Check if field is a pointer type
+            if (!fieldType.EndsWith("*"))
+            {
+                ReportError(line, $"Cannot assign malloc result to non-pointer field of type '{fieldType}'");
+                return null;
+            }
+            
+            // Validate the malloc call
+            dynamicMemorySemanticAnalyzer.VisitMallocStructAtt(context);
+            
+            return fieldType;
         }
 
     }

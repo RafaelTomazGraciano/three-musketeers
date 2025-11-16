@@ -5,7 +5,7 @@ using System.Linq;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
 using Three_Musketeers.Utils;
-using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct_Unions;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
 {

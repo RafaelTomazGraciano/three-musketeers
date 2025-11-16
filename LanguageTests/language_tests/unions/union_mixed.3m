@@ -1,0 +1,78 @@
+#include <stdio.tm>
+
+union Register {
+    int full,
+    char bytes[4]
+};
+
+union Number {
+    int i,
+    double d
+};
+
+int main() {
+    union Register reg;
+    union Number n1;
+    union Number n2;
+    int i;
+    
+    printf("=== Union Mixed Types Test ===\n\n");
+    
+    // Test 1: Byte access to integer
+    printf("Test 1 - Byte-level access:\n");
+    reg.full = 0;
+    reg.bytes[0] = 65;  // 'A'
+    reg.bytes[1] = 66;  // 'B'
+    reg.bytes[2] = 67;  // 'C'
+    reg.bytes[3] = 68;  // 'D'
+    
+    printf("  Set individual bytes: A B C D\n");
+    printf("  reg.full as int: %d\n", reg.full);
+    printf("  Individual bytes: ");
+    for (i = 0; i < 4; i = i + 1) {
+        printf("%c ", reg.bytes[i]);
+    }
+    printf("\n");
+    
+    // Test 2: Integer to bytes
+    printf("\nTest 2 - Integer to bytes:\n");
+    reg.full = 1094861636;  // 'ABCD' in little-endian
+    printf("  Set reg.full = 1094861636\n");
+    printf("  Bytes: ");
+    for (i = 0; i < 4; i = i + 1) {
+        printf("%c ", reg.bytes[i]);
+    }
+    printf("\n");
+    
+    // Test 3: Type punning (int/double)
+    printf("\nTest 3 - Type punning:\n");
+    n1.i = 100;
+    n2.d = 3.14159;
+    printf("  n1 stores int: %d\n", n1.i);
+    printf("  n2 stores double: %f\n", n2.d);
+    
+    // Swap interpretations
+    printf("\nTest 4 - Reinterpret cast:\n");
+    n1.d = 2.71828;
+    printf("  Store n1.d = 2.71828\n");
+    printf("  Read as n1.i = %d (bit pattern of double)\n", n1.i);
+    
+    // Test 5: Array in union
+    printf("\nTest 5 - Array manipulation:\n");
+    reg.full = 0;
+    printf("  Initialize reg.full = 0\n");
+    
+    for (i = 0; i < 4; i = i + 1) {
+        reg.bytes[i] = 48 + i;  // ASCII '0', '1', '2', '3'
+    }
+    
+    printf("  Fill bytes with '0', '1', '2', '3'\n");
+    printf("  Bytes: ");
+    for (i = 0; i < 4; i = i + 1) {
+        printf("%c ", reg.bytes[i]);
+    }
+    printf("\n");
+    printf("  reg.full = %d\n", reg.full);
+    
+    return 0;
+}

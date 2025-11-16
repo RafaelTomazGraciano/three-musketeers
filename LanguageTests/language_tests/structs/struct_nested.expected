@@ -1,0 +1,5 @@
+=== Nested Struct Test ===
+Rectangle:
+  Top-Left: (0, 100)
+  Bottom-Right: (50, 0)
+Width: 50, Height: 100

@@ -1,0 +1,24 @@
+#include <stdio.tm>
+
+struct Point {
+    int x,
+    int y
+};
+
+int main() {
+    struct Point p;
+    
+    printf("=== Simple Struct Test ===\n");
+    
+    p.x = 10;
+    p.y = 20;
+    
+    printf("Point: (%d, %d)\n", p.x, p.y);
+    
+    p.x = p.x + 5;
+    p.y = p.y - 3;
+    
+    printf("After modification: (%d, %d)\n", p.x, p.y);
+    
+    return 0;
+}

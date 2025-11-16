@@ -2,7 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
-using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct_Unions;
 using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
@@ -14,6 +14,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         protected Dictionary<string, HeterogenousInfo> structures = [];
 
         protected StructSemanticAnalyzer structSemanticAnalyzer;
+        protected UnionSemanticAnalyzer? unionSemanticAnalyzer;
 
         protected LibraryDependencyTracker libraryTracker;
         public bool hasErrors { get; protected set; } = false;
@@ -98,7 +99,10 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         private void CollectHeterogenousType(ExprParser.StartContext context)
         {
             var allProgs = context.prog();
-            var heterogeneousContext = allProgs.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
+            var heterogeneousContext = allProgs
+                .Where(p => p.heteregeneousDeclaration() != null)
+                .Select(p => p.heteregeneousDeclaration());
+            
             foreach (var prog in heterogeneousContext)
             {
                 if (prog.structStatement() != null)
@@ -109,7 +113,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
                 if (prog.unionStatement() != null)
                 {
-                    structSemanticAnalyzer.VisitUnionStatement(prog.unionStatement());
+                    unionSemanticAnalyzer!.VisitUnionStatement(prog.unionStatement());
                 }
             }
         }
@@ -333,6 +337,11 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 string varName = varCtx.ID().GetText();
                 var symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol is StructSymbol structSymbol)
+                {
+                    return structSymbol.type; 
+                }
 
                 if (symbol is PointerSymbol pointerSymbol)
                 {

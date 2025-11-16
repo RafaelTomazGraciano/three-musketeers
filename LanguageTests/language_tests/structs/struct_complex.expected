@@ -1,0 +1,19 @@
+=== Complex Struct Test ===
+
+Employee List:
+Employee ID: 1001
+  Hire Date: 15/3/2020
+  Salary: 50000
+
+Employee ID: 1002
+  Hire Date: 22/7/2021
+  Salary: 60000
+
+Employee ID: 1003
+  Hire Date: 10/1/2022
+  Salary: 55000
+
+Total Payroll: 165000
+Average Salary: 55000
+
+All data processed successfully

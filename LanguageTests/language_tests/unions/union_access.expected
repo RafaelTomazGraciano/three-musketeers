@@ -1,0 +1,18 @@
+=== Union Member Access Test ===
+
+Test 1 - Integer:
+  v1.integer = 100
+
+Test 2 - Double:
+  v2.floating = 2.718280
+
+Test 3 - Character:
+  v3.character = Z
+
+Test 4 - Overwriting:
+  Before: v1.integer = 999
+  After storing double: v1.floating = 1.230000
+  v1.integer now = 2061584302 (corrupted)
+
+Test 5 - Union assignment:
+  v3.integer (copied from v2) = 777

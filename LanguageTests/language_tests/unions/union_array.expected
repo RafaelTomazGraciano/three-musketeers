@@ -1,0 +1,16 @@
+=== Union Array Test ===
+
+Initializing array of unions:
+  values[0].i = 10
+  values[1].d = 2.500000
+  values[2].c = Z
+
+Modifying through loop:
+  values[0].i = 0
+  values[1].i = 100
+  values[2].i = 200
+
+Mixed member access:
+  values[0].c = A
+  values[1].i = 999
+  values[2].d = 7.770000

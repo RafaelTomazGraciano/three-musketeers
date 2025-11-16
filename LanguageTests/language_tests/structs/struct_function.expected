@@ -1,0 +1,6 @@
+=== Struct Function Test ===
+Point 1:
+  Point: (5, 10)
+Point 2:
+  Point: (15, 25)
+Manhattan distance: 25

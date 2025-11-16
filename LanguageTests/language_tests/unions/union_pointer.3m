@@ -1,0 +1,51 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+union Pointer {
+    int *iptr,
+    double *dptr,
+    char *cptr
+};
+
+int main() {
+    union Pointer ptr;
+    int intVal;
+    double doubleVal;
+    char charVal;
+    
+    printf("=== Union with Pointers Test ===\n\n");
+    
+    // Test 1: Integer pointer
+    printf("Test 1 - Integer pointer:\n");
+    intVal = 42;
+    ptr.iptr = &intVal;
+    printf("  *ptr.iptr = %d\n", (*ptr.iptr));
+    (*ptr.iptr) = 100;
+    printf("  After modification: %d\n", intVal);
+    
+    // Test 2: Double pointer (overwrites int pointer)
+    printf("\nTest 2 - Double pointer:\n");
+    doubleVal = 3.14;
+    ptr.dptr = &doubleVal;
+    printf("  *ptr.dptr = %f\n", (*ptr.dptr));
+    (*ptr.dptr) = 2.71;
+    printf("  After modification: %f\n", doubleVal);
+    
+    // Test 3: Char pointer
+    printf("\nTest 3 - Char pointer:\n");
+    charVal = 'X';
+    ptr.cptr = &charVal;
+    printf("  *ptr.cptr = %c\n", (*ptr.cptr));
+    (*ptr.cptr) = 'Y';
+    printf("  After modification: %c\n", charVal);
+    
+    // Test 4: Dynamic allocation
+    printf("\nTest 4 - Dynamic allocation:\n");
+    ptr.iptr = malloc(5);
+    (*ptr.iptr) = 999;
+    printf("  Allocated and stored: %d\n", (*ptr.iptr));
+    free(ptr.iptr);
+    printf("  Freed successfully\n");
+    
+    return 0;
+}
