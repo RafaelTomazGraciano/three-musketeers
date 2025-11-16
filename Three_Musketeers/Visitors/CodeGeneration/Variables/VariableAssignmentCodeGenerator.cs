@@ -346,7 +346,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             // Handle regular variables, pointers, and structs
             string reg = isGlobal ? $"@{varName}" : nextRegister();
             int align = isPointer ? 8 : GetAlignment(llvmType);
-            Console.WriteLine($"DEBUG VisitDec: varName={varName}, llvmType={llvmType}, isPointer={isPointer}, align={align}");
             string initialValue = isPointer ? "null" : "zeroinitializer";
 
             if (isGlobal)

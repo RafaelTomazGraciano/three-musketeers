@@ -81,8 +81,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         {
             string typeName = type.TrimStart('%');
             
-            Console.WriteLine($"DEBUG ALIGNMENT: Getting alignment for type={type}, typeName={typeName}");
-            
             if (structTypes.ContainsKey(typeName))
             {
                 var hetType = structTypes[typeName];

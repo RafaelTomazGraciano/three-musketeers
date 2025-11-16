@@ -531,10 +531,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             string type = typeToken.GetText();
             int pointerCount = pointers?.Length ?? 0;
             
-            // DEBUG: Adicione este print
-            Console.WriteLine($"[DEBUG] Checking if '{varName}' exists in current scope...");
             bool exists = symbolTable.ContainsInCurrentScopeOnly(varName);
-            Console.WriteLine($"[DEBUG] Result: {exists}");
             
             if (exists)
             {
