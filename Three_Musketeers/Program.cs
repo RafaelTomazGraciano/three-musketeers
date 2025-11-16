@@ -116,7 +116,7 @@ namespace Three_Musketeers
                 return 1;
             }
 
-            if (Path.GetExtension(filePath) != ".tm")
+            if (Path.GetExtension(filePath) != ".3m")
             {
                 WriteError("No valid extension from input file");
                 return 1;
