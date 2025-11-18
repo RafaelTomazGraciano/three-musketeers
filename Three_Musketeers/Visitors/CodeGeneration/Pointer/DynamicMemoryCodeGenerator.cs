@@ -13,6 +13,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
         private Func<string> nextRegister;
         private Func<ExprParser.ExprContext, string> visitExpression;
         private Func<string, int> getAlignment;
+        private Func<string, int> getSize;
         private Func<string, string> getLLVMType;
         private Func<string?> getCurrentFunctionName;
         private VariableResolver variableResolver;
@@ -25,6 +26,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             Func<string> nextRegister,
             Func<ExprParser.ExprContext, string> visitExpression,
             Func<string, int> getAlignment,
+            Func<string, int> getSize,
             Func<string, string> getLLVMType,
             Func<string?> getCurrentFunctionName,
             VariableResolver variableResolver,
@@ -37,6 +39,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             this.nextRegister = nextRegister;
             this.visitExpression = visitExpression;
             this.getAlignment = getAlignment;
+            this.getSize = getSize;
             this.getLLVMType = getLLVMType;
             this.getCurrentFunctionName = getCurrentFunctionName;
             this.variableResolver = variableResolver;
@@ -60,12 +63,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             string bitcastReg = nextRegister();
             int size = 0;
 
-            // Declaration with type (int *pointer = malloc(5))
+            // Declaration with type 
             if (type != null)
             {
                 varType = type.GetText();
                 llvmType = getLLVMType(varType);
-                size = getAlignment(llvmType);
+                size = getSize(llvmType);
+                
+                // Ensure proper allocation size for structs (safety margin for calculation errors)
+                if (llvmType.StartsWith("%") && size < 32)
+                {
+                    size = 32;
+                }
+                
                 register = nextRegister();
 
                 // Build LLVM type with pointers
@@ -74,11 +84,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 string? currentFunc = getCurrentFunctionName();
                 string actualVarName = currentFunc != null ? $"@{currentFunc}.{varName}" : varName;
 
+                // Use correct alignment for the pointer type (always 8 for pointers)
                 mainBody.AppendLine($"  {register} = alloca {llvmType}, align 8");
                 mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
                 mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
                 
                 mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
+                // Pointer types always use align 8
                 mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}, align 8");
 
                 registerTypes[register] = llvmType + "*";
@@ -86,8 +98,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 return null;
             }
 
-            // Case 2: Assignment to existing variable (pointer = malloc(5))
-
+            // Case 2: Assignment to existing variable 
             Variable? variable = variableResolver.GetVariable(varName);
 
             if (variable == null)
@@ -97,15 +108,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 
             var indexes = context.index();
 
-            // Handle array element assignment: ptrs[i] = malloc(...)
+            // Handle array element assignment
             if (indexes != null && indexes.Length > 0)
             {
                 // This is an array of pointers
                 if (variable is ArrayVariable arrayVar)
                 {
-                    string elementType = arrayVar.innerType; // This should be the pointer type (e.g., i32*)
+                    string elementType = arrayVar.innerType; 
                     string arrBaseType = CodeGeneratorBase.RemoveOneAsterisk(elementType);
-                    size = getAlignment(arrBaseType);
+                    size = getSize(arrBaseType);
                     
                     mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
                     mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
@@ -116,7 +127,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                     string gepReg = nextRegister();
                     mainBody.AppendLine($"  {gepReg} = getelementptr inbounds {arrayVar.LLVMType}, {arrayVar.LLVMType}* {variable.register}, i32 0, i32 {indexExpr}");
                     
-                    // Store the malloc'd pointer in the array element
+                    //Pointer types always use align 8
                     mainBody.AppendLine($"  store {elementType} {bitcastReg}, {elementType}* {gepReg}, align 8");
                     
                     return null;
@@ -127,17 +138,24 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 }
             }
 
-            // Handle simple pointer assignment: pointer = malloc(...)
+            // Handle simple pointer assignment
             register = variable.register;
             llvmType = variable.LLVMType;
 
             // Remove the '*' to calculate the base type size
             string baseType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
-            size = getAlignment(baseType);
+            size = getSize(baseType);
+            
+            // Ensure proper allocation size for structs (safety margin for calculation errors)
+            if (baseType.StartsWith("%") && size < 32)
+            {
+                size = 32;  // Reasonable default for struct allocations
+            }
 
             mainBody.AppendLine($"  {mulReg} = mul i64 {i64ToUse}, {size}");
             mainBody.AppendLine($"  {mallocReg} = call i8* @malloc(i64 {mulReg})");
             mainBody.AppendLine($"  {bitcastReg} = bitcast i8* {mallocReg} to {llvmType}");
+            // Pointer types always use align 8
             mainBody.AppendLine($"  store {llvmType} {bitcastReg}, {llvmType}* {register}, align 8");
 
             return null;
@@ -164,7 +182,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
             
             // Calculate size to allocate
             string baseType = CodeGeneratorBase.RemoveOneAsterisk(memberType);
-            int size = getAlignment(baseType);
+            int size = getSize(baseType);
             
             string mulReg = nextRegister();
             string mallocReg = nextRegister();

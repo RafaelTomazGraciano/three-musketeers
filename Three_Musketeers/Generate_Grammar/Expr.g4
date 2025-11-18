@@ -160,7 +160,16 @@ structContinue: ID index* | structGet;
 
 derref: '(' POINTER expr ')';
 
-type: 'int' | 'double' | 'bool' | 'char' | 'string' | 'struct' ID | 'union' ID | ID;
+type
+	: 'int' 
+	| 'double' 
+	| 'bool' 
+	| 'char' 
+	| 'string' 
+	| 'struct' ID 
+	| 'union' ID 
+	| ID
+	;
 
 /* -------- TOKENS -------- */
 INCLUDE: '#include';

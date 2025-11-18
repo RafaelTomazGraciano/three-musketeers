@@ -323,6 +323,25 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                     return "int";
                 }
                 
+                var exprContext = derrefNode.expr();
+                
+                if (exprContext is ExprParser.VarContext varContext)
+                {
+                    string varName = varContext.ID().GetText();
+                    var symbol = symbolTable.GetSymbol(varName);
+                    
+                    if (symbol is PointerSymbol pointerSymbol)
+                    {
+                        // Se pointerLevel > 1, retorna ponteiro com nível reduzido
+                        if (pointerSymbol.pointerLevel > 1)
+                        {
+                            return pointerSymbol.pointeeType + new string('*', pointerSymbol.pointerLevel - 1);
+                        }
+                        // Se pointerLevel == 1, retorna o tipo base
+                        return pointerSymbol.pointeeType;
+                    }
+                }
+                
                 string innerType = GetExpressionType(derrefNode.expr());
 
                 if (innerType.EndsWith("*"))

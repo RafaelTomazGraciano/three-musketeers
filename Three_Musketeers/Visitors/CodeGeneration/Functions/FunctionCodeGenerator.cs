@@ -15,13 +15,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
         private readonly Func<string, string> getLLVMType;
         private readonly Func<ExprParser.StmContext, string?> visitStatement;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
-        private readonly StringBuilder forwardDeclarations;
 
         // Current function context
         private string? currentFunctionName = null;
         private FunctionInfo? currentFunction = null;
         private StringBuilder? currentFunctionBody = null;
-        private bool hasReturnedInCurrentBlock = false;
 
         public FunctionCodeGenerator(
             StringBuilder functionDefinitions,
@@ -31,8 +29,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             Func<string> nextRegister,
             Func<string, string> getLLVMType,
             Func<ExprParser.StmContext, string?> visitStatement,
-            Func<ExprParser.ExprContext, string?> visitExpression,
-            StringBuilder forwardDeclarations)
+            Func<ExprParser.ExprContext, string?> visitExpression)
         {
             this.functionDefinitions = functionDefinitions;
             this.registerTypes = registerTypes;
@@ -42,7 +39,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             this.getLLVMType = getLLVMType;
             this.visitStatement = visitStatement;
             this.visitExpression = visitExpression;
-            this.forwardDeclarations = forwardDeclarations;
         }
 
         public void CollectFunctionSignature([NotNull] ExprParser.FunctionContext context)
@@ -172,7 +168,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             currentFunctionName = functionName;
             currentFunction = declaredFunctions[functionName];
             currentFunctionBody = new StringBuilder();
-            hasReturnedInCurrentBlock = false;
 
             //build parameter
             List<string> paramDeclarations = new List<string>();
@@ -266,34 +261,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
 
                     string paramReg = $"%param.{paramName}";
 
-                    if (pointerLevel > 0)
-                    {
-                        variables[$"@{functionName}.{paramName}"] = new Variable(
-                            paramName,
-                            paramType,
-                            llvmParamType,
-                            paramReg,
-                            isDirectPointerParam: true  
-                        );
-                        
-                        registerTypes[paramReg] = llvmParamType;
-                    }
-                    else
-                    {
-                        string allocaReg = nextRegister();
-                        
-                        functionDefinitions.AppendLine($"  {allocaReg} = alloca {llvmParamType}");
-                        functionDefinitions.AppendLine($"  store {llvmParamType} {paramReg}, {llvmParamType}* {allocaReg}");
+                    string allocaReg = nextRegister();
+                    int alignment = llvmParamType.Contains("*") ? 8 : llvmParamType == "double" ? 8 : llvmParamType == "i32" ? 4 : 1;
+                    
+                    functionDefinitions.AppendLine($"  {allocaReg} = alloca {llvmParamType}, align {alignment}");
+                    functionDefinitions.AppendLine($"  store {llvmParamType} {paramReg}, {llvmParamType}* {allocaReg}, align {alignment}");
 
-                        variables[$"@{functionName}.{paramName}"] = new Variable(
-                            paramName,
-                            paramType,
-                            llvmParamType,
-                            allocaReg
-                        );
+                    variables[$"@{functionName}.{paramName}"] = new Variable(
+                        paramName,
+                        paramType,
+                        llvmParamType,
+                        allocaReg
+                    );
 
-                        registerTypes[allocaReg] = llvmParamType + "*";
-                    }
+                    registerTypes[allocaReg] = llvmParamType + "*";
                 }
             }
 
@@ -304,21 +285,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                 VisitFunctionBody(funcBodyCtx);
             }
 
-            functionDefinitions.Append(currentFunctionBody);
-
-            //append default return if needed
-            if (!hasReturnedInCurrentBlock)
+            // Check if currentFunctionBody ends with a terminator
+            if (!EndsWithTerminator())
             {
                 if (llvmReturnType == "void")
                 {
-                    functionDefinitions.AppendLine("  ret void");
+                    currentFunctionBody.AppendLine("  ret void");
                 }
                 else
                 {
-                    // for non-void functions without explicit return, use undef
-                    functionDefinitions.AppendLine($"  ret {llvmReturnType} undef");
+                    currentFunctionBody.AppendLine($"  ret {llvmReturnType} undef");
                 }
             }
+
+            functionDefinitions.Append(currentFunctionBody);
 
             functionDefinitions.AppendLine("}");
             functionDefinitions.AppendLine();
@@ -347,10 +327,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
             var statements = context.stm();
             foreach (var stm in statements)
             {
-                if (hasReturnedInCurrentBlock)
-                {
-                    break; // skip unreachable code after return
-                }
 
                 if (stm.RETURN() != null)
                 {
@@ -372,23 +348,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
 
             var exprCtx = context.expr();
 
-            // Check if we're inside a control flow structure (if/switch/loop)
-            // by checking if the last line in the body is a label (indicating we're in a control flow block)
-            bool isInControlFlow = IsInsideControlFlow();
-
-            // Void return
             if (currentFunction.isVoid)
             {
                 currentFunctionBody.AppendLine("  ret void");
-                // Only set flag for unconditional returns (not inside control flow)
-                if (!isInControlFlow)
-                {
-                    hasReturnedInCurrentBlock = true;
-                }
                 return;
             }
 
-            // Non-void return
             if (exprCtx != null)
             {
                 string? returnValue = visitExpression(exprCtx);
@@ -397,6 +362,20 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                     string returnType = registerTypes.ContainsKey(returnValue)
                         ? registerTypes[returnValue]
                         : getLLVMType(currentFunction.returnType ?? "i32");
+
+                    // Convert 0 to null if function returns a pointer type
+                    string expectedReturnType = getLLVMType(currentFunction.returnType ?? "i32");
+                    for (int i = 0; i < currentFunction.returnPointerLevel; i++)
+                    {
+                        expectedReturnType += "*";
+                    }
+
+                    // If returning 0 to a pointer type, convert to null
+                    if (expectedReturnType.Contains("*") && returnValue == "0")
+                    {
+                        returnValue = "null";
+                        returnType = expectedReturnType;
+                    }
 
                     if (returnType == "i1")
                     {
@@ -407,68 +386,57 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Functions
                     }
 
                     currentFunctionBody.AppendLine($"  ret {returnType} {returnValue}");
-                    // Only set flag for unconditional returns (not inside control flow)
-                    if (!isInControlFlow)
-                    {
-                        hasReturnedInCurrentBlock = true;
-                    }
                 }
             }
         }
 
-        private bool IsInsideControlFlow()
+        private bool EndsWithTerminator()
         {
             if (currentFunctionBody == null || currentFunctionBody.Length == 0)
             {
                 return false;
             }
 
-            // Check recent lines to see if we're inside a control flow structure
-            // We're inside control flow if we just branched TO a control flow label,
-            // not if we're AT a merge label (merge labels mark the end of control flow)
             string bodyText = currentFunctionBody.ToString();
-            string[] lines = bodyText.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            
-            if (lines.Length == 0)
-            {
-                return false;
-            }
+            string[] lines = bodyText.Split('\n');
 
-            // Check the last few non-empty lines
-            int checkedLines = 0;
-            for (int i = lines.Length - 1; i >= 0 && checkedLines < 3; i--)
+            string? lastMeaningfulLine = null;
+            
+            for (int i = lines.Length - 1; i >= 0; i--)
             {
                 string line = lines[i].Trim();
+                
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     continue;
                 }
                 
-                checkedLines++;
-                
-                // If the line is a merge label, we're past control flow
-                if (line.StartsWith("merge_") && line.EndsWith(":"))
+                if (line.EndsWith(":"))
                 {
-                    return false; // We're at a merge point, past the control flow
-                }
-                
-                // If the line is a control flow block label (if_, case_, while_, etc.) but not merge_,
-                // we're inside control flow
-                if ((line.StartsWith("if_") || line.StartsWith("case_") || line.StartsWith("while_") || 
-                     line.StartsWith("for_") || line.StartsWith("dowhile_") || line.StartsWith("else_")) 
-                    && line.EndsWith(":"))
-                {
-                    return true; // We're in a control flow block
-                }
-                
-                // If it's a branch TO a control flow label (but not merge), we're entering control flow
-                if ((line.Contains("br i1") || line.Contains("br label %")) && 
-                    !line.Contains("merge_"))
-                {
-                    return true;
-                }
-            }
+                    if (lastMeaningfulLine == null)
+                    {
+                        return false;
+                    }
 
+                    break;
+                }
+
+                lastMeaningfulLine = line;
+                break;
+            }
+            
+            if (lastMeaningfulLine == null)
+            {
+                return false;
+            }
+            if (lastMeaningfulLine.StartsWith("ret ") || 
+                lastMeaningfulLine.StartsWith("br ") ||         
+                lastMeaningfulLine.StartsWith("switch ") || 
+                lastMeaningfulLine.StartsWith("unreachable"))
+            {
+                return true;
+            }
+            
             return false;
         }
         

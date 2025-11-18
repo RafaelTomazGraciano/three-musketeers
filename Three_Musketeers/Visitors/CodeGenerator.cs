@@ -46,6 +46,7 @@ namespace Three_Musketeers.Visitors
         private readonly IfStatementCodeGenerator ifStatementCodeGenerator;
         private readonly SwitchStatementCodeGenerator switchStatementCodeGenerator;
         private readonly LoopStatementCodeGenerator loopStatementCodeGenerator;
+        private readonly Dictionary<string, int> stringLiteralSizes = new Dictionary<string, int>();
 
         public CodeGenerator()
         {
@@ -66,7 +67,7 @@ namespace Three_Musketeers.Visitors
 
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
-                variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
+                variables, NextRegister, GetLLVMType, Visit, Visit);
             base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
                 NextRegister, GetLLVMType, Visit, Visit);
             base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
@@ -80,12 +81,12 @@ namespace Three_Musketeers.Visitors
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
                 declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
                 GetCurrentFunctionNameIncludingMain, GetCurrentBody, GetAlignment, CalculateArrayPosition);
-            stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
+            stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel, stringLiteralSizes);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
             printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
-                NextRegister, NextStringLabel, Visit);
+                NextRegister, NextStringLabel, Visit, stringLiteralSizes);
             scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
                 NextRegister, NextStringLabel, GetLLVMType, variableResolver, CalculateArrayPosition,
                 (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx), registerTypes, GetAlignment);
@@ -116,7 +117,7 @@ namespace Three_Musketeers.Visitors
             //pointers & dynamic memory
             pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, variableResolver, CalculateArrayPosition);
             dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, 
-                GetAlignment, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables,
+                GetAlignment, GetSize, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables,
                 (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx));
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(

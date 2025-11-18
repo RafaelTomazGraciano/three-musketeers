@@ -92,41 +92,80 @@ namespace Three_Musketeers.Visitors.CodeGeneration
                     foreach (var member in unionType.GetMembers())
                     {
                         int memberAlignment = GetAlignment(member.LLVMType);
-                        Console.WriteLine($"  Member {member.name} type={member.LLVMType} alignment={memberAlignment}");
                         if (memberAlignment > maxAlignment)
                         {
                             maxAlignment = memberAlignment;
                         }
                     }
-                    Console.WriteLine($"  Final union alignment={maxAlignment}");
                     return maxAlignment;
                 }
                 
                 // For structs, return 4 (or calculate based on members)
-                Console.WriteLine($"  Struct alignment=4");
                 return 4;
             }
-            
-            Console.WriteLine($"  Type not found, returning 4");
+
             return 4;
         }
 
         protected int GetSize(string type)
         {
-            // Structs/Unions (tipos LLVM começam com %)
+            // Check for POINTERS FIRST
+            if (type.Contains('*'))
+            {
+                return 8; // All pointers are 8 bytes on x64
+            }
+            
+            // Check for basic types
+            if (type == "double") return 8;
+            if (type == "i1" || type == "i8") return 1;
+            if (type == "i32") return 4;
+            
+            // Structs/Unions (LLVM types start with %)
             if (type.StartsWith("%"))
             {
                 string structName = type.TrimStart('%');
+                
                 if (structTypes.ContainsKey(structName))
                 {
-                    return structTypes[structName].totalSize;
+                    var structType = structTypes[structName];
+                    
+                    // Calculate size with proper alignment
+                    int totalSize = 0;
+                    int maxAlignment = 1;
+                    
+                    foreach (var member in structType.GetMembers())
+                    {
+                        string memberType = member.LLVMType;
+                        int memberSize = GetSize(memberType);
+                        int memberAlignment = GetAlignment(memberType);
+                       
+                        // Track maximum alignment for final padding
+                        if (memberAlignment > maxAlignment)
+                        {
+                            maxAlignment = memberAlignment;
+                        }
+                        
+                        // Align current offset to member's alignment requirement
+                        if (totalSize % memberAlignment != 0)
+                        {
+                            int padding = memberAlignment - (totalSize % memberAlignment);
+                            totalSize += padding;
+                        }
+                        
+                        totalSize += memberSize;
+                    }
+                    
+                    // Add final padding to align to the largest member alignment
+                    if (totalSize % maxAlignment != 0)
+                    {
+                        int finalPadding = maxAlignment - (totalSize % maxAlignment);
+                        totalSize += finalPadding;
+                    }
+                    
+                    return totalSize;
                 }
-                return 4; // fallback
+                return 32; // fallback
             }
-            
-            if (type.Contains('*') || type == "double") return 8;
-            if (type == "i1" || type == "i8") return 1;
-            if (type == "i32") return 4;
             
             // Arrays
             int total = 1;
@@ -256,6 +295,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration
         {
             StringBuilder output = new StringBuilder();
             output.AppendLine("; ModuleID = 'Three_Musketeers'");
+            output.AppendLine("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
             output.AppendLine("target triple = \"x86_64-pc-linux-gnu\"");
             output.AppendLine();
             

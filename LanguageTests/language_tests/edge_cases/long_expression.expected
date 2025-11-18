@@ -1,0 +1,16 @@
+=== Long Expression Test ===
+
+Variables: a=10, b=5, c=3, d=2, e=7
+
+Testing long arithmetic expression:
+a + b * c - d / 2 + e * (a - b) + c * d - e + a / d = 63
+
+Testing nested operations:
+((a + b) * (c - d)) + ((e * a) / (b + 1)) - (c * (d + e)) = -1
+
+Testing with boolean operations:
+(a > b) && (c < d || e > a) && !(b == c) || (d <= e && a != b) = 1
+
+Testing long double expression:
+Variables: x=10.5, y=3.2, z=7.8
+(x + y) * z / (x - y) + z * x - y / (z + x) + x * y * z / 100.0 = 98.98

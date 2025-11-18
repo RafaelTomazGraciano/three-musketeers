@@ -1,0 +1,33 @@
+=== String Special Characters Test ===
+
+Testing newline:
+Line 1
+Line 2
+Line 3
+
+Testing tab:
+Column1	Column2	Column3
+A	B	C
+1	2	3
+
+Testing backslash:
+This is a backslash: \
+Path: C:\Users\Documents\
+
+Testing quotes:
+She said: "Hello, World!"
+Single quote in double: '
+
+Testing null character:
+Before null
+Combining multiple escapes:
+Name:	John Doe
+Age:	25
+Path:	C:\Users\John
+
+Testing in expressions:
+Result:	42
+Status:	OK
+
+Testing escape sequences:
+Newline: \n Tab: \t Backslash: \\ Quote: \"

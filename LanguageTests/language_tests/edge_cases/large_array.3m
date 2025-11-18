@@ -1,0 +1,36 @@
+#include <stdio.tm>
+
+int main() {
+    int large[1000];
+    int i;
+    int sum;
+    
+    printf("=== Large Array Test ===\n\n");
+    
+    printf("Initializing array with 1000 elements...\n");
+    for (i = 0; i < 1000; i = i + 1) {
+        large[i] = i;
+    }
+    
+    printf("First element: %d\n", large[0]);
+    printf("Middle element (500): %d\n", large[500]);
+    printf("Last element (999): %d\n", large[999]);
+    
+    printf("\nCalculating sum of all elements...\n");
+    sum = 0;
+    for (i = 0; i < 1000; i = i + 1) {
+        sum = sum + large[i];
+    }
+    printf("Sum: %d\n", sum);
+    
+    printf("\nModifying some elements...\n");
+    large[0] = 9999;
+    large[500] = 8888;
+    large[999] = 7777;
+    
+    printf("Modified first: %d\n", large[0]);
+    printf("Modified middle: %d\n", large[500]);
+    printf("Modified last: %d\n", large[999]);
+    
+    return 0;
+}

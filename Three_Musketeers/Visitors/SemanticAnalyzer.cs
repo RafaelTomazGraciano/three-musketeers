@@ -239,6 +239,14 @@ namespace Three_Musketeers.Visitors
                     {
                         ReportWarning(context.Start.Line, $"Dereferencing potentially uninitialized pointer '{varName}'");
                     }
+                    
+                    if (pointerSymbol.pointerLevel > 1)
+                    {
+                       
+                        string resultType = pointerSymbol.pointeeType + new string('*', pointerSymbol.pointerLevel - 1);
+                        return resultType;
+                    }
+
                     return pointerSymbol.pointeeType;
                 }
 

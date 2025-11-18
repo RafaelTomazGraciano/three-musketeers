@@ -153,16 +153,21 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
             }
             
             string fieldPtrType = registerTypes[register];
-            string fieldType = fieldPtrType.TrimEnd('*');
+            string fieldType = CodeGeneratorBase.RemoveOneAsterisk(fieldPtrType);
             
             string expr = visit(context.expr());
+            string valueType;
             
-            if (fieldType.Contains('*') && expr == "0")
+            // Convert 0 to null for any pointer field 
+            if (fieldType.Contains("*") && expr == "0")
             {
                 expr = "null";
+                valueType = fieldType;
             }
-            
-            string valueType = registerTypes.ContainsKey(expr) ? registerTypes[expr] : fieldType;
+            else
+            {
+                valueType = registerTypes.ContainsKey(expr) ? registerTypes[expr] : fieldType;
+            }
 
             if (fieldType == "i8" && valueType == "i32")
             {
@@ -255,21 +260,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
                     // Remove one * to get the base struct type
                     string baseStructType = CodeGeneratorBase.RemoveOneAsterisk(pointerType);  
                     
-                    if (variable.isDirectPointerParam)
-                    {
-                        currentRegister = pointerReg;
-                        currentType = baseStructType;
-                        registerTypes[pointerReg] = pointerType;
-                    }
-                    else
-                    {
-                        string loadedPtrReg = nextRegister();
-                        currentBody.AppendLine($"   {loadedPtrReg} = load {pointerType}, {pointerType}* {pointerReg}");
-                        
-                        currentRegister = loadedPtrReg;
-                        currentType = baseStructType; 
-                        registerTypes[loadedPtrReg] = pointerType;
-                    }
+                    string loadedPtrReg = nextRegister();
+                    currentBody.AppendLine($"   {loadedPtrReg} = load {pointerType}, {pointerType}* {pointerReg}, align 8");
+
+                    currentRegister = loadedPtrReg;
+                    currentType = baseStructType; 
+                    registerTypes[loadedPtrReg] = pointerType;
                 }
                 else if (exprContext is ExprParser.VarStructContext varStructCtx)
                 {
@@ -279,8 +275,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
                     string innerBaseType = CodeGeneratorBase.RemoveOneAsterisk(innerStructType);
                     
                     string loadedPtrReg = nextRegister();
-                    currentBody.AppendLine($"   {loadedPtrReg} = load {innerBaseType}, {innerStructType} {innerStructReg}");
-                    
+                    int loadAlign = innerBaseType.Contains("*") ? 8 : innerBaseType == "double" ? 8 : innerBaseType == "i32" ? 4 : 1;
+                    currentBody.AppendLine($"   {loadedPtrReg} = load {innerBaseType}, {innerStructType} {innerStructReg}, align {loadAlign}");
+
                     currentRegister = loadedPtrReg;
                     currentType = CodeGeneratorBase.RemoveOneAsterisk(innerBaseType);
                     registerTypes[loadedPtrReg] = innerBaseType;
@@ -320,20 +317,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
                 {
                     string baseType = CodeGeneratorBase.RemoveOneAsterisk(pointerType);
                     
-                    if (variable.isDirectPointerParam)
-                    {
-                        currentRegister = pointerReg;
-                        currentType = baseType;
-                    }
-                    else
-                    {
-                        string loadedPtrReg = nextRegister();
-                        currentBody.AppendLine($"   {loadedPtrReg} = load {pointerType}, {pointerType}* {pointerReg}");
-                        
-                        currentRegister = loadedPtrReg;
-                        currentType = baseType;
-                        registerTypes[loadedPtrReg] = pointerType;
-                    }
+                    string loadedPtrReg = nextRegister();
+                    currentBody.AppendLine($"   {loadedPtrReg} = load {pointerType}, {pointerType}* {pointerReg}, align 8");
+
+                    currentRegister = loadedPtrReg;
+                    currentType = baseType;
+                    registerTypes[loadedPtrReg] = pointerType;
                 }
                 else if (isArrayOfStructs)
                 {
@@ -382,7 +371,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
                 }
             }
 
-            return ProcessStructContinue(structContinueCtx, currentRegister, currentType, false);
+            // Check if this is a pointer access (->)  at the top level by examining the context
+            bool isTopLevelPointerAccess = context.GetText().Contains("->");
+            
+            return ProcessStructContinue(structContinueCtx, currentRegister, currentType, isTopLevelPointerAccess);
         }
 
         private string ProcessStructContinue(ExprParser.StructContinueContext context, string currentRegister, string currentType, bool isPointerAccess)
@@ -419,14 +411,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
                 {
                     string llvmStructType = structType.GetLLVMName();
                     
-                    bool isAlreadyPointer = registerTypes.ContainsKey(currentRegister) && registerTypes[currentRegister].EndsWith("*");
+                    // Check if we need to load the pointer first
+                    // This happens when isPointerAccess is true and the register holds a pointer to a pointer
+                    string registerType = registerTypes.ContainsKey(currentRegister) ? registerTypes[currentRegister] : "";
+                    bool isPointerToPointer = registerType.EndsWith("**");
                     
-                    if (isPointerAccess && !isAlreadyPointer)
+                    if (isPointerAccess && isPointerToPointer)
                     {
+                        // Need to load through the pointer to get the actual struct pointer
                         string loadReg = nextRegister();
-                        currentBody.AppendLine($"   {loadReg} = load {llvmStructType}, {llvmStructType}* {currentRegister}");
+                        string pointerType = registerType.Substring(0, registerType.Length - 1); // Remove one *
+                        currentBody.AppendLine($"   {loadReg} = load {pointerType}, {registerType} {currentRegister}, align 8");
                         currentRegister = loadReg;
-                        registerTypes[loadReg] = llvmStructType;
+                        registerTypes[loadReg] = pointerType;
                     }
 
                     int memberIndex = structType.GetFieldIndex(memberId);
@@ -491,14 +488,19 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
                 {
                     string llvmStructType = structType.GetLLVMName();
                     
-                    bool isAlreadyPointer = registerTypes.ContainsKey(currentRegister) && registerTypes[currentRegister].EndsWith("*");
+                    // Check if we need to load the pointer first
+                    // This happens when isPointerAccess is true and the register holds a pointer to a pointer
+                    string registerType = registerTypes.ContainsKey(currentRegister) ? registerTypes[currentRegister] : "";
+                    bool isPointerToPointer = registerType.EndsWith("**");
                     
-                    if (isPointerAccess && !isAlreadyPointer)
+                    if (isPointerAccess && isPointerToPointer)
                     {
+                        // Need to load through the pointer to get the actual struct pointer
                         string loadReg = nextRegister();
-                        currentBody.AppendLine($"   {loadReg} = load {llvmStructType}, {llvmStructType}* {currentRegister}");
+                        string pointerType = registerType.Substring(0, registerType.Length - 1); // Remove one *
+                        currentBody.AppendLine($"   {loadReg} = load {pointerType}, {registerType} {currentRegister}, align 8");
                         currentRegister = loadReg;
-                        registerTypes[loadReg] = llvmStructType;
+                        registerTypes[loadReg] = pointerType;
                     }
 
                     int memberIndex = structType.GetFieldIndex(memberId);
@@ -606,7 +608,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Struct_Unions
             }
 
             string loadReg = nextRegister();
-            currentBody.AppendLine($"   {loadReg} = load {actualType}, {registerType} {register}");
+
+            int alignment = actualType.Contains("*") ? 8 : 
+                        actualType == "double" ? 8 :
+                        actualType == "i32" ? 4 : 
+                        actualType == "i8" ? 1 : 4;
+            currentBody.AppendLine($"   {loadReg} = load {actualType}, {registerType} {register}, align {alignment}");
             registerTypes[loadReg] = actualType;
             return loadReg;
         }

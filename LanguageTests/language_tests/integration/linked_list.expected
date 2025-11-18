@@ -1,0 +1,36 @@
+=== Doubly Linked List Test ===
+
+Inserting at end: 10, 20, 30
+Forward: 10 20 30 
+Backward: 30 20 10 
+
+Inserting at beginning: 5
+Forward: 5 10 20 30 
+Backward: 30 20 10 5 
+
+Searching for node with value 20...
+Found node with value: 20
+Inserting 25 after node 20
+Forward: 5 10 20 25 30 
+Backward: 30 25 20 10 5 
+
+List length: 5
+
+Deleting node with value 20...
+Forward: 5 10 25 30 
+Backward: 30 25 10 5 
+
+Deleting first node (5)...
+Forward: 10 25 30 
+Backward: 30 25 10 
+
+Deleting last node (30)...
+Forward: 10 25 
+Backward: 25 10 
+
+Final list length: 2
+
+Inserting multiple nodes: 1, 2, 3, 4, 5
+Forward: 10 25 1 2 3 4 5 
+Backward: 5 4 3 2 1 25 10 
+Final length: 7

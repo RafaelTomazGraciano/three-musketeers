@@ -209,12 +209,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 return ptrReg;
             }
 
-            if (variable.isDirectPointerParam)
-            {
-                registerTypes[variable.register] = variable.LLVMType;
-                return variable.register;
-            }
-
             if (variable.type == "string")
             {
                 if (variable.LLVMType == "[256 x i8]")
@@ -413,16 +407,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             if (isPointer)
             {
 
-                string loadedPointer;
-                if (variable.isDirectPointerParam)
-                {
-                    loadedPointer = variable.register;  
-                }
-                else
-                {
-                    loadedPointer = nextRegister();
-                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
-                }
+                string loadedPointer = nextRegister();
+                currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
                 // Get element address with single index (no i32 0)
                 string expr = visitExpression(indexes[0].expr());
@@ -488,16 +474,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             {
                 if (isPointer)
                 {
-                    string loadedPointer;
-                    if (variable.isDirectPointerParam)
-                    {
-                        loadedPointer = variable.register; 
-                    }
-                    else
-                    {
-                        loadedPointer = nextRegister();
-                        currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
-                    }
+                    string loadedPointer = nextRegister();
+                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
                     // Get element address with single index (no i32 0)
                     string expr = visitExpression(indexes[0].expr());
@@ -598,16 +576,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             if (isPointer)
             {
 
-                string loadedPointer;
-                if (variable.isDirectPointerParam)
-                {
-                    loadedPointer = variable.register; 
-                }
-                else
-                {
-                    loadedPointer = nextRegister();
-                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
-                }
+                string loadedPointer = nextRegister();
+                currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
                 // Get element address with single index (no i32 0)
                 string expr = visitExpression(indexes[0].expr());

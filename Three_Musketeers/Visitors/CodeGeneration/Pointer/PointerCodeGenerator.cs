@@ -68,15 +68,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 {
                     string loadedPointer;
 
-                    if (variable.isDirectPointerParam)
-                    {
-                        loadedPointer = variable.register;  
-                    }
-                    else
-                    {
-                        loadedPointer = nextRegister();
-                        currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align 8");
-                    }
+                    loadedPointer = nextRegister();
+                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align 8");   
 
                     // Get element address with single index (no i32 0)
                     string indexExpr = visitExpression(indexes[0].expr());

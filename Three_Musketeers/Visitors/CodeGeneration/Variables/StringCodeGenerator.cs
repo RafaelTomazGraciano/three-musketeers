@@ -11,15 +11,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         private readonly StringBuilder globalStrings;
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextStringLabel;
+        private readonly Dictionary<string, int> stringLiteralSizes;
 
         public StringCodeGenerator(
             StringBuilder globalStrings,
             Dictionary<string, string> registerTypes,
-            Func<string> nextStringLabel)
+            Func<string> nextStringLabel,
+            Dictionary<string, int> stringLiteralSizes)  
         {
             this.globalStrings = globalStrings;
             this.registerTypes = registerTypes;
             this.nextStringLabel = nextStringLabel;
+            this.stringLiteralSizes = stringLiteralSizes;  
         }
 
         public string VisitStringLiteral([NotNull] ExprParser.StringLiteralContext context)
@@ -30,10 +33,11 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             var (processedString, byteCount) = EscapeSequenceProcessor.Process(content);
             
             string strLabel = nextStringLabel();
-            int strLen = byteCount + 1; // +1 for null terminator
+            int strLen = byteCount + 1;
             
             globalStrings.AppendLine($"{strLabel} = private unnamed_addr constant [{strLen} x i8] c\"{processedString}\\00\", align 1");
             
+            stringLiteralSizes[strLabel] = strLen;  
             registerTypes[strLabel] = "i8*";
             
             return strLabel;

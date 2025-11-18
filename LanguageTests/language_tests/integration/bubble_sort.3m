@@ -1,0 +1,90 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+void bubbleSort(int* arr, int n) {
+    int i;
+    int j;
+    int temp;
+    int swapped;
+    
+    for (i = 0; i < n - 1; i = i + 1) {
+        swapped = 0;
+        for (j = 0; j < n - i - 1; j = j + 1) {
+            if (arr[j] > arr[j + 1]) {
+                temp = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+                swapped = 1;
+            }
+        }
+        if (swapped == 0) {
+            break;
+        }
+    }
+}
+
+void printArray(int* arr, int n) {
+    int i;
+    for (i = 0; i < n; i = i + 1) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+int main() {
+    int arr[10];
+    int n;
+    
+    printf("=== Bubble Sort Test ===\n\n");
+    
+    arr[0] = 64;
+    arr[1] = 34;
+    arr[2] = 25;
+    arr[3] = 12;
+    arr[4] = 22;
+    arr[5] = 11;
+    arr[6] = 90;
+    arr[7] = 88;
+    arr[8] = 45;
+    arr[9] = 50;
+    n = 10;
+    
+    printf("Original array:\n");
+    printArray(arr, n);
+    
+    printf("\nSorting...\n");
+    bubbleSort(arr, n);
+    
+    printf("\nSorted array:\n");
+    printArray(arr, n);
+    
+    printf("\nTest with already sorted array:\n");
+    arr[0] = 1;
+    arr[1] = 2;
+    arr[2] = 3;
+    arr[3] = 4;
+    arr[4] = 5;
+    n = 5;
+    
+    printf("Before: ");
+    printArray(arr, n);
+    bubbleSort(arr, n);
+    printf("After: ");
+    printArray(arr, n);
+    
+    printf("\nTest with reverse sorted array:\n");
+    arr[0] = 9;
+    arr[1] = 7;
+    arr[2] = 5;
+    arr[3] = 3;
+    arr[4] = 1;
+    n = 5;
+    
+    printf("Before: ");
+    printArray(arr, n);
+    bubbleSort(arr, n);
+    printf("After: ");
+    printArray(arr, n);
+    
+    return 0;
+}

@@ -11,6 +11,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
         private readonly Dictionary<string, string> registerTypes;
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
+        private int labelCounter = 0;
 
         public LogicalCodeGenerator(
             Func<StringBuilder> getCurrentBody,
@@ -26,13 +27,115 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
 
         public string VisitLogicalAndOr([NotNull] ExprParser.LogicalAndOrContext context)
         {
+            string op = context.GetChild(1).GetText();
+            
+            if (op == "&&")
+            {
+                return VisitLogicalAnd(context);
+            }
+            else if (op == "||")
+            {
+                return VisitLogicalOr(context);
+            }
+            
+            // Fallback (should not happen)
+            return VisitLogicalAndSimple(context);
+        }
+
+        private string VisitLogicalAnd([NotNull] ExprParser.LogicalAndOrContext context)
+        {
+            int baseLabel = labelCounter++;
+            string rhsLabel = $"and_rhs_{baseLabel}";
+            string mergeLabel = $"and_merge_{baseLabel}";
+            
+            // Get current block label BEFORE evaluating left expression
+            string leftBlockLabel = GetCurrentBlockLabel();
+            
+            // Evaluate left side
+            string leftValue = GetExpressionValue(context.expr(0));
+            string leftType = GetExpressionType(leftValue);
+            string leftBool = ConvertToBool(leftValue, leftType);
+            
+            // Get the actual block we're in after evaluating left (might have changed due to nested operations)
+            string actualLeftBlock = GetCurrentBlockLabel();
+            
+            // Short-circuit: if left is false, jump to merge
+            // If left is true, evaluate right side
+            getCurrentBody().AppendLine($"  br i1 {leftBool}, label %{rhsLabel}, label %{mergeLabel}");
+            
+            // Right-hand side block
+            getCurrentBody().AppendLine($"{rhsLabel}:");
+            string rightValue = GetExpressionValue(context.expr(1));
+            string rightType = GetExpressionType(rightValue);
+            string rightBool = ConvertToBool(rightValue, rightType);
+            
+            // Get the actual block we're in after evaluating right (for nested operations)
+            string actualRightBlock = GetCurrentBlockLabel();
+            
+            getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+            
+            // Merge block with PHI node
+            getCurrentBody().AppendLine($"{mergeLabel}:");
+            string resultReg = nextRegister();
+
+            // PHI node should reference the actual predecessor blocks
+            getCurrentBody().AppendLine($"  {resultReg} = phi i1 [ false, %{actualLeftBlock} ], [ {rightBool}, %{actualRightBlock} ]");
+            
+            registerTypes[resultReg] = "i1";
+            return resultReg;
+        }
+
+        private string VisitLogicalOr([NotNull] ExprParser.LogicalAndOrContext context)
+        {
+            int baseLabel = labelCounter++;
+            string rhsLabel = $"or_rhs_{baseLabel}";
+            string mergeLabel = $"or_merge_{baseLabel}";
+            
+            // Get current block label BEFORE evaluating left expression
+            string leftBlockLabel = GetCurrentBlockLabel();
+            
+            // Evaluate left side
+            string leftValue = GetExpressionValue(context.expr(0));
+            string leftType = GetExpressionType(leftValue);
+            string leftBool = ConvertToBool(leftValue, leftType);
+            
+            // Get the actual block we're in after evaluating left (might have changed due to nested operations)
+            string actualLeftBlock = GetCurrentBlockLabel();
+            
+            // Short-circuit: if left is true, jump to merge
+            // If left is false, evaluate right side
+            getCurrentBody().AppendLine($"  br i1 {leftBool}, label %{mergeLabel}, label %{rhsLabel}");
+            
+            // Right-hand side block
+            getCurrentBody().AppendLine($"{rhsLabel}:");
+            string rightValue = GetExpressionValue(context.expr(1));
+            string rightType = GetExpressionType(rightValue);
+            string rightBool = ConvertToBool(rightValue, rightType);
+            
+            // Get the actual block we're in after evaluating right (for nested operations)
+            string actualRightBlock = GetCurrentBlockLabel();
+            
+            getCurrentBody().AppendLine($"  br label %{mergeLabel}");
+            
+            // Merge block with PHI node
+            getCurrentBody().AppendLine($"{mergeLabel}:");
+            string resultReg = nextRegister();
+            
+            // PHI node should reference the actual predecessor blocks
+            getCurrentBody().AppendLine($"  {resultReg} = phi i1 [ true, %{actualLeftBlock} ], [ {rightBool}, %{actualRightBlock} ]");
+            
+            registerTypes[resultReg] = "i1";
+            return resultReg;
+        }
+
+        private string VisitLogicalAndSimple([NotNull] ExprParser.LogicalAndOrContext context)
+        {
             string leftValue = GetExpressionValue(context.expr(0));
             string rightValue = GetExpressionValue(context.expr(1));
             
             string leftType = GetExpressionType(leftValue);
             string rightType = GetExpressionType(rightValue);
             
-            // Get the operation symbol
             string op = context.GetChild(1).GetText();
             
             string leftBool = ConvertToBool(leftValue, leftType);
@@ -42,12 +145,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             
             if (op == "&&")
             {
-                // Logical AND
                 getCurrentBody().AppendLine($"  {resultReg} = and i1 {leftBool}, {rightBool}");
             }
             else if (op == "||")
             {
-                // Logical OR
                 getCurrentBody().AppendLine($"  {resultReg} = or i1 {leftBool}, {rightBool}");
             }
             
@@ -60,7 +161,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             string exprValue = GetExpressionValue(context.expr());
             string exprType = GetExpressionType(exprValue);
             
-            // Convert operand to boolean (i1)
             string exprBool = ConvertToBool(exprValue, exprType);
             
             string resultReg = nextRegister();
@@ -70,12 +170,35 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             return resultReg;
         }
 
+        private string GetCurrentBlockLabel()
+        {
+            string currentBody = getCurrentBody().ToString();
+            string[] lines = currentBody.Split('\n');
+            
+            // Search backwards for the most recent label
+            for (int i = lines.Length - 1; i >= 0; i--)
+            {
+                string line = lines[i].Trim();
+                
+                // Skip empty lines
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+                
+                // Check if this is a label (ends with : and doesn't start with %)
+                if (line.EndsWith(":") && !line.StartsWith("%"))
+                {
+                    return line.TrimEnd(':');
+                }
+            }
+            
+            return "entry";
+        }
+
         private string GetExpressionValue(ExprParser.ExprContext context)
         {
             string? result = visitExpression(context);
             if (result == null)
             {
-                // This shouldn't happen for expressions, but provide a fallback
                 return "0";
             }
             return result;
@@ -99,22 +222,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Logical
             
             if (currentType == "i32")
             {
-                // Convert integer to boolean: != 0
                 getCurrentBody().AppendLine($"  {convReg} = icmp ne i32 {value}, 0");
             }
             else if (currentType == "double")
             {
-                // Convert double to boolean: != 0.0
                 getCurrentBody().AppendLine($"  {convReg} = fcmp one double {value}, 0.0");
             }
             else if (currentType == "i8")
             {
-                // Convert char to boolean: != 0
                 getCurrentBody().AppendLine($"  {convReg} = icmp ne i8 {value}, 0");
             }
             else
             {
-                // Default case - treat as integer
                 getCurrentBody().AppendLine($"  {convReg} = icmp ne i32 {value}, 0");
             }
             
