@@ -165,14 +165,13 @@ namespace Three_Musketeers
                 var llvmCode = codeGenerator.Visit(tree);
 
                 string fileDir = Path.GetDirectoryName(Path.GetFullPath(filePath))!;
-                string result = "";
+                string result = fileDir;
 
                 if (shouldCreateInBin)
                 {
                     result = Path.Combine(fileDir, "bin");
                     Directory.CreateDirectory(result);
                 }
-                
 
                 // Generate output paths inside bin directory
                 string fileName = Path.GetFileNameWithoutExtension(filePath);
