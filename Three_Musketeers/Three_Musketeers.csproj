@@ -5,6 +5,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AssemblyName>tm</AssemblyName>
     <NoWarn>CS3021; CS8621; CS0219</NoWarn>
   </PropertyGroup>
 
