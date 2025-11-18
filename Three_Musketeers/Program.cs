@@ -5,6 +5,7 @@ using Three_Musketeers.Listeners;
 using Three_Musketeers.Grammar;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Net;
 
 namespace Three_Musketeers 
 {
@@ -39,10 +40,16 @@ namespace Three_Musketeers
             Description = "Add debug information to the generated code"
         };
 
-        private static readonly CliOption<string> includeLibrary = new("-I", [ "--Include"])
+        private static readonly CliOption<string> includeLibrary = new("-I", ["--Include"])
         {
             DefaultValueFactory = (res) => "",
             Description = "Include path libraries"
+        };
+
+        private static readonly CliOption<bool> generateBin = new("--bin")
+        {
+            DefaultValueFactory = (res) => false,
+            Description = "Create files on a bin directory"
         };
 
         public static int Main(string[] args)
@@ -64,6 +71,7 @@ namespace Three_Musketeers
 
                     option.Action = new VersionAction();
                     option.Aliases.Add("-v");
+                    break;
                 }
             }
 
@@ -75,8 +83,9 @@ namespace Three_Musketeers
                 bool saveLLVM = result.GetValue(dotLLCodePath)!;
                 bool debugFlag = result.GetValue(addDebugFlagToGcc)!;
                 string includeLib = result.GetValue(includeLibrary)!;
+                bool shouldCreateInBin = result.GetValue(generateBin)!;
 
-                return CompileFile(inputPath, outputPath, optLevel, saveLLVM, debugFlag, includeLib);
+                return CompileFile(inputPath, outputPath, optLevel, saveLLVM, debugFlag, includeLib, shouldCreateInBin);
             });
 
             CliConfiguration config = new(rootCommand);
@@ -98,7 +107,8 @@ namespace Three_Musketeers
 
         private static int CompileFile(string? filePath, string resultPath,
                                        uint optimizationLevel, bool saveLLVM,
-                                       bool addDebugFlag, string includeLib)
+                                       bool addDebugFlag, string includeLib,
+                                       bool shouldCreateInBin)
         {
             if (filePath == null)
             {
@@ -155,14 +165,20 @@ namespace Three_Musketeers
                 var llvmCode = codeGenerator.Visit(tree);
 
                 string fileDir = Path.GetDirectoryName(Path.GetFullPath(filePath))!;
-                string binDir = Path.Combine(fileDir, "bin");
-                Directory.CreateDirectory(binDir);
+                string result = "";
+
+                if (shouldCreateInBin)
+                {
+                    result = Path.Combine(fileDir, "bin");
+                    Directory.CreateDirectory(result);
+                }
+                
 
                 // Generate output paths inside bin directory
                 string fileName = Path.GetFileNameWithoutExtension(filePath);
-                string outputPath = Path.Combine(binDir, $"{fileName}.ll");
+                string outputPath = Path.Combine(result, $"{fileName}.ll");
                 string assemblyFilePath = Path.ChangeExtension(outputPath, ".s");
-                string executablePath = Path.Combine(binDir, resultPath);
+                string executablePath = Path.Combine(result, resultPath);
                 File.WriteAllText(outputPath, llvmCode);
 
                 Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyFilePath}")?.WaitForExit();
