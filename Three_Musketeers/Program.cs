@@ -4,40 +4,124 @@ using Three_Musketeers.Visitors;
 using Three_Musketeers.Listeners;
 using Three_Musketeers.Grammar;
 using System.CommandLine;
-using System.CommandLine.Parsing;
+using System.CommandLine.Invocation;
+using System.Net;
 
-namespace Three_Musketeers {
+namespace Three_Musketeers 
+{
     public class Program
     {
+        public static readonly string VERSION = "v1.0.0 Athos";
+        private static readonly CliArgument<string> input = new("input") {
+            Description = "Path of the source file to compile",
+            Arity = ArgumentArity.ZeroOrOne
+        };
 
-        private static readonly Argument<string> input = new("input")
-            {
-                Description = "File to be compiled",
-            };
-
-        private static readonly Option<string> output = new("-o", ["--out"])
+        private static readonly CliOption<string> output = new("-o", ["--out"])
         {
-            Description = "Path of executable",
-            DefaultValueFactory = value => "a.out"
+            DefaultValueFactory = (res) => "a.out",
+        };
+
+        private static readonly CliOption<uint> compilerOptimazionLevel = new("-O", ["--opt"])
+        {
+            DefaultValueFactory = (res) => 2,
+            Description = "Optimization level (0-3)",
+        };
+
+        private static readonly CliOption<bool> dotLLCodePath = new("--ll")
+        {
+            DefaultValueFactory = (res) => false,
+            Description = "Save generated LLVM IR code"
+        };
+
+        private static readonly CliOption<bool> addDebugFlagToGcc = new("-g")
+        {
+            DefaultValueFactory = (res) => false,
+            Description = "Add debug information to the generated code"
+        };
+
+        private static readonly CliOption<string> includeLibrary = new("-I", ["--Include"])
+        {
+            DefaultValueFactory = (res) => "",
+            Description = "Include path libraries"
+        };
+
+        private static readonly CliOption<bool> generateBin = new("--bin")
+        {
+            DefaultValueFactory = (res) => false,
+            Description = "Create files on a bin directory"
         };
 
         public static int Main(string[] args)
         {
-            RootCommand rootCommand = new("Three Musketeers Language Compiler");
-            rootCommand.Add(input);
-            rootCommand.Add(output);
-
-            var result = rootCommand.Parse(args);
-            if (result.Errors.Count > 0)
+            var rootCommand = new CliRootCommand("Three Musketeers Language Compiler")
             {
-                foreach (ParseError parseError in result.Errors)
+                input,
+                output,
+                compilerOptimazionLevel,
+                dotLLCodePath,
+                addDebugFlagToGcc,
+                includeLibrary,
+                generateBin
+            }!;
+
+            foreach (var option in rootCommand.Options)
+            {
+                if (option.Name.Contains("version"))
                 {
-                    Console.Error.WriteLine(parseError.Message);
+
+                    option.Action = new VersionAction();
+                    option.Aliases.Add("-v");
+                    break;
+                }
+            }
+
+            rootCommand.SetAction((result) =>
+            {
+                string? inputPath = result.GetValue(input);
+                string outputPath = result.GetValue(output)!;
+                uint optLevel = result.GetValue(compilerOptimazionLevel);
+                bool saveLLVM = result.GetValue(dotLLCodePath)!;
+                bool debugFlag = result.GetValue(addDebugFlagToGcc)!;
+                string includeLib = result.GetValue(includeLibrary)!;
+                bool shouldCreateInBin = result.GetValue(generateBin)!;
+
+                return CompileFile(inputPath, outputPath, optLevel, saveLLVM, debugFlag, includeLib, shouldCreateInBin);
+            });
+
+            CliConfiguration config = new(rootCommand);
+
+            var parserResult = config.Parse(args);
+            if (parserResult.Errors.Count > 0)
+            {
+                foreach (var error in parserResult.Errors)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(error.Message);
+                    Console.ResetColor();
                 }
                 return 1;
             }
-            string filePath = result.GetValue(input)!;
-            string resultPath = result.GetValue(output)!;
+
+            return parserResult.Invoke();
+        }
+
+        private static int CompileFile(string? filePath, string resultPath,
+                                       uint optimizationLevel, bool saveLLVM,
+                                       bool addDebugFlag, string includeLib,
+                                       bool shouldCreateInBin)
+        {
+            if (filePath == null)
+            {
+                WriteError("No input file especified");
+                return 1;
+            }
+
+            if (Path.GetExtension(filePath) != ".3m")
+            {
+                WriteError("No valid extension from input file");
+                return 1;
+            }
 
             try
             {
@@ -45,13 +129,16 @@ namespace Three_Musketeers {
                 var inputStream = new AntlrFileStream(filePath);
                 var lexer = new ExprLexer(inputStream);
                 var tokenStream = new CommonTokenStream(lexer);
+
                 // Syntax Analysis
                 var parser = new ExprParser(tokenStream);
-                //Listeners
+
+                // Listeners
                 parser.RemoveErrorListeners();
                 var errorListener = new CompilerErrorListener();
                 parser.AddErrorListener(errorListener);
-                //AST
+
+                // AST
                 var tree = parser.start();
 
                 if (errorListener.hasErrors)
@@ -62,8 +149,8 @@ namespace Three_Musketeers {
                     return 1;
                 }
 
-                //Semantic Analysis
-                var semanticAnalyzer = new SemanticAnalyzer();
+                // Semantic Analysis
+                var semanticAnalyzer = new SemanticAnalyzer(includeLib);
                 semanticAnalyzer.Visit(tree);
 
                 if (semanticAnalyzer.hasErrors)
@@ -78,25 +165,31 @@ namespace Three_Musketeers {
                 var codeGenerator = new CodeGenerator();
                 var llvmCode = codeGenerator.Visit(tree);
 
-                // Create bin directory
                 string fileDir = Path.GetDirectoryName(Path.GetFullPath(filePath))!;
-                string binDir = Path.Combine(fileDir, "bin");
-                Directory.CreateDirectory(binDir);
+                string result = fileDir;
+
+                if (shouldCreateInBin)
+                {
+                    result = Path.Combine(fileDir, "bin");
+                    Directory.CreateDirectory(result);
+                }
 
                 // Generate output paths inside bin directory
                 string fileName = Path.GetFileNameWithoutExtension(filePath);
-                string outputPath = Path.Combine(binDir, $"{fileName}.ll");
-                string bytecodePath = Path.Combine(binDir, $"{fileName}.bc");
-                string optBytecodePath = Path.Combine(binDir, $"{fileName}-opt.bc");
-                string assemblyPath = Path.Combine(binDir, $"{fileName}.s");
-                string executablePath = Path.Combine(binDir, fileName);
-
+                string outputPath = Path.Combine(result, $"{fileName}.ll");
+                string assemblyFilePath = Path.ChangeExtension(outputPath, ".s");
+                string executablePath = Path.Combine(result, resultPath);
                 File.WriteAllText(outputPath, llvmCode);
-                Process.Start("llvm-as", $"{outputPath} -o {bytecodePath}").WaitForExit();
-                Process.Start("opt", $"-O2 {bytecodePath} -o {optBytecodePath}").WaitForExit();
-                Process.Start("llc", $"{optBytecodePath} -o {assemblyPath}").WaitForExit();
-                Process.Start("gcc", $"{assemblyPath} -o {executablePath} -no-pie").WaitForExit();
-                Process.Start("rm", $"{bytecodePath} {optBytecodePath} {assemblyPath}");
+
+                Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyFilePath}")?.WaitForExit();
+                Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyFilePath} -o {executablePath} -no-pie")?.WaitForExit();
+                File.Delete(assemblyFilePath);
+
+                if (!saveLLVM)
+                {
+                    File.Delete(outputPath);
+                }
+
                 return 0;
             }
             catch (Exception ex)
@@ -108,6 +201,22 @@ namespace Three_Musketeers {
                 Console.ResetColor();
                 return 1;
             }
+        }
+        
+        private static void WriteError(string msg)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(msg);
+            Console.ResetColor();
+        }
+    }
+    
+    public sealed class VersionAction : SynchronousCliAction
+    {
+        public override int Invoke(ParseResult parseResult)
+        {
+            parseResult.Configuration.Output.WriteLine($"Three Musketeers Compiler {Program.VERSION}");
+            return 0;
         }
     }
 }

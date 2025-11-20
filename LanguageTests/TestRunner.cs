@@ -63,8 +63,8 @@ class TestRunner
         
         // execute compiler
         var compile = new Process();
-        compile.StartInfo.FileName = "../Three_Musketeers/bin/Debug/net9.0/Three_Musketeers";
-        compile.StartInfo.Arguments = absolutePath; // Pass absolute path
+        compile.StartInfo.FileName = "../Three_Musketeers/bin/Debug/net9.0/tm";
+        compile.StartInfo.Arguments = $"{absolutePath} --bin --ll";
         compile.StartInfo.RedirectStandardOutput = true;
         compile.StartInfo.RedirectStandardError = true;
         compile.StartInfo.UseShellExecute = false;
