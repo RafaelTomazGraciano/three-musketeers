@@ -4,9 +4,11 @@ Get up and running with Three Musketeers in minutes.
 
 ## Your First Program
 
-Create a file named `hello.tm` with the following content:
+Create a file named `hello.3m` with the following content:
 
 ```c
+#include <stdio.tm>
+
 int main() {
     puts("Hello, Three Musketeers!");
     return 0;
@@ -18,7 +20,7 @@ int main() {
 Compile the program using the Three Musketeers compiler:
 
 ```bash
-Three_Musketeers hello.tm -o hello
+tm hello.3m --bin -o hello
 ```
 
 This will:
@@ -46,7 +48,7 @@ Hello, Three Musketeers!
 ### Basic Usage
 
 ```bash
-Three_Musketeers <input-file> [options]
+tm <input-file> [options]
 ```
 
 ### Common Options
@@ -60,7 +62,7 @@ Three_Musketeers <input-file> [options]
 ### Example with Options
 
 ```bash
-Three_Musketeers hello.tm -o myprogram -O 3 -g
+tm hello.3m --bin -o myprogram -O 3 -g
 ```
 
 ## File Structure

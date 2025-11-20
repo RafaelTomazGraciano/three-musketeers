@@ -7,6 +7,8 @@ Uma coleção de exemplos práticos demonstrando recursos da linguagem Three Mus
 O programa mais simples:
 
 ```c
+#include <stdio.tm>
+
 int main() {
     puts("Hello, World!");
     return 0;
@@ -16,6 +18,8 @@ int main() {
 ## Variáveis e Tipos
 
 ```c
+#include <stdio.tm>
+
 int main() {
     int contagem = 42;
     double pi = 3.14159;
@@ -36,6 +40,8 @@ int main() {
 ## Arrays
 
 ```c
+#include <stdio.tm>
+
 int main() {
     int numeros[5];
     int i;
@@ -57,6 +63,8 @@ int main() {
 ## Funções
 
 ```c
+#include <stdio.tm>
+
 int adicionar(int x, int y) {
     return x + y;
 }
@@ -81,6 +89,8 @@ int main() {
 ### If-Else
 
 ```c
+#include <stdio.tm>
+
 void verificarValor(int valor) {
     if (valor > 0) {
         printf("Valor %d é positivo\n", valor);
@@ -102,6 +112,8 @@ int main() {
 ### Switch
 
 ```c
+#include <stdio.tm>
+
 void processarOpcao(int opcao) {
     switch (opcao) {
         case 1:
@@ -130,6 +142,8 @@ int main() {
 ### Loops
 
 ```c
+#include <stdio.tm>
+
 int main() {
     int i;
     
@@ -162,6 +176,8 @@ int main() {
 ## Ponteiros
 
 ```c
+#include <stdio.tm>
+
 void trocar(int *a, int *b) {
     int temp = *a;
     *a = *b;
@@ -182,6 +198,9 @@ int main() {
 ## Memória Dinâmica
 
 ```c
+#include <stdio.tm>
+#include <stdlib.tm>
+
 int main() {
     int *arr = malloc(5);
     int i;
@@ -204,6 +223,8 @@ int main() {
 ## Estruturas
 
 ```c
+#include <stdio.tm>
+
 struct Ponto {
     int x,
     int y
@@ -226,6 +247,8 @@ int main() {
 ## Entrada/Saída
 
 ```c
+#include <stdio.tm>
+
 int main() {
     string nome;
     int idade;
@@ -252,6 +275,8 @@ int main() {
 ## Conversão de Tipos
 
 ```c
+#include <stdio.tm>
+
 int main() {
     // String para número
     string numStr = "42";
@@ -277,6 +302,8 @@ int main() {
 ## Recursão
 
 ```c
+#include <stdio.tm>
+
 int fatorial(int n) {
     if (n <= 1) {
         return 1;

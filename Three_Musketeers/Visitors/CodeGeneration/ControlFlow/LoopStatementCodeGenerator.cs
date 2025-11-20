@@ -48,7 +48,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
             var body = context.func_body();
 
             int baseLabel = labelCounter++;
-            string initLabel = $"for_init_{baseLabel}";
             string condLabel = $"for_cond_{baseLabel}";
             string bodyLabel = $"for_body_{baseLabel}";
             string incrLabel = $"for_incr_{baseLabel}";
@@ -63,17 +62,18 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
 
             if (forInit != null)
             {
-                getCurrentBody().AppendLine($"  br label %{initLabel}");
-                getCurrentBody().AppendLine($"{initLabel}:");
                 visitContext(forInit);
-                getCurrentBody().AppendLine($"  br label %{condLabel}");
             }
+
+            // Branch to condition
+            getCurrentBody().AppendLine($"  br label %{condLabel}");
 
             getCurrentBody().AppendLine($"{condLabel}:");
             
             if (forCondition != null)
             {
                 string? conditionValue = visitExpression(forCondition.expr());
+    
                 if (conditionValue == null)
                 {
                     activeLoopContexts.Pop();
@@ -242,10 +242,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         private string ConvertToBool(string value)
         {
             string currentType = GetExpressionType(value);
-            
+
             if (currentType == "i1")
             {
-                return value;
+                return value; 
             }
 
             string convReg = nextRegister();
@@ -275,18 +275,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             if (!registerTypes.ContainsKey(value))
             {
-                if (value == "1" || value == "true")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else if (value == "0" || value == "false")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else
-                {
-                    registerTypes[value] = "i32";
-                }
+                registerTypes[value] = "i32";
             }
             return registerTypes[value];
         }

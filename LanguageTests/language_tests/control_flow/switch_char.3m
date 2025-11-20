@@ -1,0 +1,75 @@
+#include <stdio.tm>
+
+int main() {
+    char grade;
+    grade = 'B';
+    
+    printf("Grade received: %c\n", grade);
+    printf("Feedback: ");
+    
+    switch (grade) {
+        case 'A':
+            printf("Excellent!\n");
+            break;
+        case 'B':
+            printf("Good job!\n");
+            break;
+        case 'C':
+            printf("Average\n");
+            break;
+        case 'D':
+            printf("Below average\n");
+            break;
+        case 'F':
+            printf("Failed\n");
+            break;
+    }
+    
+    char operation;
+    operation = '+';
+    int a;
+    int b;
+    a = 10;
+    b = 5;
+    
+    printf("\nCalculator: %d %c %d = ", a, operation, b);
+    
+    switch (operation) {
+        case '+':
+            printf("%d\n", a + b);
+            break;
+        case '-':
+            printf("%d\n", a - b);
+            break;
+        case '*':
+            printf("%d\n", a * b);
+            break;
+        case '/':
+            printf("%d\n", a / b);
+            break;
+    }
+    
+    char vowel;
+    vowel = 'e';
+    printf("\nChecking if '%c' is a vowel: ", vowel);
+    
+    switch (vowel) {
+        case 'a':
+            printf("Yes\n");
+            break;
+        case 'e':
+            printf("Yes\n");
+            break;
+        case 'i':
+            printf("Yes\n");
+            break;
+        case 'o':
+            printf("Yes\n");
+            break;
+        case 'u':
+            printf("Yes\n");
+            break;
+    }
+    
+    return 0;
+}

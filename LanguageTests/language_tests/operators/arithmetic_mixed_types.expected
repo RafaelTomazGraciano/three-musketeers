@@ -1,0 +1,12 @@
+int = 10, double = 3.500000
+int + double = 13.500000
+int - double = 6.500000
+int * double = 35.000000
+int / double = 2.857143
+double + int = 13.500000
+double - int = -6.500000
+double * int = 35.000000
+double / int = 0.350000
+i * 2 + d = 23.500000
+d * i / 2 = 17.500000
+int from mixed = 13

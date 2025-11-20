@@ -1,0 +1,59 @@
+#include <stdio.tm>
+
+int main() {
+    int i;
+    
+    printf("For loop with break at 5:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        if (i == 5) {
+            break;
+        }
+        printf("%d ", i);
+    }
+    printf("\n");
+    
+    printf("\nWhile loop with break:\n");
+    i = 0;
+    while (i < 10) {
+        if (i == 3) {
+            break;
+        }
+        printf("%d ", i);
+        i = i + 1;
+    }
+    printf("\n");
+    
+    printf("\nDo-while with break:\n");
+    i = 0;
+    do {
+        printf("%d ", i);
+        i = i + 1;
+        if (i == 4) {
+            break;
+        }
+    } while (i < 10);
+    printf("\n");
+    
+    printf("\nFind first number divisible by 7:\n");
+    for (i = 1; i <= 100; i = i + 1) {
+        if (i % 7 == 0) {
+            printf("Found: %d\n", i);
+            break;
+        }
+    }
+    
+    printf("\nNested loop with break (breaks inner only):\n");
+    int j;
+    for (i = 1; i <= 3; i = i + 1) {
+        printf("Outer: %d - Inner: ", i);
+        for (j = 1; j <= 5; j = j + 1) {
+            if (j == 3) {
+                break;
+            }
+            printf("%d ", j);
+        }
+        printf("\n");
+    }
+    
+    return 0;
+}

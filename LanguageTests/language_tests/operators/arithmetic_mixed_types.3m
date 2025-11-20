@@ -1,0 +1,28 @@
+#include <stdio.tm>
+
+int main() {
+    int i = 10;
+    double d = 3.5;
+    
+    printf("int = %d, double = %f\n", i, d);
+    printf("int + double = %f\n", i + d);
+    printf("int - double = %f\n", i - d);
+    printf("int * double = %f\n", i * d);
+    printf("int / double = %f\n", i / d);
+    
+    printf("double + int = %f\n", d + i);
+    printf("double - int = %f\n", d - i);
+    printf("double * int = %f\n", d * i);
+    printf("double / int = %f\n", d / i);
+    
+    double result = i * 2 + d;
+    printf("i * 2 + d = %f\n", result);
+    
+    result = d * i / 2;
+    printf("d * i / 2 = %f\n", result);
+    
+    int intResult = i + d;
+    printf("int from mixed = %d\n", intResult);
+    
+    return 0;
+}

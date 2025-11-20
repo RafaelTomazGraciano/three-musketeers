@@ -23,13 +23,14 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
 
         public string? VisitDerref([NotNull] ExprParser.DerrefAttContext context)
         {
-            var exprContext = context.expr();
+            var derrefContext = context.derref();
+            var exprContext = derrefContext.expr();
             int line = context.Start.Line;
 
             if (exprContext is ExprParser.VarContext varContext)
             {
                 string name = varContext.ID().GetText();
-                Symbol? symbol = symbolTable.GetSymbol(varContext.ID().GetText());
+                Symbol? symbol = symbolTable.GetSymbol(name);
 
                 if (symbol == null)
                 {
@@ -37,21 +38,21 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                     return null;
                 }
 
-                if (symbol is not PointerSymbol || symbol.type != "array")
-                {
-                    reportError(line, $"Cannot derref a variable of type {symbol.type}");
-                    return null;
-                }
-
                 if (symbol is PointerSymbol pointerSymbol)
                 {
+                    // Valid dereference of pointer
+                    if (!pointerSymbol.isInitializated)
+                    {
+                        reportWarning(line, $"Dereferencing potentially uninitialized pointer '{name}'");
+                    }
                     return pointerSymbol.pointeeType;
                 }
 
-                return symbol.type;
+                reportError(line, $"Cannot dereference a variable of type '{symbol.type}' - must be a pointer");
+                return null;
             }
-            
-            return Visit(context.expr());
+
+            return Visit(exprContext);
         }
 
         public string? VisitExprAddress([NotNull] ExprParser.ExprAddressContext context)

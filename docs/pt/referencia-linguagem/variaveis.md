@@ -24,15 +24,6 @@ bool ativo = true;
 string saudacao = "Hello";
 ```
 
-### Múltiplas Declarações
-
-Você pode declarar múltiplas variáveis do mesmo tipo:
-
-```c
-int x, y, z;
-double a = 1.0, b = 2.0, c = 3.0;
-```
-
 ## Variáveis de Array
 
 ### Arrays Unidimensionais

@@ -1,0 +1,230 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Node {
+    int data,
+    struct Node* next,
+    struct Node* prev
+};
+
+struct Node* createNode(int data) {
+    struct Node* newNode;
+    newNode = malloc(1);
+    newNode->data = data;
+    newNode->next = 0;
+    newNode->prev = 0;
+    return newNode;
+}
+
+void insertAtBeginning(struct Node** head, int data) {
+    struct Node* newNode;
+    struct Node* temp;
+    newNode = createNode(data);
+    
+    if ((*head) != 0) {
+        temp = (*head);
+        newNode->next = temp;
+        temp->prev = newNode;
+    }
+    
+    (*head) = newNode;
+}
+
+void insertAtEnd(struct Node** head, int data) {
+    struct Node* newNode;
+    struct Node* temp;
+    
+    newNode = createNode(data);
+    
+    if ((*head) == 0) {
+        (*head) = newNode;
+        return;
+    }
+    
+    temp = (*head);
+    while (temp->next != 0) {
+        temp = temp->next;
+    }
+    
+    temp->next = newNode;
+    newNode->prev = temp;
+}
+
+void insertAfter(struct Node* prevNode, int data) {
+    struct Node* newNode;
+    struct Node* nextTemp;
+    
+    if (prevNode == 0) {
+        printf("Previous node cannot be NULL\n");
+        return;
+    }
+    
+    newNode = createNode(data);
+    newNode->next = prevNode->next;
+    prevNode->next = newNode;
+    newNode->prev = prevNode;
+    
+    if (newNode->next != 0) {
+        nextTemp = newNode->next;
+        nextTemp->prev = newNode;
+    }
+}
+
+void deleteNode(struct Node** head, struct Node* delNode) {
+    struct Node* nextTemp;
+    struct Node* prevTemp;
+    
+    if ((*head) == 0 || delNode == 0) {
+        return;
+    }
+    
+    if ((*head) == delNode) {
+        (*head) = delNode->next;
+    }
+    
+    if (delNode->next != 0) {
+        nextTemp = delNode->next;
+        nextTemp->prev = delNode->prev;
+    }
+    
+    if (delNode->prev != 0) {
+        prevTemp = delNode->prev;
+        prevTemp->next = delNode->next;
+    }
+    
+    free(delNode);
+}
+
+struct Node* search(struct Node* head, int key) {
+    struct Node* temp;
+    temp = head;
+    
+    while (temp != 0) {
+        if (temp->data == key) {
+            return temp;
+        }
+        temp = temp->next;
+    }
+    
+    return 0;
+}
+
+void printForward(struct Node* head) {
+    struct Node* temp;
+    temp = head;
+    
+    printf("Forward: ");
+    while (temp != 0) {
+        printf("%d ", temp->data);
+        temp = temp->next;
+    }
+    printf("\n");
+}
+
+void printBackward(struct Node* head) {
+    struct Node* temp;
+    temp = head;
+    
+    if (temp == 0) {
+        printf("Backward: \n");
+        return;
+    }
+    
+    while (temp->next != 0) {
+        temp = temp->next;
+    }
+    
+    printf("Backward: ");
+    while (temp != 0) {
+        printf("%d ", temp->data);
+        temp = temp->prev;
+    }
+    printf("\n");
+}
+
+int getLength(struct Node* head) {
+    int count;
+    struct Node* temp;
+    
+    count = 0;
+    temp = head;
+    
+    while (temp != 0) {
+        count = count + 1;
+        temp = temp->next;
+    }
+    
+    return count;
+}
+
+int main() {
+    struct Node* head;
+    struct Node* searchResult;
+    int length;
+    
+    printf("=== Doubly Linked List Test ===\n\n");
+    
+    head = 0;
+    
+    printf("Inserting at end: 10, 20, 30\n");
+    insertAtEnd(&head, 10);
+    insertAtEnd(&head, 20);
+    insertAtEnd(&head, 30);
+    printForward(head);
+    printBackward(head);
+    
+    printf("\nInserting at beginning: 5\n");
+    insertAtBeginning(&head, 5);
+    printForward(head);
+    printBackward(head);
+    
+    printf("\nSearching for node with value 20...\n");
+    searchResult = search(head, 20);
+    if (searchResult != 0) {
+        printf("Found node with value: %d\n", searchResult->data);
+        printf("Inserting 25 after node 20\n");
+        insertAfter(searchResult, 25);
+    }
+    printForward(head);
+    printBackward(head);
+    
+    printf("\nList length: %d\n", getLength(head));
+    
+    printf("\nDeleting node with value 20...\n");
+    searchResult = search(head, 20);
+    if (searchResult != 0) {
+        deleteNode(&head, searchResult);
+    }
+    printForward(head);
+    printBackward(head);
+    
+    printf("\nDeleting first node (5)...\n");
+    searchResult = search(head, 5);
+    if (searchResult != 0) {
+        deleteNode(&head, searchResult);
+    }
+    printForward(head);
+    printBackward(head);
+    
+    printf("\nDeleting last node (30)...\n");
+    searchResult = search(head, 30);
+    if (searchResult != 0) {
+        deleteNode(&head, searchResult);
+    }
+    printForward(head);
+    printBackward(head);
+    
+    printf("\nFinal list length: %d\n", getLength(head));
+    
+    printf("\nInserting multiple nodes: 1, 2, 3, 4, 5\n");
+    insertAtEnd(&head, 1);
+    insertAtEnd(&head, 2);
+    insertAtEnd(&head, 3);
+    insertAtEnd(&head, 4);
+    insertAtEnd(&head, 5);
+    printForward(head);
+    printBackward(head);
+    printf("Final length: %d\n", getLength(head));
+    
+    return 0;
+}

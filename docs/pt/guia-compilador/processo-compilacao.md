@@ -17,7 +17,7 @@ O processo de compilação consiste em seis fases principais:
 
 O compilador lê o arquivo-fonte e o divide em tokens (palavras-chave, identificadores, operadores, literais, etc.).
 
-**Entrada:** Código-fonte (arquivo `.tm`)
+**Entrada:** Código-fonte (arquivo `.3m`)
 **Saída:** Fluxo de tokens
 
 **Exemplo:**
@@ -104,11 +104,11 @@ AST
     ↓ (Análise Semântica)
 AST Validado
     ↓ (Geração de Código)
-bin/programa.ll  (LLVM IR)
+programa.ll  (LLVM IR)
     ↓ (Geração de Assembly)
-bin/programa.s   (Assembly, temporário)
+programa.s   (Assembly, temporário)
     ↓ (Linking)
-bin/programa     (Executável)
+programa     (Executável)
 ```
 
 **Nota:** O arquivo `.s` é deletado após o linking, a menos que ocorra um erro. O arquivo `.ll` é mantido apenas se a flag `--ll` for usada.

@@ -1,0 +1,19 @@
+Array via pointer indexing:
+p[0] = 0
+p[1] = 10
+p[2] = 20
+p[3] = 30
+p[4] = 40
+
+After p[2] = 999:
+arr[2] = 999
+
+Using pointer arithmetic:
+(*p) = 0
+(*(p+1)) = 10
+(*(p+3)) = 30
+
+Array of pointers:
+(*ptrs[0]) = 100
+(*ptrs[1]) = 200
+(*ptrs[2]) = 300

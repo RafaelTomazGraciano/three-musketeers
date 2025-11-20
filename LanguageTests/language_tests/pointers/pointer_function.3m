@@ -1,0 +1,83 @@
+#include <stdio.tm>
+
+void modifyValue(int *p) {
+    (*p) = (*p) * 2;
+}
+
+void modifyArray(int *arr, int size) {
+    int i;
+    for (i = 0; i < size; i = i + 1) {
+        arr[i] = arr[i] + 1;
+    }
+}
+
+int sumArray(int *arr, int size) {
+    int sum;
+    int i;
+    sum = 0;
+    for (i = 0; i < size; i = i + 1) {
+        sum = sum + arr[i];
+    }
+    return sum;
+}
+
+void swapPointers(int **p1, int **p2) {
+    int *temp;
+    temp = (*p1);
+    (*p1) = (*p2);
+    (*p2) = temp;
+}
+
+int main() {
+    int x;
+    int arr[5];
+    int i;
+    int result;
+    
+    x = 10;
+    printf("Before modifyValue:\n");
+    printf("x = %d\n", x);
+    
+    modifyValue(&x);
+    printf("\nAfter modifyValue(&x):\n");
+    printf("x = %d\n", x);
+    
+    // Initialize array
+    for (i = 0; i < 5; i = i + 1) {
+        arr[i] = i * 10;
+    }
+    
+    printf("\nBefore modifyArray:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    
+    modifyArray(arr, 5);
+    printf("\nAfter modifyArray:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    
+    result = sumArray(arr, 5);
+    printf("\nSum of array: %d\n", result);
+    
+    // Swap pointers
+    int a;
+    int b;
+    int *p1;
+    int *p2;
+    
+    a = 100;
+    b = 200;
+    p1 = &a;
+    p2 = &b;
+    
+    printf("\nBefore swapPointers:\n");
+    printf("(*p1) = %d, (*p2) = %d\n", (*p1), (*p2));
+    
+    swapPointers(&p1, &p2);
+    printf("\nAfter swapPointers:\n");
+    printf("(*p1) = %d, (*p2) = %d\n", (*p1), (*p2));
+    
+    return 0;
+}

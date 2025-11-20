@@ -1,0 +1,46 @@
+#include <stdio.tm>
+
+union Value {
+    int integer,
+    double floating,
+    char character
+};
+
+int main() {
+    union Value v1;
+    union Value v2;
+    union Value v3;
+    
+    printf("=== Union Member Access Test ===\n\n");
+    
+    // Test 1: Integer access
+    v1.integer = 100;
+    printf("Test 1 - Integer:\n");
+    printf("  v1.integer = %d\n", v1.integer);
+    
+    // Test 2: Double access
+    v2.floating = 2.71828;
+    printf("\nTest 2 - Double:\n");
+    printf("  v2.floating = %f\n", v2.floating);
+    
+    // Test 3: Char access
+    v3.character = 'Z';
+    printf("\nTest 3 - Character:\n");
+    printf("  v3.character = %c\n", v3.character);
+    
+    // Test 4: Overwriting
+    printf("\nTest 4 - Overwriting:\n");
+    v1.integer = 999;
+    printf("  Before: v1.integer = %d\n", v1.integer);
+    v1.floating = 1.23;
+    printf("  After storing double: v1.floating = %f\n", v1.floating);
+    printf("  v1.integer now = %d (corrupted)\n", v1.integer);
+    
+    // Test 5: Assignment between unions
+    printf("\nTest 5 - Union assignment:\n");
+    v2.integer = 777;
+    v3 = v2;
+    printf("  v3.integer (copied from v2) = %d\n", v3.integer);
+    
+    return 0;
+}

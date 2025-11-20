@@ -1,0 +1,46 @@
+#include <stdio.tm>
+
+union Data {
+    int i,
+    double d,
+    char c
+};
+
+int main() {
+    union Data values[3];
+    int idx;
+    
+    printf("=== Union Array Test ===\n\n");
+    
+    // Initialize array
+    printf("Initializing array of unions:\n");
+    values[0].i = 10;
+    values[1].d = 2.5;
+    values[2].c = 'Z';
+    
+    printf("  values[0].i = %d\n", values[0].i);
+    printf("  values[1].d = %f\n", values[1].d);
+    printf("  values[2].c = %c\n", values[2].c);
+    
+    // Modify through loop
+    printf("\nModifying through loop:\n");
+    for (idx = 0; idx < 3; idx = idx + 1) {
+        values[idx].i = idx * 100;
+    }
+    
+    for (idx = 0; idx < 3; idx = idx + 1) {
+        printf("  values[%d].i = %d\n", idx, values[idx].i);
+    }
+    
+    // Mixed access
+    printf("\nMixed member access:\n");
+    values[0].c = 'A';
+    values[1].i = 999;
+    values[2].d = 7.77;
+    
+    printf("  values[0].c = %c\n", values[0].c);
+    printf("  values[1].i = %d\n", values[1].i);
+    printf("  values[2].d = %f\n", values[2].d);
+    
+    return 0;
+}

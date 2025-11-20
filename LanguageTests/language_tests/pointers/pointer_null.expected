@@ -1,0 +1,11 @@
+Testing null pointers:
+p is null
+p is not null
+(*p) = 42
+
+p and q are different
+p is null again
+
+parr is null: yes
+parr is not null: yes
+parr[0] = 10

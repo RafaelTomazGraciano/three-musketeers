@@ -320,32 +320,28 @@ namespace Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement
         private string PerformIncrementDecrement(string value, string llvmType, bool isIncrement)
         {
             string resultReg = nextRegister();
-            
+
             if (llvmType == "double")
             {
-                string oneValue = isIncrement ? "1.0" : "-1.0";
                 string llvmOp = isIncrement ? "fadd" : "fsub";
-                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} double {value}, 1.0");
             }
             else if (llvmType == "i8")
             {
-                string oneValue = isIncrement ? "1" : "-1";
                 string llvmOp = isIncrement ? "add" : "sub";
-                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i8 {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i8 {value}, 1");
             }
             else if (llvmType == "i1")
             {
-                string oneValue = isIncrement ? "1" : "-1";
                 string llvmOp = isIncrement ? "add" : "sub";
-                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i1 {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i1 {value}, 1");
             }
-            else
+            else // i32
             {
-                string oneValue = isIncrement ? "1" : "-1";
                 string llvmOp = isIncrement ? "add" : "sub";
-                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {value}, {oneValue}");
+                getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {value}, 1");
             }
-            
+
             registerTypes[resultReg] = llvmType;
             return resultReg;
         }

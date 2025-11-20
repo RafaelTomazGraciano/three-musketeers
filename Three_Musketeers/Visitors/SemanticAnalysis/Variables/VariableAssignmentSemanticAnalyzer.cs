@@ -2,6 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
+using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
 {
@@ -44,12 +45,54 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     reportError(line, $"Variable '{varName}' was not declared");
                     return null;
                 }
+
                 existingSymbol.isInitializated = true;
+
+                if (existingSymbol is StructSymbol structSym)
+                {
+                    return structSym.type;
+                }
+                
+                if (existingSymbol is PointerSymbol pointerSymbol)
+                {
+                    string fullType = pointerSymbol.pointeeType;
+                    if (pointerSymbol.pointerLevel > 0)
+                    {
+                        fullType += new string('*', pointerSymbol.pointerLevel);
+                    }
+                    return fullType;
+                }
+                
                 return existingSymbol.type;
             }
 
-            // Case 2: Type specified 
-            string type = typeToken.GetText();
+            // Case 2: Type specified - extract properly
+            string type;
+            bool isStructType = false;
+            bool isUnionType = false;
+            
+            if (typeToken.ChildCount > 1)
+            {
+                string firstChild = typeToken.GetChild(0).GetText();
+                if (firstChild == "struct" && typeToken.ID() != null)
+                {
+                    type = typeToken.ID().GetText();
+                    isStructType = true;
+                }
+                else if (firstChild == "union" && typeToken.ID() != null)
+                {
+                    type = typeToken.ID().GetText();
+                    isUnionType = true;
+                }
+                else
+                {
+                    type = typeToken.GetText();
+                }
+            }
+            else
+            {
+                type = typeToken.GetText();
+            }
 
             // Check if already declared in current scope only
             if (symbolTable.ContainsInCurrentScopeOnly(varName))
@@ -58,7 +101,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
-            if (IsStructType(type) && !structs.ContainsKey(type))
+            if ((isStructType || isUnionType || IsStructType(type)) && !structs.ContainsKey(type))
             {
                 reportError(line, $"Struct type '{type}' is not defined");
                 return null;
@@ -66,7 +109,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             
             if (pointers != null && pointers.Length > 0)
             {
-                symbol = new PointerSymbol(varName, type, line, pointers.Length);
+                string pointeeType = (isStructType || IsStructType(type)) ? $"struct_{type}" : type;
+                symbol = new PointerSymbol(varName, pointeeType, line, pointers.Length);
+            }
+            else if (isStructType || isUnionType || IsStructType(type))
+            {
+                symbol = new StructSymbol(varName, type, line, new Dictionary<string, Symbol>());
             }
             else
             {
@@ -76,34 +124,71 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             symbol.isInitializated = true;
             symbolTable.AddSymbol(symbol);
             
-            return type;
+            return (isStructType || IsStructType(type)) ? $"struct_{type}" : type;
         }
 
         public string? VisitDeclaration([NotNull] ExprParser.DeclarationContext context)
         {
-            string type = context.type().GetText();
+            var typeContext = context.type();
             string varName = context.ID().GetText();
             var indexes = context.intIndex();
             int pointerCount = context.POINTER().Length;
             int line = context.Start.Line;
-
+            
+            // Extract type name properly
+            string type;
+            bool isStructType = false;
+            bool isUnionType = false;
+            
+            if (typeContext.ChildCount > 1)
+            {
+                // Check if it's "struct ID" or "union ID"
+                string firstChild = typeContext.GetChild(0).GetText();
+                if (firstChild == "struct" && typeContext.ID() != null)
+                {
+                    type = typeContext.ID().GetText();
+                    isStructType = true;
+                }
+                else if (firstChild == "union" && typeContext.ID() != null)
+                {
+                    type = typeContext.ID().GetText();
+                    isUnionType = true;
+                }
+                else
+                {
+                    type = typeContext.GetText();
+                }
+            }
+            else
+            {
+                type = typeContext.GetText();
+            }
 
             if (symbolTable.ContainsInCurrentScopeOnly(varName))
             {
                 reportError(line, $"Variable '{varName}' has already been declared");
                 return null;
             }
-        
-            // Validate if struct type exists
-            if (IsStructType(type) && !structs.ContainsKey(type))
+
+            // Validate if struct/union type exists
+            if (isStructType || isUnionType || IsStructType(type))
             {
-                reportError(line, $"Struct type '{type}' is not defined");
-                return null;
+                if (!structs.ContainsKey(type))
+                {
+                    reportError(line, $"Struct type '{type}' is not defined");
+                    return null;
+                }
             }
-        
+
             // Handle array declarations
             if (indexes.Length > 0)
             {
+                if (type == "string")
+                {
+                    reportError(line, "Cannot declare arrays of type 'string'");
+                    return null;
+                }
+
                 List<int> dimensions = new List<int>();
                 bool hasErrors = false;
                 
@@ -118,15 +203,33 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     }
                     dimensions.Add(dim);
                 }
-        
+
                 if (hasErrors) return null;
-        
+
                 // Determine the element type for the array
-                string elementType = IsStructType(type) ? $"struct_{type}" : type;
+                string elementType;
+                
+                if (isStructType)
+                {
+                    elementType = $"struct_{type}";
+                }
+                else if (isUnionType)
+                {
+                    elementType = $"union_{type}";
+                }
+                else if (IsStructType(type))
+                {
+                    elementType = $"struct_{type}";
+                }
+                else
+                {
+                    elementType = type;
+                }
                 
                 // Create array symbol with pointer level
                 var arraySymbol = new ArraySymbol(varName, elementType, line, dimensions, pointerCount);
                 arraySymbol.isInitializated = true;
+
                 symbolTable.AddSymbol(arraySymbol);
                 
                 // Return type description
@@ -137,33 +240,52 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 }
                 return $"array_of_{elementType}";
             }
-        
+
             // Handle pointer declarations (non-array)
             if (pointerCount > 0)
             {
-                string pointeeType = IsStructType(type) ? $"struct_{type}" : type;
+                string pointeeType;
+                
+                if (isStructType)
+                {
+                    pointeeType = $"struct_{type}";
+                }
+                else if (isUnionType)
+                {
+                    pointeeType = $"union_{type}";
+                }
+                else if (IsStructType(type))
+                {
+                    pointeeType = $"struct_{type}";
+                }
+                else
+                {
+                    pointeeType = type;
+                }
+                
+                // Always create a PointerSymbol when pointerCount > 0
                 var pointerSymbol = new PointerSymbol(varName, pointeeType, line, pointerCount);
                 symbolTable.AddSymbol(pointerSymbol);
                 
                 string pointers = new string('*', pointerCount);
                 return $"{pointeeType}{pointers}";
             }
-        
+
             // Handle struct declarations (non-pointer, non-array)
-            if (IsStructType(type))
+            if (isStructType || isUnionType || IsStructType(type))
             {
                 var structSymbol = new StructSymbol(varName, type, line, new Dictionary<string, Symbol>())
                 {
-                    isInitializated = true
+                    isInitializated = true 
                 };
                 symbolTable.AddSymbol(structSymbol);
                 return $"struct_{type}";
             }
-        
+
             // Handle regular variable declarations
             var symbol = new Symbol(varName, type, line);
             symbolTable.AddSymbol(symbol);
-        
+
             return type;
         }
 
@@ -179,10 +301,31 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
+            if (symbol is StructSymbol structSymbol)
+            {
+                return structSymbol.type; 
+            }
+
             if (!symbol.isInitializated)
             {
                 reportError(line, $"Variable '{varName}' is empty");
                 return null;
+            }
+
+            if (symbol is PointerSymbol pointerSymbol)
+            {
+                string fullType = pointerSymbol.pointeeType;
+                if (pointerSymbol.pointerLevel > 0)
+                {
+                    fullType += new string('*', pointerSymbol.pointerLevel);
+                }
+                return fullType;
+            }
+
+            // Arrays used as expressions decay to pointers
+            if (symbol is ArraySymbol)
+            {
+                return "pointer";
             }
 
             return symbol.type;
@@ -201,25 +344,30 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 return null;
             }
 
-            if (indexes.Length == 0)
-            {
-                string exprType = visitExpression(context.expr());
-            }
-
-            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
-            {
-                reportError(line, $"Variable '{varName}' is not an array nor Pointer");
-                return null;
-            }
-
-            // Se há índices, verificar se é array ou ponteiro
-            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
+            if (symbol is not ArraySymbol && symbol is not PointerSymbol && indexes.Length > 0)
             {
                 reportError(line, $"Variable '{varName}' is not an array or pointer");
                 return null;
             }
 
             bool hasErrors = false;
+
+            if (indexes.Length == 0)
+            {
+                string exprType = visitExpression(context.expr());
+                if (exprType == null)
+                {
+                    return null;
+                }
+
+                if (!AreTypesCompatible(symbol.type, exprType))
+                {
+                    reportError(line, $"Type mismatch: cannot assign '{exprType}' to '{symbol.type}'");
+                    return null;
+                }
+
+                return symbol.type;
+            }
 
             if (symbol is ArraySymbol arraySymbol)
             {
@@ -245,7 +393,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                         hasErrors = true;
                     }
 
-                    // Validar valor literal se for constante
                     if (indexes[i].expr() is ExprParser.IntLiteralContext intLiteralContext)
                     {
                         int value = int.Parse(intLiteralContext.INT().GetText());
@@ -273,7 +420,8 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     return null;
                 }
 
-                string elementType = arraySymbol.type;
+                string elementType = arraySymbol.elementType;
+    
 
                 if (indexes.Length == arraySymbol.dimensions.Count)
                 {
@@ -291,6 +439,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                     reportWarning(line, $"Partial array access on '{varName}'");
                     return $"array_of_{elementType}";
                 }
+            }
+
+            if (symbol is not ArraySymbol && symbol is not PointerSymbol)
+            {
+                reportError(line, $"Variable '{varName}' is not an array nor Pointer");
+                return null;
             }
 
             if (symbol is PointerSymbol pointerSymbol)
@@ -359,7 +513,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
             int line = context.Start.Line;
             var typeToken = context.type();
             var pointers = context.POINTER();
-
+            
             // If no type specified, variable must exist
             if (typeToken == null)
             {
@@ -372,51 +526,35 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Variables
                 existingSymbol.isInitializated = true;
                 return existingSymbol.type;
             }
-
+            
             // Type specified - new variable declaration
             string type = typeToken.GetText();
             int pointerCount = pointers?.Length ?? 0;
-
-            if (symbolTable.ContainsInCurrentScopeOnly(varName))
+            
+            bool exists = symbolTable.ContainsInCurrentScopeOnly(varName);
+            
+            if (exists)
             {
                 reportError(line, $"Variable '{varName}' has already been declared");
                 return null;
             }
-
+            
             // malloc always returns a pointer, so add at least one level
             if (pointerCount == 0)
             {
                 pointerCount = 1;
             }
-
+            
             var symbol = new PointerSymbol(varName, type, line, pointerCount, isDynamic: true);
             symbol.isInitializated = true;
             symbolTable.AddSymbol(symbol);
-
+            
             return "pointer";
         }
 
         private bool AreTypesCompatible(string targetType, string sourceType)
         {
-            if (targetType == sourceType)
-            {
-                return true;
-            }
-
-            // Permitir conversões numéricas implícitas
-            if ((targetType == "double" && sourceType == "int") ||
-                (targetType == "int" && sourceType == "double"))
-            {
-                return true;
-            }
-
-            // Comparação de tipos struct
-            if (targetType.StartsWith("struct_") && sourceType.StartsWith("struct_"))
-            {
-                return targetType == sourceType;
-            }
-
-            return false;
+            return CastTypes.TwoTypesArePermitedToCast(targetType, sourceType);
         }
 
         private bool IsStructType(string typeName)

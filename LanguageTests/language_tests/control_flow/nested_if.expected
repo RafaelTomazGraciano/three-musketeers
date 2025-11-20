@@ -1,0 +1,16 @@
+Testing nested if statements
+x = 10, y = 20
+x is greater than 5
+  and y is greater than 15
+    and x is less than y
+
+Driving eligibility check
+Age: 20, Has license: 1
+Age requirement met
+Has valid license
+Can drive!
+
+Number analysis: 15
+Number is positive
+Number is greater than 10
+Number is between 10 and 20

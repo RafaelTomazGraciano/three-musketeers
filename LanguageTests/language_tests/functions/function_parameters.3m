@@ -1,0 +1,42 @@
+#include <stdio.tm>
+
+void printInt(int x) {
+    printf("Integer: %d\n", x);
+}
+
+void printDouble(double x) {
+    printf("Double: %.2f\n", x);
+}
+
+void printChar(char c) {
+    printf("Character: %c\n", c);
+}
+
+void printMultiple(int a, double b, char c) {
+    printf("Int: %d, Double: %.2f, Char: %c\n", a, b, c);
+}
+
+void swap(int *a, int *b) {
+    int temp;
+    temp = (*a);
+    (*a) = (*b);
+    (*b) = temp;
+}
+
+int main() {
+    printInt(42);
+    printDouble(3.14);
+    printChar('A');
+    printMultiple(10, 2.5, 'X');
+    
+    printf("\nTesting pointer parameters:\n");
+    int x;
+    int y;
+    x = 5;
+    y = 10;
+    printf("Before swap: x=%d, y=%d\n", x, y);
+    swap(&x, &y);
+    printf("After swap: x=%d, y=%d\n", x, y);
+    
+    return 0;
+}

@@ -4,14 +4,15 @@ Referência completa para todas as opções de linha de comando do compilador Th
 
 ## Visão Geral das Opções
 
-| Opção | Curta | Descrição | Padrão |
-|--------|-------|-----------|---------|
-| `--out` | `-o` | Nome do executável de saída | `a.out` |
-| `--opt` | `-O` | Nível de otimização (0-3) | `2` |
-| `--ll` | - | Manter código LLVM IR | `false` |
-| `-g` | - | Adicionar informações de debug | `false` |
-| `--Include` | `-I` | Caminho de biblioteca de inclusão | - |
-| `--version` | `-v` | Mostrar versão | - |
+|    Opção    | Curta |              Descrição            | Padrão  |
+|-------------|-------|-----------------------------------|---------|
+| `--bin`     | -     | Gerar executável no diretório bin | `false` |
+| `--out`     | `-o`  | Nome do executável de saída       | `a.out` |
+| `--opt`     | `-O`  | Nível de otimização (0-3)         | `2`     |
+| `--ll`      | -     | Manter código LLVM IR             | `false` |
+| `-g`        | -     | Adicionar informações de debug    | `false` |
+| `--Include` | `-I`  | Caminho de biblioteca de inclusão | -       |
+| `--version` | `-v`  | Mostrar versão                    | -       |
 
 ## Opções de Saída
 
@@ -21,13 +22,13 @@ Especifique o nome do executável de saída.
 
 **Sintaxe:**
 ```bash
-Three_Musketeers entrada.tm -o nome_saida
+tm entrada.tm -o nome_saida
 ```
 
 **Exemplo:**
 ```bash
-Three_Musketeers programa.tm -o meuprograma
-# Cria: bin/meuprograma
+tm programa.tm -o meuprograma
+# Cria: meuprograma
 ```
 
 **Padrão:** `a.out`
@@ -40,7 +41,7 @@ Defina o nível de otimização para geração de código LLVM.
 
 **Sintaxe:**
 ```bash
-Three_Musketeers entrada.tm -O <nível>
+tm entrada.tm -O <nível>
 ```
 
 **Níveis:**
@@ -51,11 +52,26 @@ Three_Musketeers entrada.tm -O <nível>
 
 **Exemplos:**
 ```bash
-Three_Musketeers programa.tm -O 0    # Sem otimização
-Three_Musketeers programa.tm -O 3    # Máxima otimização
+tm programa.tm -O 0    # Sem otimização
+tm programa.tm -O 3    # Máxima otimização
 ```
 
 **Padrão:** `2`
+
+### `--bin`
+
+Gera o executável no diretório `bin`.
+
+**Sintaxe:**
+```bash
+tm input.tm --bin
+```
+
+**Exemplo:**
+```bash
+tm program.tm --bin -o program
+# Cria: bin/program
+```
 
 ## Opções de Debug
 
@@ -65,12 +81,12 @@ Adicione informações de debug ao executável gerado para ferramentas de debug.
 
 **Sintaxe:**
 ```bash
-Three_Musketeers entrada.tm -g
+tm entrada.tm -g
 ```
 
 **Exemplo:**
 ```bash
-Three_Musketeers programa.tm -g -o programa_debug
+tm programa.tm -g -o programa_debug
 ```
 
 **Nota:** Esta flag é passada para GCC durante o linking.
@@ -83,13 +99,13 @@ Mantenha o arquivo de código LLVM IR gerado (`.ll`) após a compilação.
 
 **Sintaxe:**
 ```bash
-Three_Musketeers entrada.tm --ll
+tm entrada.tm --ll
 ```
 
 **Exemplo:**
 ```bash
-Three_Musketeers programa.tm --ll
-# Cria: bin/programa.ll (mantido)
+tm programa.tm --ll
+# Cria: programa.ll
 ```
 
 **Padrão:** Arquivos LLVM IR são deletados após a compilação a menos que esta flag seja usada.
@@ -102,13 +118,13 @@ Especifique um caminho para bibliotecas incluídas.
 
 **Sintaxe:**
 ```bash
-Three_Musketeers entrada.tm -I <caminho>
-Three_Musketeers entrada.tm --Include <caminho>
+tm entrada.tm -I <caminho>
+tm entrada.tm --Include <caminho>
 ```
 
 **Exemplo:**
 ```bash
-Three_Musketeers programa.tm -I /usr/local/include
+tm programa.tm -I /usr/local/include
 ```
 
 ## Informações de Versão
@@ -119,13 +135,13 @@ Exiba a versão do compilador.
 
 **Sintaxe:**
 ```bash
-Three_Musketeers --version
-Three_Musketeers -v
+tm --version
+tm -v
 ```
 
 **Saída:**
 ```
-Three Musketeers Compiler v0.9.5
+Three Musketeers Compiler v1.0.0Athos
 ```
 
 ## Combinando Opções
@@ -133,7 +149,7 @@ Three Musketeers Compiler v0.9.5
 Você pode combinar múltiplas opções:
 
 ```bash
-Three_Musketeers programa.tm -o minhaapp -O 3 -g --ll
+tm programa.tm -o minhaapp -O 3 -g --ll
 ```
 
 Este comando:
@@ -147,26 +163,26 @@ Este comando:
 
 ### Compilação Básica
 ```bash
-Three_Musketeers hello.tm
-# Cria: bin/a.out
+tm hello.tm
+# Cria: a.out
 ```
 
 ### Build de Release Otimizado
 ```bash
-Three_Musketeers app.tm -o app -O 3
-# Cria: bin/app (otimizado)
+tm app.tm -o app -O 3
+# Cria: app (otimizado)
 ```
 
 ### Build de Debug
 ```bash
-Three_Musketeers app.tm -o app_debug -g
-# Cria: bin/app_debug (com informações de debug)
+tm app.tm -o app_debug -g
+# Cria: app_debug (com informações de debug)
 ```
 
 ### Build de Desenvolvimento (Manter IR)
 ```bash
-Three_Musketeers app.tm -o app --ll
-# Cria: bin/app e bin/app.ll
+tm app.tm -o app --ll
+# Cria: app e app.ll
 ```
 
 ## Tópicos Relacionados

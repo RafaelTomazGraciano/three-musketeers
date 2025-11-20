@@ -2,7 +2,7 @@ using Antlr4.Runtime.Misc;
 using System;
 using Three_Musketeers.Grammar;
 using Three_Musketeers.Models;
-using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct_Unions;
 using Three_Musketeers.Utils;
 
 namespace Three_Musketeers.Visitors.SemanticAnalysis
@@ -14,6 +14,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         protected Dictionary<string, HeterogenousInfo> structures = [];
 
         protected StructSemanticAnalyzer structSemanticAnalyzer;
+        protected UnionSemanticAnalyzer? unionSemanticAnalyzer;
 
         protected LibraryDependencyTracker libraryTracker;
         public bool hasErrors { get; protected set; } = false;
@@ -98,7 +99,10 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
         private void CollectHeterogenousType(ExprParser.StartContext context)
         {
             var allProgs = context.prog();
-            var heterogeneousContext = allProgs.Where(p => p.heteregeneousDeclaration() != null).Select(p => p.heteregeneousDeclaration());
+            var heterogeneousContext = allProgs
+                .Where(p => p.heteregeneousDeclaration() != null)
+                .Select(p => p.heteregeneousDeclaration());
+            
             foreach (var prog in heterogeneousContext)
             {
                 if (prog.structStatement() != null)
@@ -109,7 +113,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
 
                 if (prog.unionStatement() != null)
                 {
-                    structSemanticAnalyzer.VisitUnionStatement(prog.unionStatement());
+                    unionSemanticAnalyzer!.VisitUnionStatement(prog.unionStatement());
                 }
             }
         }
@@ -285,11 +289,96 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 return "bool";
             }
 
+            // String conversions
+            if (expr is ExprParser.AtoiConversionContext)
+            {
+                return "int";
+            }
+
+            if (expr is ExprParser.AtodConversionContext)
+            {
+                return "double";
+            }
+
+            if (expr is ExprParser.ItoaConversionContext)
+            {
+                return "string";
+            }
+
+            if (expr is ExprParser.DtoaConversionContext)
+            {
+                return "string";
+            }
+
+            if (expr is ExprParser.ParensContext parensCtx)
+            {
+                return GetExpressionType(parensCtx.expr());
+            }
+            
+            if (expr is ExprParser.DerrefExprContext derrefCtx)
+            {
+                var derrefNode = derrefCtx.derref();
+                if (derrefNode?.expr() == null)
+                {
+                    return "int";
+                }
+                
+                var exprContext = derrefNode.expr();
+                
+                if (exprContext is ExprParser.VarContext varContext)
+                {
+                    string varName = varContext.ID().GetText();
+                    var symbol = symbolTable.GetSymbol(varName);
+                    
+                    if (symbol is PointerSymbol pointerSymbol)
+                    {
+                        // Se pointerLevel > 1, retorna ponteiro com nível reduzido
+                        if (pointerSymbol.pointerLevel > 1)
+                        {
+                            return pointerSymbol.pointeeType + new string('*', pointerSymbol.pointerLevel - 1);
+                        }
+                        // Se pointerLevel == 1, retorna o tipo base
+                        return pointerSymbol.pointeeType;
+                    }
+                }
+                
+                string innerType = GetExpressionType(derrefNode.expr());
+
+                if (innerType.EndsWith("*"))
+                {
+                    return innerType.Substring(0, innerType.Length - 1);
+                }
+                
+                return innerType;
+            }
+
             if (expr is ExprParser.VarContext varCtx)
             {
                 string varName = varCtx.ID().GetText();
                 var symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol is StructSymbol structSymbol)
+                {
+                    return structSymbol.type; 
+                }
+
+                if (symbol is PointerSymbol pointerSymbol)
+                {
+                    string fullType = pointerSymbol.pointeeType;
+                    if (pointerSymbol.pointerLevel > 0)
+                    {
+                        fullType += new string('*', pointerSymbol.pointerLevel);
+                    }
+                    return fullType;
+                }
+
                 return symbol?.type ?? "int";
+            }
+
+            if (expr is ExprParser.VarStructContext varStructCtx)
+            {
+                string? structType = structSemanticAnalyzer.VisitStructGet(varStructCtx.structGet());
+                return structType ?? "int";
             }
 
             if (expr is ExprParser.AddSubContext addSubCtx)
@@ -307,12 +396,12 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
                 {
                     return "int"; // Modulo always returns int
                 }
-                
+
                 var leftType = GetExpressionType(mulDivModCtx.expr(0));
                 var rightType = GetExpressionType(mulDivModCtx.expr(1));
                 return PromoteTypes(leftType, rightType);
             }
-            
+
             if (expr is ExprParser.UnaryMinusContext unaryMinusCtx)
             {
                 return GetExpressionType(unaryMinusCtx.expr());
@@ -337,7 +426,22 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis
             {
                 return "bool";
             }
-            
+
+            if (expr is ExprParser.FunctionCallContext funcCallCtx)
+            {
+                string funcName = funcCallCtx.ID().GetText();
+                if (declaredFunctions.ContainsKey(funcName))
+                {
+                    var funcInfo = declaredFunctions[funcName];
+                    string returnType = funcInfo.returnType ?? "int";
+                    if (funcInfo.returnPointerLevel > 0)
+                    {
+                        return returnType + new string('*', funcInfo.returnPointerLevel);
+                    }
+                    return returnType;
+                }
+            }
+
             return "int";
         }
 

@@ -1,0 +1,85 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Vector {
+    int x,
+    int y,
+    int z
+};
+
+struct Box {
+    int length,
+    int width,
+    int height
+};
+
+void initVector(Vector *v, int x, int y, int z) {
+    (*v).x = x;
+    (*v).y = y;
+    (*v).z = z;
+}
+
+void printVector(Vector *v) {
+    printf("Vector: (%d, %d, %d)\n", (*v).x, (*v).y, (*v).z);
+}
+
+void scaleVector(Vector *v, int factor) {
+    (*v).x = (*v).x * factor;
+    (*v).y = (*v).y * factor;
+    (*v).z = (*v).z * factor;
+}
+
+Vector* createVectorDynamic(int x, int y, int z) {
+    Vector* v;
+    v = malloc(12);
+    (*v).x = x;
+    (*v).y = y;
+    (*v).z = z;
+    return v;
+}
+
+int boxVolume(Box *b) {
+    return (*b).length * (*b).width * (*b).height;
+}
+
+void doubleBox(Box *b) {
+    (*b).length = (*b).length * 2;
+    (*b).width = (*b).width * 2;
+    (*b).height = (*b).height * 2;
+}
+
+int main() {
+    printf("Testing struct pointer functions:\n\n");
+    
+    Vector v1;
+    initVector(&v1, 1, 2, 3);
+    printf("Initialized vector:\n");
+    printVector(&v1);
+    
+    printf("\nScaling by 3:\n");
+    scaleVector(&v1, 3);
+    printVector(&v1);
+    
+    printf("\nDynamic vector:\n");
+    Vector* v2;
+    v2 = createVectorDynamic(10, 20, 30);
+    printVector(v2);
+    printf("Scaling dynamic vector by 2:\n");
+    scaleVector(v2, 2);
+    printVector(v2);
+    free(v2);
+    
+    printf("\nBox operations:\n");
+    Box myBox;
+    myBox.length = 5;
+    myBox.width = 3;
+    myBox.height = 2;
+    printf("Original box: %dx%dx%d\n", myBox.length, myBox.width, myBox.height);
+    printf("Volume: %d\n", boxVolume(&myBox));
+    
+    doubleBox(&myBox);
+    printf("After doubling: %dx%dx%d\n", myBox.length, myBox.width, myBox.height);
+    printf("New volume: %d\n", boxVolume(&myBox));
+    
+    return 0;
+}

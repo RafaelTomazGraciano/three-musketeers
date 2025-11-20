@@ -1,0 +1,49 @@
+#include <stdio.tm>
+
+int main() {
+    char letters[10];
+    int i;
+    
+    // Initialize with alphabet letters
+    letters[0] = 'A';
+    letters[1] = 'B';
+    letters[2] = 'C';
+    letters[3] = 'D';
+    letters[4] = 'E';
+    letters[5] = 'F';
+    letters[6] = 'G';
+    letters[7] = 'H';
+    letters[8] = 'I';
+    letters[9] = 'J';
+    
+    // Print letters
+    printf("Letters array:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        printf("letters[%d] = %c\n", i, letters[i]);
+    }
+    
+    // Convert to lowercase (assuming ASCII)
+    printf("\nConverting to lowercase:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        letters[i] = letters[i] + 32;
+        printf("letters[%d] = %c\n", i, letters[i]);
+    }
+    
+    // Count vowels
+    int vowelCount;
+    vowelCount = 0;
+    for (i = 0; i < 10; i = i + 1) {
+        if (letters[i] == 'a') {
+            vowelCount = vowelCount + 1;
+        }
+        if (letters[i] == 'e') {
+            vowelCount = vowelCount + 1;
+        }
+        if (letters[i] == 'i') {
+            vowelCount = vowelCount + 1;
+        }
+    }
+    printf("\nVowel count: %d\n", vowelCount);
+    
+    return 0;
+}

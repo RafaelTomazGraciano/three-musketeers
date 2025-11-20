@@ -1,20 +1,20 @@
 # Uso do Compilador
 
-O compilador Three Musketeers traduz arquivos-fonte `.tm` em programas executáveis.
+O compilador Three Musketeers traduz arquivos-fonte `.3m` em programas executáveis.
 
 ## Uso Básico
 
 ```bash
-Three_Musketeers <arquivo-entrada> [opções]
+tm <arquivo-entrada> [opções]
 ```
 
 ### Exemplo
 
 ```bash
-Three_Musketeers programa.tm -o programa
+tm programa.3m --bin -o programa
 ```
 
-Isso compila `programa.tm` e cria um executável chamado `programa` no diretório `bin`.
+Isso compila `programa.3m` e cria um executável chamado `programa` no diretório `bin`.
 
 ## Processo de Compilação
 
@@ -39,7 +39,7 @@ fonte.tm          →  bin/fonte.ll  (LLVM IR, se flag --ll usada)
 
 ## Requisitos de Arquivo
 
-- Arquivos-fonte devem ter a extensão `.tm`
+- Arquivos-fonte devem ter a extensão `.3m`
 - O programa deve conter uma função `main`
 - Todos os arquivos incluídos devem existir e ser acessíveis
 

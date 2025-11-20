@@ -74,9 +74,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                         else
                         {
                             // Other types: store value directly
-                            string valueType = registerTypes[initValue];
-                            declarations.AppendLine($"{globalReg} = global {valueType} {initValue}, align {GetAlignment(valueType)}");
-                            variables[varName] = new Variable(varName, varType, valueType, globalReg);
+                            string valType = registerTypes[initValue];
+                            declarations.AppendLine($"{globalReg} = global {valType} {initValue}, align {GetAlignment(valType)}");
+                            variables[varName] = new Variable(varName, varType, valType, globalReg);
                         }
                     }
                     else
@@ -132,6 +132,42 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             }
 
             string value = visitExpression(context.expr());
+            
+            // Check if we need to convert i1 to i32 (for bool variables)
+            string valueType = registerTypes.ContainsKey(value) ? registerTypes[value] : llvmType;
+
+            value = ConvertZeroToNullIfNeeded(value, llvmType);
+
+            if (llvmType == "i32" && valueType == "i1")
+            {
+                // Convert i1 to i32 for bool variables
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = zext i1 {value} to i32");
+                registerTypes[convertedReg] = "i32";
+                value = convertedReg;
+                valueType = "i32";
+            }
+
+            // Convert double to i32 (for int variables)
+            if (llvmType == "i32" && valueType == "double")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = fptosi double {value} to i32");
+                registerTypes[convertedReg] = "i32";
+                value = convertedReg;
+                valueType = "i32";
+            }
+
+            // Convert i32 to double (for double variables)
+            if (llvmType == "double" && valueType == "i32")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = sitofp i32 {value} to double");
+                registerTypes[convertedReg] = "double";
+                value = convertedReg;
+                valueType = "double";
+            }
+
             getCurrentBody().AppendLine($"  store {llvmType} {value}, {llvmType}* {register}, align {GetAlignment(llvmType)}");
             return null;
         }
@@ -154,13 +190,21 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
         public string VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
-
             Variable variable = GetVariableWithScope(varName)!;
 
             if (variable == null)
             {
                 // Return a default value or throw a more meaningful error
                 return "0";
+            }
+
+            if (variable is ArrayVariable arrayVar)
+            {
+                string ptrReg = nextRegister();
+                string elementType = arrayVar.innerType;
+                getCurrentBody().AppendLine($"  {ptrReg} = getelementptr inbounds {arrayVar.LLVMType}, {arrayVar.LLVMType}* {variable.register}, i32 0, i32 0");
+                registerTypes[ptrReg] = elementType + "*";
+                return ptrReg;
             }
 
             if (variable.type == "string")
@@ -201,7 +245,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
         public string? VisitDec([NotNull] ExprParser.DeclarationContext context)
         {
-            string varType = context.type().GetText();
+            var typeContext = context.type();
             string varName = context.ID().GetText();
 
             bool isPointer = context.POINTER() != null && context.POINTER().Length > 0;
@@ -209,31 +253,46 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 ? context.POINTER().Aggregate("", (a, b) => a + b.GetText())
                 : "";
 
-            string llvmType = getLLVMType(varType) + pointers;
+            // Handle "struct TypeName" or "union TypeName" properly
+            string varType;
+            string llvmType;
+            if (typeContext.ChildCount >= 2 && 
+                (typeContext.GetChild(0).GetText() == "struct" || typeContext.GetChild(0).GetText() == "union"))
+            {
+                // This is "struct Name" or "union Name"
+                string typeName = typeContext.ID().GetText();
+                varType = typeContext.GetText(); // "structNode" ou similar
+                llvmType = getLLVMType("struct " + typeName);
+            }
+            else
+            {
+                varType = typeContext.GetText();
+                llvmType = getLLVMType(varType);
+            }
+            
+            llvmType = llvmType + pointers;
 
             string? currentFunc = getCurrentFunctionName();
             bool isGlobal = currentFunc == null;
             string varKey = isGlobal ? varName : $"@{currentFunc}.{varName}";
 
-            if (!isPointer && context.intIndex() != null && context.intIndex().Length > 0)
+            if (context.intIndex() != null && context.intIndex().Length > 0)
             {
                 var indexes = context.intIndex();
-                List<int> dimensions = new ArrayList<int>();
-                int totalSize = 1;
+                List<int> dimensions = new List<int>();
 
                 foreach (var index in indexes)
                 {
                     int size = int.Parse(index.INT().GetText());
-                    totalSize *= size;
                     dimensions.Add(size);
                 }
 
-                if (varType == "string")
+                string arrayType = llvmType;
+                for (int i = dimensions.Count - 1; i >= 0; i--)
                 {
-                    totalSize *= 256;
+                    arrayType = $"[{dimensions[i]} x {arrayType}]";
                 }
 
-                string arrayType = $"[{totalSize} x {llvmType}]";
                 string register = isGlobal ? $"@{varName}" : nextRegister();
 
                 if (isGlobal)
@@ -243,6 +302,13 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 else
                 {
                     WriteAlloca(register, arrayType, GetAlignment(llvmType));
+                }
+
+                // Calculate total size for ArrayVariable
+                int totalSize = 1;
+                foreach (var dim in dimensions)
+                {
+                    totalSize *= dim;
                 }
 
                 variables[varKey] = new ArrayVariable(varName, varType, arrayType, register, totalSize, llvmType);
@@ -281,6 +347,10 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             else
             {
                 WriteAlloca(reg, llvmType, align);
+                if (!isPointer && llvmType.StartsWith("%"))
+                {
+                    getCurrentBody().AppendLine($"  store {llvmType} zeroinitializer, {llvmType}* {reg}, align {align}");
+                }
                 if (isPointer)
                 {
                     registerTypes[reg] = llvmType + "*";
@@ -327,7 +397,6 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             var currentBody = getCurrentBody();
             Variable variable = GetVariableWithScope(name)!;
 
-
             var llvmType = variable.LLVMType;
 
             // Check if this is a pointer variable (not an array)
@@ -335,14 +404,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             if (isPointer)
             {
-                // For pointer variables: load the pointer first, then use single index
+
                 string loadedPointer = nextRegister();
                 currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
                 // Get element address with single index (no i32 0)
-                string gepReg = nextRegister();
                 string expr = visitExpression(indexes[0].expr());
-                string elementType = llvmType.TrimEnd('*');
+                string gepReg = nextRegister();
+                string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
 
                 // Load the value at this address
@@ -355,8 +424,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             else
             {
                 // For arrays: use getelementptr with i32 0 as first index
-                string gepReg = nextRegister();
                 string result = calculateArrayPosition(indexes);
+                string gepReg = nextRegister();
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, {result}");
 
                 string elementType;
@@ -386,6 +455,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             Variable variable = GetVariableWithScope(varName)!;
             var currentBody = getCurrentBody();
 
+            var llvmType = variable.LLVMType;
+
             if (variable == null)
             {
                 return null;
@@ -401,23 +472,23 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             {
                 if (isPointer)
                 {
-                    // For pointer variables: load pointer, then GEP
                     string loadedPointer = nextRegister();
-                    currentBody.AppendLine($"  {loadedPointer} = load {variable.LLVMType}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
+                    // Get element address with single index (no i32 0)
+                    string expr = visitExpression(indexes[0].expr());
                     string gepReg = nextRegister();
-                    string position = calculateArrayPosition(indexes);
-                    string elementType = variable.LLVMType.TrimEnd('*');
-                    currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {variable.LLVMType} {loadedPointer}, {position}");
-
+                    string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
+                    currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
+                    
                     targetRegister = gepReg;
                     targetType = elementType;
                 }
                 else
                 {
                     // For arrays: GEP with i32 0 prefix
-                    string gepReg = nextRegister();
                     string position = calculateArrayPosition(indexes);
+                    string gepReg = nextRegister();
 
                     if (variable is ArrayVariable arrayVar)
                     {
@@ -442,8 +513,48 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             // Store the value
             string valueType = registerTypes.ContainsKey(exprValue) ? registerTypes[exprValue] : targetType;
-            currentBody.AppendLine($"  store {valueType} {exprValue}, {targetType}* {targetRegister}, align {GetAlignment(targetType)}");
 
+            // Convert i1 to i32 if needed (for bool variables/arrays)
+            if (targetType == "i32" && valueType == "i1")
+            {
+                string convertedReg = nextRegister();
+                currentBody.AppendLine($"  {convertedReg} = zext i1 {exprValue} to i32");
+                registerTypes[convertedReg] = "i32";
+                exprValue = convertedReg;
+                valueType = "i32";
+            }
+
+            // Convert i32 to i8 (for char arrays/variables)**
+            if (targetType == "i8" && valueType == "i32")
+            {
+                string convertedReg = nextRegister();
+                currentBody.AppendLine($"  {convertedReg} = trunc i32 {exprValue} to i8");
+                registerTypes[convertedReg] = "i8";
+                exprValue = convertedReg;
+                valueType = "i8";
+            }
+
+            // Convert double to i32 (for int variables)
+            if (llvmType == "i32" && valueType == "double")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = fptosi double {exprValue} to i32");
+                registerTypes[convertedReg] = "i32";
+                exprValue = convertedReg;
+                valueType = "i32";
+            }
+
+            // Convert i32 to double (for double variables)
+            if (llvmType == "double" && valueType == "i32")
+            {
+                string convertedReg = nextRegister();
+                getCurrentBody().AppendLine($"  {convertedReg} = sitofp i32 {exprValue} to double");
+                registerTypes[convertedReg] = "double";
+                exprValue = convertedReg;
+                valueType = "double";
+            }
+
+            currentBody.AppendLine($"  store {valueType} {exprValue}, {targetType}* {targetRegister}, align {GetAlignment(targetType)}");
             return null;
         }
 
@@ -462,13 +573,14 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
 
             if (isPointer)
             {
-                // Load pointer, then GEP
+
                 string loadedPointer = nextRegister();
                 currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align {GetAlignment(llvmType)}");
 
-                string gepReg = nextRegister();
+                // Get element address with single index (no i32 0)
                 string expr = visitExpression(indexes[0].expr());
-                string elementType = llvmType.TrimEnd('*');
+                string gepReg = nextRegister();
+                string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {expr}");
 
                 registerTypes[gepReg] = elementType + "*";
@@ -477,8 +589,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
             else
             {
                 // For arrays
-                string gepReg = nextRegister();
                 string result = calculateArrayPosition(indexes);
+                string gepReg = nextRegister();
                 currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, {result}");
 
                 string elementType;
@@ -494,6 +606,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Variables
                 registerTypes[gepReg] = elementType + "*";
                 return gepReg;
             }
+        }
+
+        private string ConvertZeroToNullIfNeeded(string value, string llvmType)
+        {
+            // If assigning 0 to a pointer type, convert to null
+            if (llvmType.Contains('*') && value == "0")
+            {
+                return "null";
+            }
+            return value;
         }
 
     }

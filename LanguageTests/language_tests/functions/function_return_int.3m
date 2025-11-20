@@ -1,0 +1,51 @@
+#include <stdio.tm>
+
+int add(int a, int b) {
+    return a + b;
+}
+
+int multiply(int a, int b) {
+    return a * b;
+}
+
+int max(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+int isEven(int n) {
+    if (n % 2 == 0) {
+        return 1;
+    }
+    return 0;
+}
+
+int square(int n) {
+    return n * n;
+}
+
+int main() {
+    int result;
+    
+    result = add(5, 3);
+    printf("5 + 3 = %d\n", result);
+    
+    result = multiply(4, 7);
+    printf("4 * 7 = %d\n", result);
+    
+    result = max(10, 20);
+    printf("max(10, 20) = %d\n", result);
+    
+    result = isEven(7);
+    printf("isEven(7) = %d\n", result);
+    
+    result = isEven(8);
+    printf("isEven(8) = %d\n", result);
+    
+    result = square(6);
+    printf("square(6) = %d\n", result);
+    
+    return 0;
+}

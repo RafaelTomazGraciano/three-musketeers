@@ -1,0 +1,35 @@
+#include <stdio.tm>
+
+int main() {
+    int x;
+    int *p;
+    int **pp;
+    
+    x = 42;
+    p = &x;
+    pp = &p;
+    
+    printf("Value of x: %d\n", x);
+    printf("Value via p: %d\n", (*p));
+    printf("Value via pp: %d\n", (*(*pp)));
+    
+    // Modify via pointer to pointer
+    (*(*pp)) = 100;
+    printf("\nAfter (*(*pp)) = 100:\n");
+    printf("x = %d\n", x);
+    printf("(*p) = %d\n", (*p));
+    printf("(*(*pp)) = %d\n", (*(*pp)));
+    
+    // Change what p points to
+    int y;
+    y = 200;
+    (*pp) = &y;
+    
+    printf("\nAfter changing p to point to y:\n");
+    printf("x = %d\n", x);
+    printf("y = %d\n", y);
+    printf("(*p) = %d\n", (*p));
+    printf("(*(*pp)) = %d\n", (*(*pp)));
+    
+    return 0;
+}

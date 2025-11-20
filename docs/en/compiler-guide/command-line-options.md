@@ -6,6 +6,7 @@ Complete reference for all Three Musketeers compiler command-line options.
 
 | Option | Short | Description | Default |
 |--------|-------|-------------|---------|
+| `--bin` | - | Generate executable in bin directory | `false` |
 | `--out` | `-o` | Output executable name | `a.out` |
 | `--opt` | `-O` | Optimization level (0-3) | `2` |
 | `--ll` | - | Keep LLVM IR code | `false` |
@@ -27,7 +28,7 @@ Three_Musketeers input.tm -o output_name
 **Example:**
 ```bash
 Three_Musketeers program.tm -o myprogram
-# Creates: bin/myprogram
+# Creates: myprogram
 ```
 
 **Default:** `a.out`
@@ -56,6 +57,21 @@ Three_Musketeers program.tm -O 3    # Maximum optimization
 ```
 
 **Default:** `2`
+
+### `--bin`
+
+Generate the executable in the `bin` directory.
+
+**Syntax:**
+```bash
+tm input.tm --bin
+```
+
+**Example:**
+```bash
+tm program.tm --bin
+# Creates: bin/program
+```
 
 ## Debug Options
 
@@ -89,7 +105,7 @@ Three_Musketeers input.tm --ll
 **Example:**
 ```bash
 Three_Musketeers program.tm --ll
-# Creates: bin/program.ll (kept)
+# Creates: program.ll (kept)
 ```
 
 **Default:** LLVM IR files are deleted after compilation unless this flag is used.
@@ -125,7 +141,7 @@ Three_Musketeers -v
 
 **Output:**
 ```
-Three Musketeers Compiler v0.9.5
+Three Musketeers Compiler v1.0.0Athos
 ```
 
 ## Combining Options
@@ -148,25 +164,25 @@ This command:
 ### Basic Compilation
 ```bash
 Three_Musketeers hello.tm
-# Creates: bin/a.out
+# Creates: a.out
 ```
 
 ### Optimized Release Build
 ```bash
 Three_Musketeers app.tm -o app -O 3
-# Creates: bin/app (optimized)
+# Creates: app (optimized)
 ```
 
 ### Debug Build
 ```bash
 Three_Musketeers app.tm -o app_debug -g
-# Creates: bin/app_debug (with debug info)
+# Creates: app_debug (with debug info)
 ```
 
 ### Development Build (Keep IR)
 ```bash
 Three_Musketeers app.tm -o app --ll
-# Creates: bin/app and bin/app.ll
+# Creates: app and app.ll
 ```
 
 ## Related Topics

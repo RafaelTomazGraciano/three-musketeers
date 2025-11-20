@@ -65,12 +65,15 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
 
                 if (isPointer)
                 {
-                    string loadedPointer = nextRegister();
-                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align 8");
+                    string loadedPointer;
 
-                    string gepReg = nextRegister();
+                    loadedPointer = nextRegister();
+                    currentBody.AppendLine($"  {loadedPointer} = load {llvmType}, {llvmType}* {variable.register}, align 8");   
+
+                    // Get element address with single index (no i32 0)
                     string indexExpr = visitExpression(indexes[0].expr());
-                    string elementType = llvmType.TrimEnd('*');
+                    string gepReg = nextRegister();
+                    string elementType = CodeGeneratorBase.RemoveOneAsterisk(llvmType);
                     currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {elementType}, {llvmType} {loadedPointer}, i32 {indexExpr}");
 
                     registerTypes[gepReg] = elementType + "*";
@@ -78,8 +81,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.Pointer
                 }
                 else if (variable is ArrayVariable arrayVar)
                 {
-                    string gepReg = nextRegister();
                     string positions = CalculateArrayPosition(indexes);
+                    string gepReg = nextRegister();
                     currentBody.AppendLine($"  {gepReg} = getelementptr inbounds {llvmType}, {llvmType}* {variable.register}, i32 0, {positions}");
 
                     registerTypes[gepReg] = arrayVar.innerType + "*";

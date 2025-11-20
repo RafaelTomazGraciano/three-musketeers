@@ -1,0 +1,17 @@
+Infinite for loop with break:
+0 1 2 3 4 
+
+Infinite while loop with break:
+0 1 2 3 4 
+
+Infinite do-while with break:
+0 1 2 3 4 
+
+Counter with limit:
+Final count: 11
+
+Search in infinite loop:
+First number whose square > 50: 8
+
+Infinite loop with multiple conditions:
+i = 6, sum = 21

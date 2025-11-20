@@ -1,0 +1,43 @@
+#include <stdio.tm>
+
+int addOne(int x) {
+    return x + 1;
+}
+
+int to_double(int x) {
+    return x * 2;
+}
+
+int square(int x) {
+    return x * x;
+}
+
+int triple(int x) {
+    return x * 3;
+}
+
+int main() {
+    int result;
+    
+    printf("Testing nested function calls:\n");
+    
+    result = addOne(5);
+    printf("addOne(5) = %d\n", result);
+    
+    result = to_double(addOne(5));
+    printf("double(addOne(5)) = %d\n", result);
+    
+    result = square(to_double(3));
+    printf("square(double(3)) = %d\n", result);
+    
+    result = triple(square(2));
+    printf("triple(square(2)) = %d\n", result);
+    
+    result = addOne(to_double(triple(2)));
+    printf("addOne(double(triple(2))) = %d\n", result);
+    
+    result = square(addOne(to_double(2)));
+    printf("square(addOne(double(2))) = %d\n", result);
+    
+    return 0;
+}

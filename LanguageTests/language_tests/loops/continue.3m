@@ -1,0 +1,66 @@
+#include <stdio.tm>
+
+int main() {
+    int i;
+    
+    printf("For loop - skip even numbers:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        if (i % 2 == 0) {
+            continue;
+        }
+        printf("%d ", i);
+    }
+    printf("\n");
+    
+    printf("\nWhile loop - skip multiples of 3:\n");
+    i = 0;
+    while (i < 10) {
+        i = i + 1;
+        if (i % 3 == 0) {
+            continue;
+        }
+        printf("%d ", i);
+    }
+    printf("\n");
+    
+    printf("\nDo-while - skip number 5:\n");
+    i = 0;
+    do {
+        i = i + 1;
+        if (i == 5) {
+            continue;
+        }
+        printf("%d ", i);
+    } while (i < 8);
+    printf("\n");
+    
+    printf("\nPrint only positive numbers:\n");
+    int numbers[5];
+    numbers[0] = 3;
+    numbers[1] = -2;
+    numbers[2] = 7;
+    numbers[3] = -5;
+    numbers[4] = 9;
+    
+    for (i = 0; i < 5; i = i + 1) {
+        if (numbers[i] < 0) {
+            continue;
+        }
+        printf("%d ", numbers[i]);
+    }
+    printf("\n");
+    
+    printf("\nNested loop with continue:\n");
+    int j;
+    for (i = 1; i <= 3; i = i + 1) {
+        for (j = 1; j <= 5; j = j + 1) {
+            if (j == 3) {
+                continue;
+            }
+            printf("(%d,%d) ", i, j);
+        }
+        printf("\n");
+    }
+    
+    return 0;
+}

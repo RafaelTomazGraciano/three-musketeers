@@ -1,0 +1,63 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+int main() {
+    int *p;
+    
+    printf("Testing malloc and free cycle:\n\n");
+    
+    // Cycle 1
+    printf("Cycle 1:\n");
+    p = malloc(1);
+    (*p) = 100;
+    printf("Allocated: %d\n", (*p));
+    free(p);
+    printf("Freed\n");
+    
+    // Cycle 2
+    printf("\nCycle 2:\n");
+    p = malloc(1);
+    (*p) = 200;
+    printf("Allocated: %d\n", (*p));
+    free(p);
+    printf("Freed\n");
+    
+    // Cycle 3 with array
+    printf("\nCycle 3 (array):\n");
+    int *arr;
+    int i;
+    arr = malloc(5);
+    for (i = 0; i < 5; i = i + 1) {
+        arr[i] = i;
+    }
+    printf("Array allocated and initialized\n");
+    free(arr);
+    printf("Array freed\n");
+    
+    // Multiple allocations before freeing
+    printf("\nMultiple allocations:\n");
+    int *a;
+    int *b;
+    int *c;
+    
+    a = malloc(1);
+    b = malloc(1);
+    c = malloc(1);
+    
+    (*a) = 10;
+    (*b) = 20;
+    (*c) = 30;
+    
+    printf("a = %d, b = %d, c = %d\n", (*a), (*b), (*c));
+    
+    free(a);
+    printf("a freed\n");
+    free(b);
+    printf("b freed\n");
+    free(c);
+    printf("c freed\n");
+    
+    printf("\nAll memory management successful\n");
+    
+    return 0;
+}

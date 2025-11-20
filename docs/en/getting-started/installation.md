@@ -78,10 +78,10 @@ The compiled executable will be available in the `release` directory.
 To verify that the compiler is installed correctly, run:
 
 ```bash
-./Three_Musketeers/bin/Debug/net9.0/Three_Musketeers --version
+./Three_Musketeers/bin/Debug/net9.0/tm --version
 ```
 
-You should see the version number (v0.9.5) displayed.
+You should see the version number (v1.0.0 Athos) displayed.
 
 ## Next Steps
 

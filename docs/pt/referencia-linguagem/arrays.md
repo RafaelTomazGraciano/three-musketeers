@@ -99,6 +99,8 @@ for (i = 0; i < 3; i++) {
 Arrays podem ser passados para funções. Eles são passados por referência:
 
 ```c
+#include <stdio.tm>
+
 void imprimirArray(int arr[], int tamanho) {
     int i;
     for (i = 0; i < tamanho; i++) {

@@ -1,0 +1,47 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct myStruct {
+    string doubleStr,
+    string anotherDoubleStr
+};
+
+union myUnion {
+    string uDoubleStr1,
+    string uDoubleStr2
+};
+
+int main() {
+    string str1 = "123.45";
+    string str2 = "-67.89";
+    string str3 = "0.0";
+    
+    myStruct s;
+    s.doubleStr = "99.99";
+    s.anotherDoubleStr = "-3.14";
+
+    myUnion u;
+    u.uDoubleStr1 = "7.77"; 
+    double d7 = atod(u.uDoubleStr1);
+    
+    u.uDoubleStr2 = "-8.88"; 
+    double d8 = atod(u.uDoubleStr2);
+    
+    double d1 = atod(str1);
+    double d2 = atod(str2);
+    double d3 = atod(str3);
+    double d4 = atod(s.doubleStr);
+    double d5 = atod(s.anotherDoubleStr);
+    double d6 = atod("1.5");
+    
+    printf("%f\n", d1);
+    printf("%f\n", d2);
+    printf("%f\n", d3);
+    printf("%f\n", d4);
+    printf("%f\n", d5);
+    printf("%f\n", d6);
+    printf("%f\n", d7); 
+    printf("%f\n", d8);
+    
+    return 0;
+}

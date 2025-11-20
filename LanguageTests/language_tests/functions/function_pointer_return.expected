@@ -1,0 +1,11 @@
+Testing pointer return functions:
+
+Creating dynamic array:
+Array elements: 10 25 15 30 20 
+
+Finding maximum:
+Maximum value: 30
+
+Comparing two values:
+x=100, y=200
+Larger value: 200

@@ -1,0 +1,27 @@
+#include <stdio.tm>
+
+int main() {
+    bool t = true;
+    bool f = false;
+    
+    printf("t = %d\n", t);
+    printf("f = %d\n", f);
+    
+    bool result1 = t && f;
+    bool result2 = t || f;
+    bool result3 = !t;
+    bool result4 = !f;
+    
+    printf("true AND false = %d\n", result1);
+    printf("true OR false = %d\n", result2);
+    printf("NOT true = %d\n", result3);
+    printf("NOT false = %d\n", result4);
+    
+    t = false;
+    printf("t after assignment = %d\n", t);
+    
+    bool comparison = 5 > 3;
+    printf("5 > 3 = %d\n", comparison);
+    
+    return 0;
+}

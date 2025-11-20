@@ -1,0 +1,10 @@
+int: 10
+double: 5.750000
+char: a
+bool: 1
+array: 20
+struct: a = 30
+struct: b = 40
+union: e = 50
+union: ms.a = 60
+union: ms.b[0] = 70

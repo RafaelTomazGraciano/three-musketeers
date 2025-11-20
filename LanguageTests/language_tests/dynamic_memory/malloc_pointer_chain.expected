@@ -1,0 +1,20 @@
+Testing malloc with pointer chains:
+
+Linked list:
+Node 0: 10
+Node 1: 20
+Node 2: 30
+
+After modifying second node:
+Second value: 200
+
+Accessing via pointer to pointer:
+First value: 10
+
+Chain freed successfully
+
+Array of malloc'd pointers:
+ptrs[0] = 0
+ptrs[1] = 100
+ptrs[2] = 200
+Array pointers freed

@@ -1,0 +1,11 @@
+a = 10
+after a = 20: 20
+after a += 5: 25
+after a -= 8: 17
+after a *= 2: 34
+after a /= 3: 11
+x = 10.000000
+after x += 2.5: 12.500000
+after x -= 1.5: 11.000000
+after x *= 2.0: 22.000000
+after x /= 4.0: 5.500000

@@ -1,0 +1,8 @@
+t = 1
+f = 0
+true AND false = 0
+true OR false = 1
+NOT true = 0
+NOT false = 1
+t after assignment = 0
+5 > 3 = 1

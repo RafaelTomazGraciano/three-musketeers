@@ -1,0 +1,34 @@
+#include <stdio.tm>
+
+int main() {
+    int a = 10;
+    int b = 5;
+    int c = 10;
+    
+    printf("a = %d, b = %d, c = %d\n", a, b, c);
+    printf("a > b = %d\n", a > b);
+    printf("a < b = %d\n", a < b);
+    printf("a >= b = %d\n", a >= b);
+    printf("a <= b = %d\n", a <= b);
+    printf("a == c = %d\n", a == c);
+    printf("a != b = %d\n", a != b);
+    printf("a == b = %d\n", a == b);
+    printf("a != c = %d\n", a != c);
+    
+    double x = 5.5;
+    double y = 5.5;
+    double z = 3.2;
+    
+    printf("x = %f, y = %f, z = %f\n", x, y, z);
+    printf("x > z = %d\n", x > z);
+    printf("x < z = %d\n", x < z);
+    printf("x >= y = %d\n", x >= y);
+    printf("x <= y = %d\n", x <= y);
+    printf("x == y = %d\n", x == y);
+    printf("x != z = %d\n", x != z);
+    
+    bool result = a > b && x > z;
+    printf("(a > b) && (x > z) = %d\n", result);
+    
+    return 0;
+}

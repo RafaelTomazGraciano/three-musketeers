@@ -1,0 +1,24 @@
+=== Union Mixed Types Test ===
+
+Test 1 - Byte-level access:
+  Set individual bytes: A B C D
+  reg.full as int: 1145258561
+  Individual bytes: A B C D 
+
+Test 2 - Integer to bytes:
+  Set reg.full = 1094861636
+  Bytes: D C B A 
+
+Test 3 - Type punning:
+  n1 stores int: 100
+  n2 stores double: 3.141590
+
+Test 4 - Reinterpret cast:
+  Store n1.d = 2.71828
+  Read as n1.i = -1783957616 (bit pattern of double)
+
+Test 5 - Array manipulation:
+  Initialize reg.full = 0
+  Fill bytes with '0', '1', '2', '3'
+  Bytes: 0 1 2 3 
+  reg.full = 858927408

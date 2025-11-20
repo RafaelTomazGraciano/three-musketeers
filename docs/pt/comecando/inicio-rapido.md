@@ -4,9 +4,11 @@ Comece a usar o Three Musketeers em minutos.
 
 ## Seu Primeiro Programa
 
-Crie um arquivo chamado `hello.tm` com o seguinte conteúdo:
+Crie um arquivo chamado `hello.3m` com o seguinte conteúdo:
 
 ```c
+#include <stdio.tm>
+
 int main() {
     puts("Hello, Three Musketeers!");
     return 0;
@@ -18,7 +20,7 @@ int main() {
 Compile o programa usando o compilador Three Musketeers:
 
 ```bash
-Three_Musketeers hello.tm -o hello
+tm hello.3m --bin -o hello
 ```
 
 Isso irá:
@@ -46,13 +48,14 @@ Hello, Three Musketeers!
 ### Uso Básico
 
 ```bash
-Three_Musketeers <arquivo-entrada> [opções]
+tm <arquivo-entrada> [opções]
 ```
 
 ### Opções Comuns
 
 - `-o <nome>` ou `--out <nome>`: Especifica o nome do executável de saída (padrão: `a.out`)
 - `-O <nível>` ou `--opt <nível>`: Define o nível de otimização (0-3, padrão: 2)
+- `--bin`: Gera o executável no diretório `bin`
 - `-g`: Adiciona informações de debug
 - `--ll`: Mantém o código LLVM IR gerado
 - `-I <caminho>` ou `--Include <caminho>`: Caminho de biblioteca de inclusão
@@ -60,7 +63,7 @@ Three_Musketeers <arquivo-entrada> [opções]
 ### Exemplo com Opções
 
 ```bash
-Three_Musketeers hello.tm -o meuprograma -O 3 -g
+tm hello.3m --bin -o meuprograma -O 3 -g
 ```
 
 ## Estrutura de Arquivos

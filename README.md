@@ -1,11 +1,11 @@
 # Three Musketeers
 
-![Version](https://img.shields.io/badge/version-v0.9.5-blue.svg)
+![Version](https://img.shields.io/badge/version-v1.0.0Athos-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Language](https://img.shields.io/badge/language-C%23-purple.svg)
 ![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)
-
-**English** | [Português](#português)
+![ANTLR4](https://img.shields.io/badge/ANTLR-4-orange.svg)
+![LLVM](https://img.shields.io/badge/LLVM-IR-blue.svg)
 
 Three Musketeers is a C-like programming language compiler with native support for strings and boolean types. It serves as a subset of C with additional features, designed to be strongly typed with implicit type conversion.
 
@@ -39,12 +39,14 @@ The Three Musketeers compiler is written in C# (.NET 9.0) and uses:
 ### Compile a Program
 
 ```bash
-Three_Musketeers program.tm -o program
+tm program.tm -o program
 ```
 
 ### Example Program
 
 ```c
+#include <stdio.tm>
+
 int main() {
     puts("Hello, Three Musketeers!");
     return 0;
@@ -83,8 +85,29 @@ dotnet build
 For a release build:
 
 ```bash
+cd ..
 ./create_release.sh
 ```
+
+## Running Tests
+
+To run the Code Generation tests:
+
+```bash
+cd Three_Musketeers/LanguageTests
+dotnet run
+```
+
+To run the Semantic Analysis tests:
+
+```bash
+cd Three_Musketeers/Three_Musketeers.Tests
+dotnet test
+```
+
+## Use Our Syntax Highlighting
+
+You can use our syntax highlighting for Visual Studio Code by our repository: [Three Musketeers Syntax Highlighting](https://github.com/RafaelTomazGraciano/three-musketeers-vscode)
 
 ## License
 
@@ -94,93 +117,33 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
----
+## The Three Musketeers
 
-# Português
-
-Three Musketeers é um compilador de linguagem de programação similar ao C com suporte nativo para strings e tipos booleanos. Serve como um subconjunto de C com recursos adicionais, projetado para ser fortemente tipado com conversão de tipo implícita.
-
-## Características
-
-- **Fortemente Tipado**: Todas as variáveis devem ser declaradas com um tipo explícito
-- **Conversão de Tipo Implícita**: Conversões de tipo automáticas tratadas pelo compilador
-- **Tipos Nativos**: `int`, `double`, `char`, `bool`, `string`
-- **Ponteiros**: Suporte completo a ponteiros com operadores de desreferenciação e endereço
-- **Estruturas e Uniões**: Suporte para tipos compostos definidos pelo usuário
-- **Arrays**: Arrays de uma e múltiplas dimensões
-- **Funções**: Funções com vários tipos de retorno e parâmetros
-- **Fluxo de Controle**: Loops `if/else`, `switch`, `for`, `while`, `do-while`
-- **Gerenciamento de Memória**: Alocação dinâmica com `malloc` e `free`
-- **Operações de E/S**: `printf`, `scanf`, `puts`, `gets` para entrada/saída
-- **Conversão de Tipos**: Funções integradas para conversão de tipos (`atoi`, `atod`, `itoa`, `dtoa`)
-
-## Filosofia
-
-Three Musketeers é projetado para servir como um subconjunto da linguagem de programação C com alguns atributos adicionais, como tipos string e boolean nativos. A linguagem é fortemente tipada com conversão de tipo implícita, facilitando o trabalho mantendo o poder e a flexibilidade do C.
-
-## Compilador
-
-O compilador Three Musketeers é escrito em C# (.NET 9.0) e usa:
-- **ANTLR4** para análise léxica e sintática
-- **LLVM** para geração de código intermediário
-- **GCC** para compilação final em executáveis nativos
-
-## Início Rápido
-
-### Compilar um Programa
-
-```bash
-Three_Musketeers programa.tm -o programa
-```
-
-### Programa de Exemplo
-
-```c
-int main() {
-    puts("Hello, Three Musketeers!");
-    return 0;
-}
-```
-
-## Documentação
-
-Documentação abrangente está disponível em inglês e português:
-
-- **[English Documentation](docs/en/README.md)** - Documentação completa em inglês
-- **[Documentação em Português](docs/pt/README.md)** - Documentação completa em português
-
-### Links Rápidos
-
-- [Getting Started](docs/en/getting-started/README.md) / [Começando](docs/pt/comecando/README.md)
-- [Language Reference](docs/en/language-reference/README.md) / [Referência da Linguagem](docs/pt/referencia-linguagem/README.md)
-- [Compiler Guide](docs/en/compiler-guide/README.md) / [Guia do Compilador](docs/pt/guia-compilador/README.md)
-- [Examples](docs/en/examples/examples.md) / [Exemplos](docs/pt/exemplos/exemplos.md)
-
-## Compilando o Compilador
-
-### Pré-requisitos
-
-- .NET SDK 9.0 ou posterior
-- LLVM (com comando `llc` disponível)
-- GCC (GNU Compiler Collection)
-
-### Instruções de Compilação
-
-```bash
-cd Three_Musketeers
-dotnet build
-```
-
-Para uma build de release:
-
-```bash
-./create_release.sh
-```
-
-## Licença
-
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## Contribuindo
-
-Contribuições são bem-vindas! Sinta-se à vontade para enviar um Pull Request.
+<table>
+  <tr>
+  <td align="center">
+      <a href="https://github.com/RafaelTomazGraciano">
+        <img src="https://github.com/RafaelTomazGraciano.png" width="100px;" alt="Foto do Rafael Tomaz"/><br>
+        <sub>
+          <b>Rafael Tomaz</b>
+        </sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/gabrielwitor">
+        <img src="https://github.com/gabrielwitor.png" width="100px;" alt="Foto do Gabriel Witor"/><br>
+        <sub>
+          <b>Gabriel Witor</b>
+        </sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/HedroPedro">
+        <img src="https://github.com/HedroPedro.png" width="100px;" alt="Foto do Hedro Pedro"/><br>
+        <sub>
+          <b>Pedro Henrique de Oliveira</b>
+        </sub>
+      </a>
+    </td>
+  </tr>
+</table>

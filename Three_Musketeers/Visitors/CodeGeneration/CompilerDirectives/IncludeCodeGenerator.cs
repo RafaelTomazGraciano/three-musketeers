@@ -19,8 +19,9 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives
 
         public string? VisitIncludeSystem([NotNull] ExprParser.IncludeSystemContext context)
         {
-            string angleString = context.ANGLE_STRING().GetText();
-            string libraryName = angleString.Substring(1, angleString.Length - 2);
+            // Build library name from ID tokens
+            var ids = context.ID();
+            string libraryName = string.Join(".", ids.Select(id => id.GetText()));
 
             if (includedLibraries.Contains(libraryName))
             {
@@ -66,15 +67,23 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives
             }
 
             // scanf declaration
-            if (!declarations.ToString().Contains("declare i32 @__isoc99_scanf"))
+            if (!declarations.ToString().Contains("declare i32 @scanf"))
             {
-                declarations.AppendLine("declare i32 @__isoc99_scanf(i8*, ...)");
+                declarations.AppendLine("declare i32 @scanf(i8*, ...)");
             }
 
             // gets declaration
             if (!declarations.ToString().Contains("declare i8* @gets"))
             {
                 declarations.AppendLine("declare i8* @gets(i8*)");
+            }
+
+            // for gets/fgets
+            if (!declarations.ToString().Contains("declare i8* @fgets"))
+            {
+                declarations.AppendLine("%struct._IO_FILE = type opaque");
+                declarations.AppendLine("@stdin = external global %struct._IO_FILE*");
+                declarations.AppendLine("declare i8* @fgets(i8*, i32, %struct._IO_FILE*)");
             }
 
             // puts declaration
@@ -114,6 +123,17 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives
             if (!declarations.ToString().Contains("declare i32 @sprintf"))
             {
                 declarations.AppendLine("declare i32 @sprintf(i8*, i8*, ...)");
+            }
+            
+            // Format strings for sprintf (itoa/dtoa)
+            if (!declarations.ToString().Contains("@.fmt.d"))
+            {
+                declarations.AppendLine("@.fmt.d = private unnamed_addr constant [3 x i8] c\"%d\\00\", align 1");
+            }
+            
+            if (!declarations.ToString().Contains("@.fmt.lf"))
+            {
+                declarations.AppendLine("@.fmt.lf = private unnamed_addr constant [4 x i8] c\"%lf\\00\", align 1");
             }
         }
     }

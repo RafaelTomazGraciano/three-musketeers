@@ -119,6 +119,8 @@ printf("Hello, %s!\n", nome);
 ## Exemplo Completo de E/S
 
 ```c
+#include <stdio.tm>
+
 int main() {
     string nome;
     int idade;

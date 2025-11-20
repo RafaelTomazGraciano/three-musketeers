@@ -1,0 +1,16 @@
+For loop with break at 5:
+0 1 2 3 4 
+
+While loop with break:
+0 1 2 
+
+Do-while with break:
+0 1 2 3 
+
+Find first number divisible by 7:
+Found: 7
+
+Nested loop with break (breaks inner only):
+Outer: 1 - Inner: 1 2 
+Outer: 2 - Inner: 1 2 
+Outer: 3 - Inner: 1 2

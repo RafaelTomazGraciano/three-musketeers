@@ -1,6 +1,6 @@
 # Documentação da Linguagem Three Musketeers
 
-![Versão](https://img.shields.io/badge/versão-v0.9.5-blue.svg)
+![Versão](https://img.shields.io/badge/versão-v1.0.0Athos-blue.svg)
 ![Licença](https://img.shields.io/badge/licença-MIT-green.svg)
 
 Bem-vindo à documentação da linguagem de programação Three Musketeers. Esta documentação fornece um guia completo para aprender e usar a linguagem Three Musketeers.

@@ -24,15 +24,6 @@ bool active = true;
 string greeting = "Hello";
 ```
 
-### Multiple Declarations
-
-You can declare multiple variables of the same type:
-
-```c
-int x, y, z;
-double a = 1.0, b = 2.0, c = 3.0;
-```
-
 ## Array Variables
 
 ### One-Dimensional Arrays

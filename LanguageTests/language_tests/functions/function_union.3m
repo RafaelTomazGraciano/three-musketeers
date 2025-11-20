@@ -1,0 +1,94 @@
+#include <stdio.tm>
+
+union Data {
+    int i,
+    double d,
+    char c
+};
+
+struct Tagged {
+    int type,
+    Data value
+};
+
+Data createInt(int value) {
+    Data d;
+    d.i = value;
+    return d;
+}
+
+Data createDouble(double value) {
+    Data d;
+    d.d = value;
+    return d;
+}
+
+Data createChar(char value) {
+    Data d;
+    d.c = value;
+    return d;
+}
+
+Tagged createTaggedInt(int value) {
+    Tagged t;
+    t.type = 1;
+    t.value.i = value;
+    return t;
+}
+
+Tagged createTaggedDouble(double value) {
+    Tagged t;
+    t.type = 2;
+    t.value.d = value;
+    return t;
+}
+
+Tagged createTaggedChar(char value) {
+    Tagged t;
+    t.type = 3;
+    t.value.c = value;
+    return t;
+}
+
+void printTagged(Tagged t) {
+    if (t.type == 1) {
+        printf("Integer: %d\n", t.value.i);
+    }
+    if (t.type == 2) {
+        printf("Double: %.2f\n", t.value.d);
+    }
+    if (t.type == 3) {
+        printf("Char: %c\n", t.value.c);
+    }
+}
+
+int main() {
+    printf("Testing union functions:\n\n");
+    
+    Data d1;
+    d1 = createInt(42);
+    printf("Union as int: %d\n", d1.i);
+    
+    Data d2;
+    d2 = createDouble(3.14);
+    printf("Union as double: %.2f\n", d2.d);
+    
+    Data d3;
+    d3 = createChar('Z');
+    printf("Union as char: %c\n", d3.c);
+    
+    printf("\nTagged union tests:\n");
+    Tagged t1;
+    t1 = createTaggedInt(100);
+    printTagged(t1);
+    
+    Tagged t2;
+    t2 = createTaggedDouble(2.71);
+    printTagged(t2);
+    
+    Tagged t3;
+    t3 = createTaggedChar('A');
+    printTagged(t3);
+    
+    return 0;
+}

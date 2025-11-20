@@ -1,20 +1,20 @@
 # Compiler Usage
 
-The Three Musketeers compiler translates `.tm` source files into executable programs.
+The Three Musketeers compiler translates `.3m` source files into executable programs.
 
 ## Basic Usage
 
 ```bash
-Three_Musketeers <input-file> [options]
+tm <input-file> [options]
 ```
 
 ### Example
 
 ```bash
-Three_Musketeers program.tm -o program
+tm program.3m -o program
 ```
 
-This compiles `program.tm` and creates an executable named `program` in the `bin` directory.
+This compiles `program.3m` and creates an executable named `program` in the `bin` directory.
 
 ## Compilation Process
 
@@ -39,7 +39,7 @@ source.tm          →  bin/source.ll  (LLVM IR, if --ll flag used)
 
 ## File Requirements
 
-- Source files must have the `.tm` extension
+- Source files must have the `.3m` extension
 - The program must contain a `main` function
 - All included files must exist and be accessible
 

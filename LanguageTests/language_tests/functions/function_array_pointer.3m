@@ -1,0 +1,75 @@
+#include <stdio.tm>
+
+void printArray(int* arr, int size) {
+    int i;
+    printf("Array: ");
+    for (i = 0; i < size; i = i + 1) {
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+void fillArray(int* arr, int size, int value) {
+    int i;
+    for (i = 0; i < size; i = i + 1) {
+        arr[i] = value;
+    }
+}
+
+void incrementArray(int* arr, int size) {
+    int i;
+    for (i = 0; i < size; i = i + 1) {
+        arr[i] = arr[i] + 1;
+    }
+}
+
+int sumArray(int* arr, int size) {
+    int sum;
+    int i;
+    sum = 0;
+    for (i = 0; i < size; i = i + 1) {
+        sum = sum + arr[i];
+    }
+    return sum;
+}
+
+void reverseArray(int* arr, int size) {
+    int i;
+    int temp;
+    int j;
+    for (i = 0; i < size / 2; i = i + 1) {
+        j = size - 1 - i;
+        temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+    }
+}
+
+int main() {
+    int numbers[5];
+    int i;
+    
+    printf("Testing array pointer functions:\n\n");
+    
+    printf("Filling array with 7:\n");
+    fillArray(numbers, 5, 7);
+    printArray(numbers, 5);
+    
+    printf("\nIncrementing all elements:\n");
+    incrementArray(numbers, 5);
+    printArray(numbers, 5);
+    
+    printf("\nSum of array: %d\n", sumArray(numbers, 5));
+    
+    printf("\nManual assignment:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        numbers[i] = i + 1;
+    }
+    printArray(numbers, 5);
+    
+    printf("\nReversing array:\n");
+    reverseArray(numbers, 5);
+    printArray(numbers, 5);
+    
+    return 0;
+}

@@ -1,0 +1,15 @@
+Testing pointer reuse after free:
+
+First allocation: 100
+Second allocation: 200
+
+Array allocation:
+p[0] = 0
+p[1] = 10
+p[2] = 20
+p[3] = 30
+p[4] = 40
+
+Final allocation: 999
+
+All reuses successful

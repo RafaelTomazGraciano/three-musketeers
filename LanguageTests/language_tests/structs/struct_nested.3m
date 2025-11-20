@@ -1,0 +1,33 @@
+#include <stdio.tm>
+
+struct Point {
+    int x,
+    int y
+};
+
+struct Rectangle {
+    struct Point topLeft,
+    struct Point bottomRight
+};
+
+int main() {
+    struct Rectangle rect;
+    
+    printf("=== Nested Struct Test ===\n");
+    
+    rect.topLeft.x = 0;
+    rect.topLeft.y = 100;
+    rect.bottomRight.x = 50;
+    rect.bottomRight.y = 0;
+    
+    printf("Rectangle:\n");
+    printf("  Top-Left: (%d, %d)\n", rect.topLeft.x, rect.topLeft.y);
+    printf("  Bottom-Right: (%d, %d)\n", rect.bottomRight.x, rect.bottomRight.y);
+    
+    int width = rect.bottomRight.x - rect.topLeft.x;
+    int height = rect.topLeft.y - rect.bottomRight.y;
+    
+    printf("Width: %d, Height: %d\n", width, height);
+    
+    return 0;
+}

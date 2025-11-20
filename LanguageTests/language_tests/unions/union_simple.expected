@@ -1,0 +1,7 @@
+=== Simple Union Test ===
+
+Stored int: 42
+Stored double: 3.140000
+Int after double: 1374389535 (corrupted)
+Stored char: A
+Int after char: 1374389569 (corrupted)

@@ -50,22 +50,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Functions
 
             var functionInfo = declaredFunctions[functionName];
 
-            // var funcReturnCtx = context.function_return();
-            // if (funcReturnCtx.type() != null)
-            // {
-            //     string baseType = funcReturnCtx.type().GetText();
-            //     int pointerCount = funcReturnCtx.POINTER().Length;
-            //     string finalReturnType = baseType + new string('*', pointerCount);
-
-            //     functionInfo.returnType = finalReturnType;
-            //     functionInfo.returnPointerLevel = pointerCount;
-            // }
-            // else if (funcReturnCtx.VOID() != null)
-            // {
-            //     functionInfo.returnType = "void";
-            //     functionInfo.returnPointerLevel = 0;
-            // }
-
             // enter new scope for function body
             symbolTable.EnterScope();
 

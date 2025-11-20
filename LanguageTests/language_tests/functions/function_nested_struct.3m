@@ -1,0 +1,88 @@
+#include <stdio.tm>
+
+struct Point {
+    int x,
+    int y
+};
+
+struct Line {
+    Point start,
+    Point end
+};
+
+struct Circle {
+    Point center,
+    int radius
+};
+
+Line createLine(int x1, int y1, int x2, int y2) {
+    Line l;
+    l.start.x = x1;
+    l.start.y = y1;
+    l.end.x = x2;
+    l.end.y = y2;
+    return l;
+}
+
+void printLine(Line l) {
+    printf("Line from (%d,%d) to (%d,%d)\n", 
+           l.start.x, l.start.y, l.end.x, l.end.y);
+}
+
+Circle createCircle(int cx, int cy, int r) {
+    Circle c;
+    c.center.x = cx;
+    c.center.y = cy;
+    c.radius = r;
+    return c;
+}
+
+void printCircle(Circle c) {
+    printf("Circle at (%d,%d) with radius %d\n", 
+           c.center.x, c.center.y, c.radius);
+}
+
+void moveCircle(Circle *c, int dx, int dy) {
+    (*c).center.x = (*c).center.x + dx;
+    (*c).center.y = (*c).center.y + dy;
+}
+
+int lineLength(Line l) {
+    int dx;
+    int dy;
+    dx = l.end.x - l.start.x;
+    dy = l.end.y - l.start.y;
+    if (dx < 0) {
+        dx = -dx;
+    }
+    if (dy < 0) {
+        dy = -dy;
+    }
+    return dx + dy;
+}
+
+int main() {
+    printf("Testing nested struct functions:\n\n");
+    
+    Line line1;
+    line1 = createLine(0, 0, 10, 5);
+    printLine(line1);
+    printf("Manhattan distance: %d\n", lineLength(line1));
+    
+    printf("\n");
+    Circle circle1;
+    circle1 = createCircle(5, 5, 10);
+    printCircle(circle1);
+    
+    printf("\nMoving circle by (3, -2):\n");
+    moveCircle(&circle1, 3, -2);
+    printCircle(circle1);
+    
+    printf("\nCreating another line:\n");
+    Line line2;
+    line2 = createLine(1, 1, 4, 4);
+    printLine(line2);
+    printf("Manhattan distance: %d\n", lineLength(line2));
+    
+    return 0;
+}

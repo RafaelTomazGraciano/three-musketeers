@@ -1,0 +1,40 @@
+#include <stdio.tm>
+
+int main() {
+    int i;
+    int j;
+    
+    printf("Multiplication table (1-5):\n");
+    for (i = 1; i <= 5; i = i + 1) {
+        for (j = 1; j <= 5; j = j + 1) {
+            printf("%d ", i * j);
+        }
+        printf("\n");
+    }
+    
+    printf("\nTriangle pattern:\n");
+    for (i = 1; i <= 5; i = i + 1) {
+        for (j = 1; j <= i; j = j + 1) {
+            printf("* ");
+        }
+        printf("\n");
+    }
+    
+    printf("\nCoordinates grid (0-2, 0-2):\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("(%d,%d) ", i, j);
+        }
+        printf("\n");
+    }
+    
+    printf("\nNumber pyramid:\n");
+    for (i = 1; i <= 4; i = i + 1) {
+        for (j = 1; j <= i; j = j + 1) {
+            printf("%d ", j);
+        }
+        printf("\n");
+    }
+    
+    return 0;
+}

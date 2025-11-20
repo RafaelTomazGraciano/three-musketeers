@@ -1,0 +1,146 @@
+#include <stdio.tm>
+
+#define ROWS 3
+#define COLS 3
+
+void printMatrix(int rows, int cols) {
+    int matrix[3][3];
+    int i;
+    int j;
+    
+    for (i = 0; i < rows; i = i + 1) {
+        for (j = 0; j < cols; j = j + 1) {
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    int a[3][3];
+    int b[3][3];
+    int result[3][3];
+    int temp[3][3];
+    int i;
+    int j;
+    int k;
+    
+    printf("=== Matrix Operations Test ===\n\n");
+    
+    a[0][0] = 1;
+    a[0][1] = 2;
+    a[0][2] = 3;
+    a[1][0] = 4;
+    a[1][1] = 5;
+    a[1][2] = 6;
+    a[2][0] = 7;
+    a[2][1] = 8;
+    a[2][2] = 9;
+    
+    b[0][0] = 9;
+    b[0][1] = 8;
+    b[0][2] = 7;
+    b[1][0] = 6;
+    b[1][1] = 5;
+    b[1][2] = 4;
+    b[2][0] = 3;
+    b[2][1] = 2;
+    b[2][2] = 1;
+    
+    printf("Matrix A:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("%d ", a[i][j]);
+        }
+        printf("\n");
+    }
+    
+    printf("\nMatrix B:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("%d ", b[i][j]);
+        }
+        printf("\n");
+    }
+    
+    printf("\nMatrix Multiplication (A * B):\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            result[i][j] = 0;
+            for (k = 0; k < 3; k = k + 1) {
+                result[i][j] = result[i][j] + a[i][k] * b[k][j];
+            }
+        }
+    }
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("%d ", result[i][j]);
+        }
+        printf("\n");
+    }
+    
+    printf("\nMatrix Addition (A + B):\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            result[i][j] = a[i][j] + b[i][j];
+        }
+    }
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("%d ", result[i][j]);
+        }
+        printf("\n");
+    }
+    
+    printf("\nTranspose of A:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            temp[j][i] = a[i][j];
+        }
+    }
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("%d ", temp[i][j]);
+        }
+        printf("\n");
+    }
+    
+    printf("\nTranspose of B:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            temp[j][i] = b[i][j];
+        }
+    }
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("%d ", temp[i][j]);
+        }
+        printf("\n");
+    }
+    
+    printf("\nChained multiplication: (A * B) * A:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            result[i][j] = 0;
+            for (k = 0; k < 3; k = k + 1) {
+                result[i][j] = result[i][j] + a[i][k] * b[k][j];
+            }
+        }
+    }
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            temp[i][j] = 0;
+            for (k = 0; k < 3; k = k + 1) {
+                temp[i][j] = temp[i][j] + result[i][k] * a[k][j];
+            }
+        }
+    }
+    for (i = 0; i < 3; i = i + 1) {
+        for (j = 0; j < 3; j = j + 1) {
+            printf("%d ", temp[i][j]);
+        }
+        printf("\n");
+    }
+    
+    return 0;
+}

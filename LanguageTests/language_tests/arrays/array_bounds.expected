@@ -1,0 +1,65 @@
+First element: arr[0] = 0
+Last element: arr[9] = 90
+Middle element: arr[5] = 50
+
+Forward sequential access:
+arr[0] = 0
+arr[1] = 10
+arr[2] = 20
+arr[3] = 30
+arr[4] = 40
+arr[5] = 50
+arr[6] = 60
+arr[7] = 70
+arr[8] = 80
+arr[9] = 90
+
+Backward sequential access:
+arr[9] = 90
+arr[8] = 80
+arr[7] = 70
+arr[6] = 60
+arr[5] = 50
+arr[4] = 40
+arr[3] = 30
+arr[2] = 20
+arr[1] = 10
+arr[0] = 0
+
+Even indices:
+arr[0] = 0
+arr[2] = 20
+arr[4] = 40
+arr[6] = 60
+arr[8] = 80
+
+Odd indices:
+arr[1] = 10
+arr[3] = 30
+arr[5] = 50
+arr[7] = 70
+arr[9] = 90
+
+Copied array:
+copy[0] = 0
+copy[1] = 10
+copy[2] = 20
+copy[3] = 30
+copy[4] = 40
+copy[5] = 50
+copy[6] = 60
+copy[7] = 70
+copy[8] = 80
+copy[9] = 90
+
+Reversed array:
+reversed[0] = 90
+reversed[1] = 80
+reversed[2] = 70
+reversed[3] = 60
+reversed[4] = 50
+reversed[5] = 40
+reversed[6] = 30
+reversed[7] = 20
+reversed[8] = 10
+reversed[9] = 0

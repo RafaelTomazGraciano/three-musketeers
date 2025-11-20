@@ -1,0 +1,48 @@
+#include <stdio.tm>
+
+double addDouble(double a, double b) {
+    return a + b;
+}
+
+double divide(int a, int b) {
+    double temp = a; // convert to double
+    double result = temp / b;
+    return result;
+}
+
+double average(int a, int b, int c) {
+    double sum;
+    sum = a + b + c;
+    return sum / 3.0;
+}
+
+double power(double base, int exp) {
+    double result;
+    int i;
+    result = 1.0;
+    for (i = 0; i < exp; i = i + 1) {
+        result = result * base;
+    }
+    return result;
+}
+
+int main() {
+    double result;
+    
+    result = addDouble(3.5, 2.7);
+    printf("3.5 + 2.7 = %.2f\n", result);
+    
+    result = divide(10, 4);
+    printf("10 / 4 = %.2f\n", result);
+    
+    result = average(10, 20, 30);
+    printf("average(10, 20, 30) = %.2f\n", result);
+    
+    result = power(2.0, 3);
+    printf("2.0^3 = %.2f\n", result);
+    
+    result = power(1.5, 2);
+    printf("1.5^2 = %.2f\n", result);
+    
+    return 0;
+}

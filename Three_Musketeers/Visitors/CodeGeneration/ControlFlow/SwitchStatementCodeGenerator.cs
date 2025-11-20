@@ -12,7 +12,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         private readonly Func<string> nextRegister;
         private readonly Func<ExprParser.ExprContext, string?> visitExpression;
         private readonly Func<ExprParser.StmContext, string?> visitStatement;
-        private int labelCounter = 0;
+            private int labelCounter = 0;
 
         private readonly Stack<string> activeSwitchMergeLabels = new Stack<string>();
 
@@ -238,18 +238,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             if (!registerTypes.ContainsKey(value))
             {
-                if (value == "1" || value == "true")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else if (value == "0" || value == "false")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else
-                {
-                    registerTypes[value] = "i32";
-                }
+                registerTypes[value] = "i32";
             }
             return registerTypes[value];
         }

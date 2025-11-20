@@ -1,0 +1,97 @@
+#include <stdio.tm>
+
+struct IntArray {
+    int data[5],
+    int size
+};
+
+struct Matrix {
+    int rows,
+    int cols,
+    int data[9]
+};
+
+IntArray createArray(int value) {
+    IntArray arr;
+    int i;
+    arr.size = 5;
+    for (i = 0; i < 5; i = i + 1) {
+        arr.data[i] = value;
+    }
+    return arr;
+}
+
+void printArray(IntArray arr) {
+    int i;
+    printf("Array[%d]: ", arr.size);
+    for (i = 0; i < arr.size; i = i + 1) {
+        printf("%d ", arr.data[i]);
+    }
+    printf("\n");
+}
+
+int sumArray(IntArray arr) {
+    int sum;
+    int i;
+    sum = 0;
+    for (i = 0; i < arr.size; i = i + 1) {
+        sum = sum + arr.data[i];
+    }
+    return sum;
+}
+
+void fillArray(IntArray *arr, int start) {
+    int i;
+    for (i = 0; i < (*arr).size; i = i + 1) {
+        (*arr).data[i] = start + i;
+    }
+}
+
+Matrix createMatrix(int rows, int cols, int value) {
+    Matrix m;
+    int i;
+    m.rows = rows;
+    m.cols = cols;
+    for (i = 0; i < rows * cols; i = i + 1) {
+        m.data[i] = value;
+    }
+    return m;
+}
+
+void printMatrix(Matrix m) {
+    int i;
+    int j;
+    printf("Matrix %dx%d:\n", m.rows, m.cols);
+    for (i = 0; i < m.rows; i = i + 1) {
+        for (j = 0; j < m.cols; j = j + 1) {
+            printf("%d ", m.data[i * m.cols + j]);
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    printf("Testing struct array functions:\n\n");
+    
+    IntArray arr1;
+    arr1 = createArray(7);
+    printArray(arr1);
+    printf("Sum: %d\n", sumArray(arr1));
+    
+    printf("\nFilling with sequence starting at 10:\n");
+    fillArray(&arr1, 10);
+    printArray(arr1);
+    printf("Sum: %d\n", sumArray(arr1));
+    
+    printf("\n");
+    Matrix mat1;
+    mat1 = createMatrix(3, 3, 1);
+    printMatrix(mat1);
+    
+    printf("\nCreating 2x3 matrix with value 5:\n");
+    Matrix mat2;
+    mat2 = createMatrix(2, 3, 5);
+    printMatrix(mat2);
+    
+    return 0;
+}

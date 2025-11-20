@@ -99,6 +99,8 @@ for (i = 0; i < 3; i++) {
 Arrays can be passed to functions. They are passed by reference:
 
 ```c
+#include <stdio.tm>
+
 void printArray(int arr[], int size) {
     int i;
     for (i = 0; i < size; i++) {

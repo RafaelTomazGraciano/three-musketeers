@@ -1,0 +1,101 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Node {
+    int value,
+    Node *next
+};
+
+struct Pair {
+    int first,
+    int second
+};
+
+Node* createNode(int value) {
+    Node *n;
+    Node *nullPtr;
+    n = malloc(8);
+    (*n).value = value;
+    nullPtr = 0;
+    (*n).next = nullPtr;
+    return n;
+}
+
+void printList(Node *head) {
+    Node *current;
+    Node *nullPtr;
+    current = head;
+    printf("List: ");
+    nullPtr = 0;
+    while (current != nullPtr) {
+        printf("%d ", (*current).value);
+        current = (*current).next;
+    }
+    printf("\n");
+}
+
+Pair makePair(int a, int b) {
+    Pair p;
+    p.first = a;
+    p.second = b;
+    return p;
+}
+
+Pair swapPair(Pair p) {
+    Pair result;
+    result.first = p.second;
+    result.second = p.first;
+    return result;
+}
+
+int pairSum(Pair p) {
+    return p.first + p.second;
+}
+
+Pair* createPairDynamic(int a, int b) {
+    Pair *p;
+    p = malloc(8);
+    (*p).first = a;
+    (*p).second = b;
+    return p;
+}
+
+int main() {
+    Node *head;
+    Node *second;
+    Node *third;
+    Pair p1;
+    Pair p2;
+    Pair *p3;
+    Pair p3value;
+    
+    printf("Testing complex struct functions:\n\n");
+    
+    printf("Creating linked list:\n");
+    head = createNode(10);
+    second = createNode(20);
+    (*head).next = second;
+    third = createNode(30);
+    (*second).next = third;
+    printList(head);
+    
+    printf("\nPair operations:\n");
+    p1 = makePair(5, 10);
+    printf("Pair: (%d, %d)\n", p1.first, p1.second);
+    printf("Sum: %d\n", pairSum(p1));
+    
+    p2 = swapPair(p1);
+    printf("Swapped: (%d, %d)\n", p2.first, p2.second);
+    
+    printf("\nDynamic pair:\n");
+    p3 = createPairDynamic(100, 200);
+    printf("Dynamic pair: (%d, %d)\n", (*p3).first, (*p3).second);
+    printf("Sum: %d\n", pairSum(((*p3))));
+    free(p3);
+    
+    free(third);
+    free(second);
+    free(head);
+    
+    return 0;
+}

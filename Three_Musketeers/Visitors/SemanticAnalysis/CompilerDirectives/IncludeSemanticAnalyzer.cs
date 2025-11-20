@@ -37,17 +37,17 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
         {
             int line = context.Start.Line;
 
-            string angleString = context.ANGLE_STRING().GetText();
-            //remove < and >
-            string libraryName = angleString.Substring(1, angleString.Length - 2);
+            // Build library name from ID tokens
+            var ids = context.ID();
+            string libraryName = string.Join(".", ids.Select(id => id.GetText()));
 
-            //validate system library
+            // Validate system library
             if (!systemLibraries.Contains(libraryName))
             {
                 reportWarning(line, $"Unknown system library '{libraryName}'. Available libraries: stdio.tm, stdlib.tm");
             }
 
-            //check duplicate include
+            // Check duplicate include
             if (includedFiles.Contains(libraryName))
             {
                 reportWarning(line, $"Library '{libraryName}' has already been included");
@@ -63,30 +63,30 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives
         {
             int line = context.Start.Line;
             string stringLiteral = context.STRING_LITERAL().GetText();
-            //remove quotes
+            // Remove quotes
             string fileName = stringLiteral.Substring(1, stringLiteral.Length - 2);
 
-            //validate file extension
+            // Validate file extension
             if (!fileName.EndsWith(".tm"))
             {
                 reportError(line, $"Include file must have .tm extension, got '{fileName}'");
                 return null;
             }
 
-            //check for duplicate include
+            // Check for duplicate include
             if (includedFiles.Contains(fileName))
             {
                 reportWarning(line, $"File '{fileName}' has already been included");
                 return null;
             }
 
-            //buld full path 
+            // Build full path 
             string? directory = Path.GetDirectoryName(currentFilePath);
             string fullPath = directory != null
                 ? Path.Combine(directory, fileName)
                 : fileName;
 
-            //check if file exists
+            // Check if file exists
             if (!File.Exists(fullPath))
             {
                 reportError(line, $"Include file '{fileName}' not found at path: {fullPath}");

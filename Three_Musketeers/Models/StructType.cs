@@ -5,11 +5,7 @@ namespace Three_Musketeers.Models
 
         public StructType(string LLVMName, List<HeterogenousMember> members, Func<string, int> GetSize) : base(LLVMName, members)
         {
-            totalSize = 0;
-            foreach (var member in members)
-            {
-                totalSize += GetSize(member.LLVMType);
-            }
+            // it's calculated properly in GetSize() when needed
         }
 
         public int GetFieldIndex(string fieldName)

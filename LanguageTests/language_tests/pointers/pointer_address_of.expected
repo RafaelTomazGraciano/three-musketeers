@@ -1,0 +1,15 @@
+Before increment:
+x = 5
+
+After increment(&x):
+x = 6
+
+Before swap:
+x = 6, y = 10
+
+After swap(&x, &y):
+x = 10, y = 6
+
+Array elements via address:
+(*p1) = 100
+(*p2) = 300

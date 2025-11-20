@@ -1,0 +1,8 @@
+Integer: 42
+Double: 3.14
+Character: A
+Int: 10, Double: 2.50, Char: X
+
+Testing pointer parameters:
+Before swap: x=5, y=10
+After swap: x=10, y=5

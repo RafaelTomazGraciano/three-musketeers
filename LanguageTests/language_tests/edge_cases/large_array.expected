@@ -1,0 +1,14 @@
+=== Large Array Test ===
+
+Initializing array with 1000 elements...
+First element: 0
+Middle element (500): 500
+Last element (999): 999
+
+Calculating sum of all elements...
+Sum: 499500
+
+Modifying some elements...
+Modified first: 9999
+Modified middle: 8888
+Modified last: 7777

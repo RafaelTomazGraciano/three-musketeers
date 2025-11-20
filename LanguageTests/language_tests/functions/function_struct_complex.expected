@@ -1,0 +1,13 @@
+Testing complex struct functions:
+
+Creating linked list:
+List: 10 20 30 
+
+Pair operations:
+Pair: (5, 10)
+Sum: 15
+Swapped: (10, 5)
+
+Dynamic pair:
+Dynamic pair: (100, 200)
+Sum: 300
