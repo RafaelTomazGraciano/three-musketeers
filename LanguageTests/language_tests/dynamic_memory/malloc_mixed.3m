@@ -1,0 +1,75 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+union Value {
+    int i,
+    double d
+};
+
+struct Container {
+    int type,
+    union Value val
+};
+
+int main() {
+    struct Container *c1;
+    struct Container *c2;
+    
+    printf("Testing mixed struct + union with malloc:\n\n");
+    
+    // Allocate container with int value
+    c1 = malloc(16);
+    (*c1).type = 1;
+    (*c1).val.i = 42;
+    
+    printf("Container 1 (int):\n");
+    printf("type = %d, value = %d\n", (*c1).type, (*c1).val.i);
+    
+    // Allocate container with double value
+    c2 = malloc(16);
+    (*c2).type = 2;
+    (*c2).val.d = 3.14;
+    
+    printf("\nContainer 2 (double):\n");
+    printf("type = %d, value = %.2f\n", (*c2).type, (*c2).val.d);
+    
+    // Switch type in c1
+    (*c1).type = 2;
+    (*c1).val.d = 99.5;
+    
+    printf("\nContainer 1 after change (double):\n");
+    printf("type = %d, value = %.2f\n", (*c1).type, (*c1).val.d);
+    
+    free(c1);
+    free(c2);
+    
+    printf("\nContainers freed successfully\n");
+    
+    // Array of mixed containers
+    struct Container *arr;
+    int i;
+    
+    arr = malloc(3);
+    
+    arr[0].type = 1;
+    arr[0].val.i = 100;
+    
+    arr[1].type = 2;
+    arr[1].val.d = 2.5;
+    
+    arr[2].type = 1;
+    arr[2].val.i = 200;
+    
+    printf("\nArray of containers:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        if (arr[i].type == 1) {
+            printf("arr[%d]: int = %d\n", i, arr[i].val.i);
+        } else {
+            printf("arr[%d]: double = %.2f\n", i, arr[i].val.d);
+        }
+    }
+    
+    free(arr);
+    
+    return 0;
+}

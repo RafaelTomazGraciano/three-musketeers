@@ -1,0 +1,18 @@
+Testing malloc with unions:
+
+As int: 42
+As char: 65
+As double: 3.14
+
+Second union:
+Stored as int: 100
+Stored as double: 99.99
+
+Array of unions:
+arr[0].i = 10
+arr[1].i = 20
+arr[2].i = 30
+
+arr[1] as double: 2.50
+
+All unions freed successfully

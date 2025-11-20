@@ -43,6 +43,21 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Comparison
 
         private bool AreComparableTypes(string type1, string type2)
         {
+            // Allow pointer comparisons (>, <, >=, <=)
+            if (type1.Contains('*') || type2.Contains('*'))
+            {
+                // Pointer with pointer
+                if (type1.Contains('*') && type2.Contains('*'))
+                    return true;
+                
+                // Pointer with int (for null/0 comparison)
+                if ((type1.Contains('*') && type2 == "int") || 
+                    (type2.Contains('*') && type1 == "int"))
+                    return true;
+                
+                return false;
+            }
+            
             // Both must be numeric types for comparison
             return IsNumericType(type1) && IsNumericType(type2);
         }

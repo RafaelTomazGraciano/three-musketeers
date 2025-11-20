@@ -1,0 +1,8 @@
+i = 5
+a = i++: a = 5, i = 6
+b = ++i: b = 6, i = 6
+c = i--: c = 5, i = 4
+d = --i: d = 4, i = 4
+i++ + ++i: result = 22, i = 12
+++i + i++: result = 22, i = 12
+i-- - --i: result = 2, i = 3

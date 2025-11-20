@@ -1,0 +1,77 @@
+#include <stdio.tm>
+
+int main() {
+    int i;
+    int count;
+    
+    printf("Infinite for loop with break:\n");
+    i = 0;
+    for (;;) {
+        printf("%d ", i);
+        i += 1;
+        if (i >= 5) {
+            break;
+        }
+    }
+    printf("\n");
+    
+    printf("\nInfinite while loop with break:\n");
+    i = 0;
+    while (1) {
+        printf("%d ", i);
+        i += 1;
+        if (i >= 5) {
+            break;
+        }
+    }
+    printf("\n");
+    
+    printf("\nInfinite do-while with break:\n");
+    i = 0;
+    do {
+        printf("%d ", i);
+        i += 1;
+        if (i >= 5) {
+            break;
+        }
+    } while (1);
+    printf("\n");
+    
+    printf("\nCounter with limit:\n");
+    count = 0;
+    for (;;) {
+        count += 1;
+        if (count > 10) {
+            break;
+        }
+    }
+    printf("Final count: %d\n", count);
+    
+    printf("\nSearch in infinite loop:\n");
+    i = 1;
+    while (1) {
+        if (i * i > 50) {
+            printf("First number whose square > 50: %d\n", i);
+            break;
+        }
+        i += 1;
+    }
+    
+    printf("\nInfinite loop with multiple conditions:\n");
+    i = 0;
+    int sum;
+    sum = 0;
+    for (;;) {
+        if (i > 10) {
+            break;
+        }
+        sum += i;
+        if (sum > 20) {
+            break;
+        }
+        i += 1;
+    }
+    printf("i = %d, sum = %d\n", i, sum);
+    
+    return 0;
+}

@@ -1,0 +1,13 @@
+Pointer to a:
+Value: 10
+After (*p) = 15:
+a = 15
+
+Pointer to b:
+Value: 20
+After (*p) = 25:
+b = 25
+
+After (*p) = (*p) + 10:
+b = 35
+(*p) = 35

@@ -1,0 +1,27 @@
+Before modifyValue:
+x = 10
+
+After modifyValue(&x):
+x = 20
+
+Before modifyArray:
+arr[0] = 0
+arr[1] = 10
+arr[2] = 20
+arr[3] = 30
+arr[4] = 40
+
+After modifyArray:
+arr[0] = 1
+arr[1] = 11
+arr[2] = 21
+arr[3] = 31
+arr[4] = 41
+
+Sum of array: 105
+
+Before swapPointers:
+(*p1) = 100, (*p2) = 200
+
+After swapPointers:
+(*p1) = 200, (*p2) = 100

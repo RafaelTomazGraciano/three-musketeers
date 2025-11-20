@@ -1,0 +1,41 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+int main() {
+    int *p;
+    int *q;
+    
+    printf("Testing malloc for integers:\n\n");
+    
+    // Allocate single integer
+    p = malloc(1);
+    (*p) = 42;
+    printf("Allocated integer: %d\n", (*p));
+    
+    // Modify it
+    (*p) = (*p) * 2;
+    printf("After doubling: %d\n", (*p));
+    
+    // Allocate another
+    q = malloc(1);
+    (*q) = 100;
+    printf("\nSecond allocated integer: %d\n", (*q));
+    
+    // Use both
+    printf("p + q = %d\n", (*p) + (*q));
+    
+    // Free memory
+    free(p);
+    free(q);
+    printf("\nMemory freed successfully\n");
+    
+    // Allocate and use in expression
+    int *r;
+    r = malloc(1);
+    (*r) = 10;
+    (*r) = (*r) + 5;
+    printf("\nComputed value: %d\n", (*r));
+    free(r);
+    
+    return 0;
+}

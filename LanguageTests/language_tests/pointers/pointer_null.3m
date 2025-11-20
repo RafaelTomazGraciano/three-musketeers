@@ -1,0 +1,59 @@
+#include <stdio.tm>
+
+int main() {
+    int *p;
+    int *q;
+    int x;
+    
+    p = 0;
+    x = 42;
+    
+    printf("Testing null pointers:\n");
+    
+    // Check if pointer is null
+    if (p == 0) {
+        printf("p is null\n");
+    }
+    
+    // Point to actual variable
+    p = &x;
+    if (p != 0) {
+        printf("p is not null\n");
+        printf("(*p) = %d\n", (*p));
+    }
+    
+    // Compare with another null pointer
+    q = 0;
+    if (p != q) {
+        printf("\np and q are different\n");
+    }
+    
+    // Set back to null
+    p = 0;
+    if (p == 0) {
+        printf("p is null again\n");
+    }
+    
+    // Test with array pointer
+    int arr[3];
+    int *parr;
+    
+    arr[0] = 10;
+    arr[1] = 20;
+    arr[2] = 30;
+    
+    parr = 0;
+    printf("\nparr is null: ");
+    if (parr == 0) {
+        printf("yes\n");
+    }
+    
+    parr = arr;
+    printf("parr is not null: ");
+    if (parr != 0) {
+        printf("yes\n");
+        printf("parr[0] = %d\n", parr[0]);
+    }
+    
+    return 0;
+}

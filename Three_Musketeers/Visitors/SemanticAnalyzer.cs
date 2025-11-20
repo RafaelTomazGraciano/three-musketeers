@@ -13,10 +13,11 @@ using Three_Musketeers.Visitors.SemanticAnalysis.Functions;
 using Three_Musketeers.Visitors.SemanticAnalysis.Pointer;
 using Three_Musketeers.Visitors.SemanticAnalysis.IncrementDecrement;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompoundAssignment;
-using Three_Musketeers.Visitors.SemanticAnalysis.Struct;
+using Three_Musketeers.Visitors.SemanticAnalysis.Struct_Unions;
 using Three_Musketeers.Visitors.SemanticAnalysis.CompilerDirectives;
 using Three_Musketeers.Visitors.SemanticAnalysis.ControlFlow;
 using Three_Musketeers.Utils;
+using Three_Musketeers.Models;
 
 namespace Three_Musketeers.Visitors
 {
@@ -63,14 +64,21 @@ namespace Three_Musketeers.Visitors
             includeSemanticAnalyzer = new IncludeSemanticAnalyzer(ReportError, ReportWarning, currentFilePath, libraryTracker);
             defineSemanticAnalyzer = new DefineSemanticAnalyzer(symbolTable, ReportError, ReportWarning);
 
+            //structs and unions
+            structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
+            unionSemanticAnalyzer = new UnionSemanticAnalyzer(symbolTable, structures, ReportError);
+            
             //variables
             variableAssignmentSemanticAnalyzer = new VariableAssignmentSemanticAnalyzer(symbolTable, ReportError, ReportWarning, structures, Visit);
             pointerSemanticAnalyzer = new PointerSemanticAnalyzer(ReportError, ReportWarning, Visit, symbolTable);
+
+            
             // input-output
             printfSemanticAnalyzer = new PrintfSemanticAnalyzer(ReportError, ReportWarning, GetExpressionType, Visit, libraryTracker);
-            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
-            getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
-            putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable, libraryTracker);
+            scanfSemanticAnalyzer = new ScanfSemanticAnalyzer(ReportError, symbolTable, libraryTracker, structSemanticAnalyzer);
+            getsSemanticAnalyzer = new GetsSemanticAnalyzer(ReportError, symbolTable, libraryTracker, structSemanticAnalyzer);
+            putsSemanticAnalyzer = new PutsSemanticAnalyzer(ReportError, symbolTable, libraryTracker, structSemanticAnalyzer);
+            
             // string conversion
             atoiSemanticAnalyzer = new AtoiSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
             atodSemanticAnalyzer = new AtodSemanticAnalyzer(ReportError, symbolTable, GetExpressionType, Visit, libraryTracker);
@@ -96,7 +104,6 @@ namespace Three_Musketeers.Visitors
             incrementDecrementSemanticAnalyzer = new IncrementDecrementSemanticAnalyzer(ReportError, ReportWarning, symbolTable);
             // compound assignment
             compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable, GetExpressionType);
-            structSemanticAnalyzer = new StructSemanticAnalyzer(symbolTable, structures, ReportError);
             compoundAssignmentSemanticAnalyzer = new CompoundAssignmentSemanticAnalyzer(ReportError, ReportWarning, symbolTable,
                 GetExpressionType);
             // control flow
@@ -127,6 +134,23 @@ namespace Three_Musketeers.Visitors
             string? exprType = Visit(context.expr());
             if (type == null || exprType == null) return null;
 
+            // Handle struct-to-struct assignment
+            if (type.StartsWith("struct_") && exprType.StartsWith("struct_"))
+            {
+                // Extract struct names
+                string targetStructName = type.Substring(7);
+                string sourceStructName = exprType.Substring(7);
+                
+                if (targetStructName == sourceStructName)
+                {
+                    return type;
+                }
+                
+                ReportError(context.Start.Line,
+                    $"Cannot assign struct of type '{sourceStructName}' to struct of type '{targetStructName}'");
+                return null;
+            }
+
             if (!CastTypes.TwoTypesArePermitedToCast(type, exprType))
             {
                 ReportError(context.Start.Line,
@@ -142,7 +166,7 @@ namespace Three_Musketeers.Visitors
             var result = variableAssignmentSemanticAnalyzer.VisitSingleArrayAtt(context);
             var exprType = Visit(context.expr());
             if (result == null || exprType == null) return null;
-            if(!TwoTypesArePermitedToCast(result, exprType))
+            if(!CastTypes.TwoTypesArePermitedToCast(result, exprType))
             {
                 ReportError(context.Start.Line,
                     $"Cannot assign value of type '{exprType}' to array element of type '{result}'");
@@ -186,6 +210,68 @@ namespace Three_Musketeers.Visitors
             string? variableType = pointerSemanticAnalyzer.VisitDerref(context);
             string? expr = Visit(context.expr());
             return "int";
+        }
+
+        public override string? VisitDerrefExpr([NotNull] ExprParser.DerrefExprContext context)
+        {
+            var derrefNode = context.derref();
+            if (derrefNode?.expr() == null)
+            {
+                return null;
+            }
+
+            var exprContext = derrefNode.expr();
+            
+            if (exprContext is ExprParser.VarContext varContext)
+            {
+                string varName = varContext.ID().GetText();
+                Symbol? symbol = symbolTable.GetSymbol(varName);
+
+                if (symbol == null)
+                {
+                    ReportError(context.Start.Line, $"Variable '{varName}' was not declared");
+                    return null;
+                }
+
+                if (symbol is PointerSymbol pointerSymbol)
+                {
+                    if (!pointerSymbol.isInitializated)
+                    {
+                        ReportWarning(context.Start.Line, $"Dereferencing potentially uninitialized pointer '{varName}'");
+                    }
+                    
+                    if (pointerSymbol.pointerLevel > 1)
+                    {
+                       
+                        string resultType = pointerSymbol.pointeeType + new string('*', pointerSymbol.pointerLevel - 1);
+                        return resultType;
+                    }
+
+                    return pointerSymbol.pointeeType;
+                }
+
+                ReportError(context.Start.Line, $"Cannot dereference variable '{varName}' of type '{symbol.type}'");
+                return null;
+            }
+
+            if (exprContext is ExprParser.ParensContext parensCtx)
+            {
+                return Visit(parensCtx.expr());
+            }
+            
+            if (exprContext is ExprParser.DerrefExprContext nestedDerrefCtx)
+            {
+                string? innerType = Visit(nestedDerrefCtx);
+                
+                if (innerType != null && innerType.EndsWith("*"))
+                {
+                    return innerType.Substring(0, innerType.Length - 1);
+                }
+                
+                return innerType;
+            }
+
+            return Visit(exprContext);
         }
         public override string? VisitSingleAttPlusEquals([NotNull] ExprParser.SingleAttPlusEqualsContext context)
         {
@@ -452,27 +538,13 @@ namespace Three_Musketeers.Visitors
             }
 
             // Check type compatibility
-            if (!TwoTypesArePermitedToCast(fieldType, exprType))
+            if (!CastTypes.TwoTypesArePermitedToCast(fieldType, exprType))
             {
                 ReportError(line, $"Cannot assign value of type '{exprType}' to struct field of type '{fieldType}'");
                 return null;
             }
 
             return fieldType;
-        }
-    
-        private static bool TwoTypesArePermitedToCast(string type1, string type2)
-        {
-            bool anyIsDouble = type1 == "double" || type2 == "double";
-            bool anyIsChar = type1 == "char" || type2 == "char";
-            bool anyIsInt = type1 == "int" || type2 == "int";
-            bool anyIsBool = type1 == "bool" || type2 == "bool";
-            bool anyIsString = type1 == "string" || type2 == "string";
-            if (type1 == type2) return true;
-            if (anyIsDouble && (anyIsChar || anyIsInt || anyIsBool)) return true;
-            if (anyIsInt && (anyIsChar || anyIsBool)) return true;
-            if (anyIsChar && (anyIsBool || !anyIsString)) return true;
-            return false;
         }
 
         public override string? VisitIncludeSystem([NotNull] ExprParser.IncludeSystemContext context)
@@ -499,6 +571,31 @@ namespace Three_Musketeers.Visitors
         {
             return defineSemanticAnalyzer.VisitDefineString(context);
         }
+
+        public override string? VisitMallocStructAtt([NotNull] ExprParser.MallocStructAttContext context)
+        {
+            int line = context.Start.Line;
+            
+            // Validate the struct member access
+            string? fieldType = structSemanticAnalyzer.VisitStructGet(context.structGet());
+            if (fieldType == null)
+            {
+                return null;
+            }
+            
+            // Check if field is a pointer type
+            if (!fieldType.EndsWith("*"))
+            {
+                ReportError(line, $"Cannot assign malloc result to non-pointer field of type '{fieldType}'");
+                return null;
+            }
+            
+            // Validate the malloc call
+            dynamicMemorySemanticAnalyzer.VisitMallocStructAtt(context);
+            
+            return fieldType;
+        }
+
     }
 }
 

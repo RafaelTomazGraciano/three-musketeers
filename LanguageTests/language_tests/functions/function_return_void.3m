@@ -1,0 +1,50 @@
+#include <stdio.tm>
+
+void printBanner(char c) {
+    int i;
+    for (i = 0; i < 20; i = i + 1) {
+        printf("%c", c);
+    }
+    printf("\n");
+}
+
+void countdown(int n) {
+    int i;
+    for (i = n; i > 0; i = i - 1) {
+        printf("%d ", i);
+    }
+    printf("\n");
+}
+
+void printTable(int n) {
+    int i;
+    printf("Multiplication table for %d:\n", n);
+    for (i = 1; i <= 5; i = i + 1) {
+        printf("%d x %d = %d\n", n, i, n * i);
+    }
+}
+
+void modifyValue(int *ptr) {
+    (*ptr) = (*ptr) * 2;
+}
+
+int main() {
+    printBanner('=');
+    printf("Testing void functions\n");
+    printBanner('=');
+    
+    printf("\nCountdown from 5:\n");
+    countdown(5);
+    
+    printf("\n");
+    printTable(3);
+    
+    printf("\nTesting pointer modification:\n");
+    int value;
+    value = 10;
+    printf("Before: %d\n", value);
+    modifyValue(&value);
+    printf("After: %d\n", value);
+    
+    return 0;
+}

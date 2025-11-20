@@ -107,6 +107,8 @@ int main(int argc, char argv[]) {
 ### Função Simples
 
 ```c
+#include <stdio.tm>
+
 void cumprimentar(string nome) {
     printf("Hello, %s!\n", nome);
 }
@@ -136,6 +138,8 @@ bool ehPar(int n) {
 ### Chamadas de Função Aninhadas
 
 ```c
+#include <stdio.tm>
+
 int quadrado(int n) {
     return n * n;
 }

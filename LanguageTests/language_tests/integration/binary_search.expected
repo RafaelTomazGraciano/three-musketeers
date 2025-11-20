@@ -1,0 +1,16 @@
+=== Binary Search Test ===
+
+Sorted array:
+2 5 8 12 16 23 38 45 56 67 
+
+Testing Recursive Binary Search:
+Search for 23: Found at index 5
+Search for 2: Found at index 0
+Search for 67: Found at index 9
+Search for 100: -1 (not found)
+
+Testing Iterative Binary Search:
+Search for 16: Found at index 4
+Search for 45: Found at index 7
+Search for 1: -1 (not found)
+Search for 50: -1 (not found)

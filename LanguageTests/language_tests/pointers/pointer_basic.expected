@@ -1,0 +1,10 @@
+Value of x: 42
+Value at pointer p: 42
+After changing via pointer:
+Value of x: 100
+Value at pointer p: 100
+
+After changing via q:
+Value of x: 200
+Value at pointer p: 200
+Value at pointer q: 200

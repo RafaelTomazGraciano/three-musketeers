@@ -43,20 +43,31 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Equality
 
         private bool AreCompatibleTypes(string type1, string type2)
         {
-            // All types can be compared for equality
-            // Numeric types can be compared with each other
+            // Allow pointer comparisons
+            if (type1.Contains('*') || type2.Contains('*'))
+            {
+                // Pointer with pointer (same or different types)
+                if (type1.Contains('*') && type2.Contains('*'))
+                    return true;
+                
+                // Pointer with int (for null/0 comparison)
+                if ((type1.Contains('*') && type2 == "int") || 
+                    (type2.Contains('*') && type1 == "int"))
+                    return true;
+                
+                return false;
+            }
+            
+            // logic for non-pointers
             if (IsNumericType(type1) && IsNumericType(type2))
                 return true;
             
-            // Same types can always be compared
             if (type1 == type2)
                 return true;
             
-            // String and char can be compared
             if ((type1 == "string" && type2 == "char") || (type1 == "char" && type2 == "string"))
                 return true;
             
-            // Bool can be compared with numeric types (0/1)
             if ((type1 == "bool" && IsNumericType(type2)) || (type2 == "bool" && IsNumericType(type1)))
                 return true;
             

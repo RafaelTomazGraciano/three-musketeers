@@ -17,7 +17,7 @@ The compilation process consists of six main phases:
 
 The compiler reads the source file and breaks it down into tokens (keywords, identifiers, operators, literals, etc.).
 
-**Input:** Source code (`.tm` file)
+**Input:** Source code (`.3m` file)
 **Output:** Stream of tokens
 
 **Example:**
@@ -104,11 +104,11 @@ AST
     ↓ (Semantic Analysis)
 Validated AST
     ↓ (Code Generation)
-bin/program.ll  (LLVM IR)
+program.ll  (LLVM IR)
     ↓ (Assembly Generation)
-bin/program.s   (Assembly, temporary)
+program.s   (Assembly, temporary)
     ↓ (Linking)
-bin/program     (Executable)
+program     (Executable)
 ```
 
 **Note:** The `.s` file is deleted after linking unless an error occurs. The `.ll` file is kept only if `--ll` flag is used.

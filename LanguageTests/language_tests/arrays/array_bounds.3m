@@ -1,0 +1,68 @@
+#include <stdio.tm>
+
+int main() {
+    int arr[10];
+    int i;
+    
+    // Initialize array
+    for (i = 0; i < 10; i = i + 1) {
+        arr[i] = i * 10;
+    }
+    
+    // Access first element
+    printf("First element: arr[0] = %d\n", arr[0]);
+    
+    // Access last element
+    printf("Last element: arr[9] = %d\n", arr[9]);
+    
+    // Access middle element
+    printf("Middle element: arr[5] = %d\n", arr[5]);
+    
+    // Sequential access forward
+    printf("\nForward sequential access:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    
+    // Sequential access backward
+    printf("\nBackward sequential access:\n");
+    for (i = 9; i >= 0; i = i - 1) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    
+    // Even indices only
+    printf("\nEven indices:\n");
+    for (i = 0; i < 10; i = i + 2) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    
+    // Odd indices only
+    printf("\nOdd indices:\n");
+    for (i = 1; i < 10; i = i + 2) {
+        printf("arr[%d] = %d\n", i, arr[i]);
+    }
+    
+    // Copy array
+    int copy[10];
+    for (i = 0; i < 10; i = i + 1) {
+        copy[i] = arr[i];
+    }
+    
+    printf("\nCopied array:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        printf("copy[%d] = %d\n", i, copy[i]);
+    }
+    
+    // Reverse array
+    int reversed[10];
+    for (i = 0; i < 10; i = i + 1) {
+        reversed[i] = arr[9 - i];
+    }
+    
+    printf("\nReversed array:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        printf("reversed[%d] = %d\n", i, reversed[i]);
+    }
+    
+    return 0;
+}

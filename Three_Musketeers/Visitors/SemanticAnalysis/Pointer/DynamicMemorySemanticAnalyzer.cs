@@ -48,11 +48,6 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return null;
             }
 
-            if (VisitExpr(context.expr()) == "string")
-            {
-                reportError(line, $"Expected char, int or double not string");
-            }
-
             // Case 1: Malloc with type declaration (int *pointer = malloc(5))
             if (typeToken != null)
             {
@@ -71,7 +66,7 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return "pointer";
             }
 
-            // Case 2: Malloc assignment to existing variable (pointer = malloc(5))
+            // Case 2: Malloc assignment to existing variable
             Symbol? symbol = symbolTable.GetSymbol(varName);
 
             if (symbol == null)
@@ -80,6 +75,32 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return null;
             }
 
+            // Check if it's an array element being assigned (e.g., ptrs[i] = malloc(...))
+            var indexes = context.index();
+            if (indexes.Length > 0)
+            {
+                if (symbol is ArraySymbol arraySymbol)
+                {
+                    // Check if array elements are pointers
+                    if (arraySymbol.pointerLevel > 0)
+                    {
+                        // Valid: assigning to an element of array of pointers
+                        return "pointer";
+                    }
+                    else
+                    {
+                        reportError(line, $"Cannot assign malloc to array element of non-pointer type");
+                        return null;
+                    }
+                }
+                else
+                {
+                    reportError(line, $"Variable '{varName}' is not an array");
+                    return null;
+                }
+            }
+
+            // Regular pointer assignment
             if (symbol is not PointerSymbol)
             {
                 reportError(line, $"Variable '{varName}' is not a pointer type, cannot assign malloc result");
@@ -107,10 +128,17 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return null;
             } 
 
-            string varName = context.ID().GetText();
             int line = context.Start.Line;
+            var structGet = context.structGet();
+            if (structGet != null)
+            {
+                return null;
+            }
 
-            // Check if variable exists
+            // Handle regular variable or array element
+            string varName = context.ID().GetText();
+            var indexes = context.index();
+            
             Symbol? symbol = symbolTable.GetSymbol(varName);
             if (symbol == null)
             {
@@ -118,32 +146,119 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 return null;
             }
 
-            // Check if variable is a pointer
-            if (symbol is not PointerSymbol)
+            // If there are indices, validate array access
+            if (indexes.Length > 0)
             {
-                reportError(line, $"Cannot free non-pointer variable '{varName}' (type: {symbol.type})");
-                return null;
+                if (symbol is ArraySymbol arraySymbol)
+                {
+                    if (indexes.Length > arraySymbol.dimensions.Count)
+                    {
+                        reportError(line, $"Too many indices for array '{varName}': expected {arraySymbol.dimensions.Count}, got {indexes.Length}");
+                        return null;
+                    }
+
+                    // Validate each index
+                    foreach (var index in indexes)
+                    {
+                        string? indexType = VisitExpr(index.expr()); 
+                        if (indexType != null && indexType != "int")
+                        {
+                            reportError(index.Start.Line, $"Array index must be of type 'int', got '{indexType}'");
+                            return null;
+                        }
+                    }
+
+                    // Check if the element type is a pointer
+                    string elementType = arraySymbol.elementType;
+                    if (!elementType.EndsWith("*") && !(arraySymbol.pointerLevel > 0))
+                    {
+                        reportError(line, $"Cannot free non-pointer array element of type '{elementType}'");
+                        return null;
+                    }
+                }
+                else if (symbol is PointerSymbol pointerSymbol)
+                {
+                    // Pointer with index access (e.g., ptr[0])
+                    foreach (var index in indexes)
+                    {
+                        string? indexType = VisitExpr(index.expr());
+                        if (indexType != null && indexType != "int")
+                        {
+                            reportError(index.Start.Line, $"Pointer index must be of type 'int', got '{indexType}'");
+                            return null;
+                        }
+                    }
+
+                    if (pointerSymbol.pointerLevel < indexes.Length)
+                    {
+                        reportError(line, $"Too many dereferences for pointer '{varName}'");
+                        return null;
+                    }
+                }
+                else
+                {
+                    reportError(line, $"Variable '{varName}' is not an array or pointer");
+                    return null;
+                }
             }
-
-            PointerSymbol pointerSymbol = (PointerSymbol)symbol;
-
-            // Warn if pointer was not allocated with malloc
-            if (!pointerSymbol.isDynamic)
+            else
             {
-                reportWarning(line, $"Freeing pointer '{varName}' that was not allocated with malloc - this may cause undefined behavior");
-            }
+                // No indices - must be a pointer
+                if (!(symbol is PointerSymbol))
+                {
+                    reportError(line, $"Cannot free non-pointer variable '{varName}'");
+                    return null;
+                }
 
-            // Warn if pointer is uninitialized
-            if (!pointerSymbol.isInitializated)
-            {
-                reportWarning(line, $"Attempting to free uninitialized pointer '{varName}' - this may cause undefined behavior");
+                var pointerSymbol = symbol as PointerSymbol;
+                if (!pointerSymbol!.isDynamic)
+                {
+                    reportWarning(line, $"Freeing pointer '{varName}' that may not have been dynamically allocated");
+                }
             }
-
-            // Mark the pointer as freed (no longer dynamic and uninitialized)
-            pointerSymbol.isDynamic = false;
-            pointerSymbol.isInitializated = false;      
 
             return null;
+        }
+
+        public void VisitMallocStructAtt(ExprParser.MallocStructAttContext context)
+        {
+            if (!libraryTracker.CheckFunctionDependency("free", context.Start.Line))
+            {
+                return;
+            } 
+            
+            int line = context.Start.Line;
+            // Validate the size expression
+            var sizeExpr = context.expr();
+            if (sizeExpr == null)
+            {
+                reportError(line, "malloc requires a size argument");
+                return;
+            }
+            
+            // Visit the size expression to check its type
+            string? sizeType = VisitExpr(sizeExpr);
+            if (sizeType == null)
+            {
+                return;
+            }
+            
+            // Size must be an integer
+            if (sizeType != "int")
+            {
+                reportError(line, $"malloc size must be of type 'int', got '{sizeType}'");
+                return;
+            }
+            
+            // Check for zero or negative size if it's a literal
+            if (sizeExpr is ExprParser.IntLiteralContext intLiteral)
+            {
+                int size = int.Parse(intLiteral.INT().GetText());
+                if (size <= 0)
+                {
+                    reportWarning(line, $"malloc with size {size} may cause undefined behavior");
+                }
+            }
         }
             
     }

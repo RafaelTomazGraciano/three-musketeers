@@ -1,0 +1,52 @@
+#include <stdio.tm>
+
+void increment(int *val) {
+    (*val) = (*val) + 1;
+}
+
+void swap(int *a, int *b) {
+    int temp;
+    temp = (*a);
+    (*a) = (*b);
+    (*b) = temp;
+}
+
+int main() {
+    int x;
+    int y;
+    
+    x = 5;
+    y = 10;
+    
+    printf("Before increment:\n");
+    printf("x = %d\n", x);
+    
+    increment(&x);
+    printf("\nAfter increment(&x):\n");
+    printf("x = %d\n", x);
+    
+    printf("\nBefore swap:\n");
+    printf("x = %d, y = %d\n", x, y);
+    
+    swap(&x, &y);
+    printf("\nAfter swap(&x, &y):\n");
+    printf("x = %d, y = %d\n", x, y);
+    
+    // Address of array elements
+    int arr[3];
+    int *p1;
+    int *p2;
+    
+    arr[0] = 100;
+    arr[1] = 200;
+    arr[2] = 300;
+    
+    p1 = &arr[0];
+    p2 = &arr[2];
+    
+    printf("\nArray elements via address:\n");
+    printf("(*p1) = %d\n", (*p1));
+    printf("(*p2) = %d\n", (*p2));
+    
+    return 0;
+}

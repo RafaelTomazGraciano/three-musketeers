@@ -1,0 +1,22 @@
+=== Union with Nested Struct Test ===
+
+Test 1 - Store radius:
+  s1.radius = 10
+
+Test 2 - Store point:
+  s1.center.x = 5
+  s1.center.y = 7
+  s1.radius = 5 (corrupted)
+
+Test 3 - Store area:
+  s1.area = 314.159000
+
+Test 4 - Union inside struct:
+  Container ID: 100
+  Shape radius: 15
+  Shape center: (20, 30)
+  Shape radius: 20 (corrupted)
+
+Test 5 - Multiple instances:
+  s2.radius = 25
+  s1.area = 314.159000 (unchanged)

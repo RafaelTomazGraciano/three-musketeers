@@ -1,0 +1,15 @@
+Testing array pointer functions:
+
+Filling array with 7:
+Array: 7 7 7 7 7 
+
+Incrementing all elements:
+Array: 8 8 8 8 8 
+
+Sum of array: 40
+
+Manual assignment:
+Array: 1 2 3 4 5 
+
+Reversing array:
+Array: 5 4 3 2 1

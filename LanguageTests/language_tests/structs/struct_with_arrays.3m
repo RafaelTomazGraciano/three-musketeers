@@ -1,0 +1,36 @@
+#include <stdio.tm>
+
+struct Matrix {
+    int rows,
+    int cols,
+    int data[2][3]
+};
+
+int main() {
+    struct Matrix m;
+    int i;
+    int j;
+    
+    printf("=== Struct with Arrays Test ===\n");
+    
+    m.rows = 2;
+    m.cols = 3;
+    
+    m.data[0][0] = 1;
+    m.data[0][1] = 2;
+    m.data[0][2] = 3;
+    m.data[1][0] = 4;
+    m.data[1][1] = 5;
+    m.data[1][2] = 6;
+    
+    printf("Matrix (%dx%d):\n", m.rows, m.cols);
+    for (i = 0; i < m.rows; i = i + 1) {
+        printf("  ");
+        for (j = 0; j < m.cols; j = j + 1) {
+            printf("%d ", m.data[i][j]);
+        }
+        printf("\n");
+    }
+    
+    return 0;
+}

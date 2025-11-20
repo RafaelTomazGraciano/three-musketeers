@@ -1,0 +1,17 @@
+=== Union with Pointers Test ===
+
+Test 1 - Integer pointer:
+  *ptr.iptr = 42
+  After modification: 100
+
+Test 2 - Double pointer:
+  *ptr.dptr = 3.140000
+  After modification: 2.710000
+
+Test 3 - Char pointer:
+  *ptr.cptr = X
+  After modification: Y
+
+Test 4 - Dynamic allocation:
+  Allocated and stored: 999
+  Freed successfully

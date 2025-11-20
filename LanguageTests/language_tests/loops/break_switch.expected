@@ -1,0 +1,13 @@
+Testing break in switch:
+
+Option 1: First
+Option 2: Second
+Option 3: Third
+
+Switch with default:
+Option 5: Other
+
+Switch inside loop with break:
+Iteration 1: One
+Iteration 2: Two
+Iteration 3: Three

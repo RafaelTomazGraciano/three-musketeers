@@ -1,0 +1,66 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+int* createArray(int size) {
+    int* arr;
+    arr = malloc(size * 4);
+    return arr;
+}
+
+int* getLarger(int* a, int* b) {
+    if ((*a) > (*b)) {
+        return a;
+    }
+    return b;
+}
+
+int* findMax(int* arr, int size) {
+    int* max;
+    int i;
+    max = arr;
+    for (i = 1; i < size; i = i + 1) {
+        if (arr[i] > (*max)) {
+            max = &arr[i];
+        }
+    }
+    return max;
+}
+
+int main() {
+    printf("Testing pointer return functions:\n\n");
+    
+    printf("Creating dynamic array:\n");
+    int* numbers;
+    numbers = createArray(5);
+    numbers[0] = 10;
+    numbers[1] = 25;
+    numbers[2] = 15;
+    numbers[3] = 30;
+    numbers[4] = 20;
+    
+    int i;
+    printf("Array elements: ");
+    for (i = 0; i < 5; i = i + 1) {
+        printf("%d ", numbers[i]);
+    }
+    printf("\n");
+    
+    printf("\nFinding maximum:\n");
+    int* maxPtr;
+    maxPtr = findMax(numbers, 5);
+    printf("Maximum value: %d\n", (*maxPtr));
+    
+    printf("\nComparing two values:\n");
+    int x;
+    int y;
+    x = 100;
+    y = 200;
+    int* larger;
+    larger = getLarger(&x, &y);
+    printf("x=%d, y=%d\n", x, y);
+    printf("Larger value: %d\n", (*larger));
+    
+    free(numbers);
+    
+    return 0;
+}

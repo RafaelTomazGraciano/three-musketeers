@@ -1,0 +1,6 @@
+=== Struct Array Test ===
+Students:
+  ID: 101, Grade: 85
+  ID: 102, Grade: 92
+  ID: 103, Grade: 78
+Average grade: 85

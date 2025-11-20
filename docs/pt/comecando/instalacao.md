@@ -78,10 +78,10 @@ O executável compilado estará disponível no diretório `release`.
 Para verificar se o compilador está instalado corretamente, execute:
 
 ```bash
-./Three_Musketeers/bin/Debug/net9.0/Three_Musketeers --version
+./Three_Musketeers/bin/Debug/net9.0/tm --version
 ```
 
-Você deve ver o número da versão (v0.9.5) exibido.
+Você deve ver o número da versão (v1.0.0 Athos) exibido.
 
 ## Próximos Passos
 

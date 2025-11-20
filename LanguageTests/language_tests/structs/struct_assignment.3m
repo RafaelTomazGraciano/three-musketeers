@@ -1,0 +1,31 @@
+#include <stdio.tm>
+
+struct Person {
+    int age,
+    int height
+};
+
+int main() {
+    struct Person alice;
+    struct Person bob;
+    
+    printf("=== Struct Assignment Test ===\n");
+    
+    alice.age = 25;
+    alice.height = 165;
+    
+    printf("Alice - Age: %d, Height: %d\n", alice.age, alice.height);
+    
+    bob = alice;
+    
+    printf("Bob (copy of Alice) - Age: %d, Height: %d\n", bob.age, bob.height);
+    
+    bob.age = 30;
+    bob.height = 180;
+    
+    printf("\nAfter modifying Bob:\n");
+    printf("Alice - Age: %d, Height: %d\n", alice.age, alice.height);
+    printf("Bob - Age: %d, Height: %d\n", bob.age, bob.height);
+    
+    return 0;
+}

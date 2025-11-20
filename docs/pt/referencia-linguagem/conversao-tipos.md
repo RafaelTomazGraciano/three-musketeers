@@ -103,6 +103,8 @@ puts(valorStr);  // 2.718
 ## Exemplo Completo de Conversão
 
 ```c
+#include <stdio.tm>
+
 int main() {
     // String para número
     string entrada = "42";

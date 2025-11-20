@@ -38,6 +38,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
+
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ProcessSimpleCompoundAssignment(varName, context.expr(), "+=");
+            }
+
             ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
@@ -67,6 +73,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
+
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ProcessSimpleCompoundAssignment(varName, context.expr(), "-=");
+            }
+
             ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
@@ -96,6 +108,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
+            
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ProcessSimpleCompoundAssignment(varName, context.expr(), "*=");
+            }
+
             ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
@@ -125,6 +143,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         {
             string varName = context.ID().GetText();
             var indexes = context.index();
+            
+            if (indexes == null || indexes.Length == 0)
+            {
+                return ProcessSimpleCompoundAssignment(varName, context.expr(), "/=");
+            }
+
             ArrayVariable arrayVar = (ArrayVariable)variableResolver.GetVariable(varName)!;
             
             // Calculate position
@@ -168,12 +192,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
         private string PerformCompoundOperation(string currentValue, string exprValue, string operation, string llvmType)
         {
             string exprType = registerTypes[exprValue];
-            
+
             // Convert types if needed
             string convertedExpr = ConvertToType(exprValue, exprType, llvmType);
-            
+
             string resultReg = nextRegister();
-            
+
             if (llvmType == "double")
             {
                 string llvmOp = operation switch
@@ -222,9 +246,28 @@ namespace Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment
                 };
                 getCurrentBody().AppendLine($"  {resultReg} = {llvmOp} i32 {currentValue}, {convertedExpr}");
             }
-            
+
             registerTypes[resultReg] = llvmType;
             return resultReg;
+        }
+
+        private string? ProcessSimpleCompoundAssignment(string varName, ExprParser.ExprContext exprCtx, string operation)
+        {
+            Variable variable = variableResolver.GetVariable(varName)!;
+
+            // Load current value
+            string currentValue = LoadVariableValue(variable.register, variable.LLVMType);
+
+            // Evaluate expression
+            string exprValue = visitExpression(exprCtx);
+
+            // Perform operation
+            string resultValue = PerformCompoundOperation(currentValue, exprValue, operation, variable.LLVMType);
+
+            // Store result
+            getCurrentBody().AppendLine($"  store {variable.LLVMType} {resultValue}, {variable.LLVMType}* {variable.register}, align {GetAlignment(variable.LLVMType)}");
+
+            return null;
         }
 
         private string ConvertToType(string value, string fromType, string toType)

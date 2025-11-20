@@ -13,7 +13,7 @@ using Three_Musketeers.Visitors.CodeGeneration.Pointer;
 using Three_Musketeers.Utils;
 using Three_Musketeers.Visitors.CodeGeneration.IncrementDecrement;
 using Three_Musketeers.Visitors.CodeGeneration.CompoundAssignment;
-using Three_Musketeers.Visitors.CodeGeneration.Struct;
+using Three_Musketeers.Visitors.CodeGeneration.Struct_Unions;
 using Three_Musketeers.Visitors.CodeGeneration.CompilerDirectives;
 using Three_Musketeers.Visitors.CodeGeneration.ControlFlow;
 
@@ -46,16 +46,28 @@ namespace Three_Musketeers.Visitors
         private readonly IfStatementCodeGenerator ifStatementCodeGenerator;
         private readonly SwitchStatementCodeGenerator switchStatementCodeGenerator;
         private readonly LoopStatementCodeGenerator loopStatementCodeGenerator;
+        private readonly Dictionary<string, int> stringLiteralSizes = new Dictionary<string, int>();
 
         public CodeGenerator()
         {
+            variableResolver = new VariableResolver(
+            variables,
+            GetCurrentFunctionNameIncludingMain
+            );
+            
             //compiler directives
             includeCodeGenerator = new IncludeCodeGenerator(declarations);
             defineCodeGenerator = new DefineCodeGenerator(globalStrings, defineValues, registerTypes, NextStringLabel);
 
+            //struct
+            structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
+                variableResolver, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
+    
+            unionCodeGenerator = new UnionCodeGenerator(structTypes, structBuilder, GetLLVMType, GetSize);
+
             //functions
             base.functionCodeGenerator = new FunctionCodeGenerator(functionDefinitions, registerTypes, declaredFunctions,
-                variables, NextRegister, GetLLVMType, Visit, Visit, forwardDeclarations);
+                variables, NextRegister, GetLLVMType, Visit, Visit);
             base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
                 NextRegister, GetLLVMType, Visit, Visit);
             base.mainFunctionCodeGenerator = new MainFunctionCodeGenerator(mainDefinition, registerTypes, variables,
@@ -64,26 +76,24 @@ namespace Three_Musketeers.Visitors
                 GetLLVMType, Visit, () => base.functionCodeGenerator!.IsInsideFunction()
                 ? base.functionCodeGenerator.GetCurrentFunctionBody()! : mainDefinition);
             
-            variableResolver = new VariableResolver(
-            variables,
-            GetCurrentFunctionNameIncludingMain
-            );
 
             //variables
             variableAssignmentCodeGenerator = new VariableAssignmentCodeGenerator(
                 declarations, variables, registerTypes, NextRegister, GetLLVMType, Visit,
                 GetCurrentFunctionNameIncludingMain, GetCurrentBody, GetAlignment, CalculateArrayPosition);
-            stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel);
+            stringCodeGenerator = new StringCodeGenerator(globalStrings, registerTypes, NextStringLabel, stringLiteralSizes);
             charCodeGenerator = new CharCodeGenerator(registerTypes);
 
             //input-output
             printfCodeGenerator = new PrintfCodeGenerator(globalStrings, GetCurrentBody, registerTypes,
-                NextRegister, NextStringLabel, Visit);
+                NextRegister, NextStringLabel, Visit, stringLiteralSizes);
             scanfCodeGenerator = new ScanfCodeGenerator(globalStrings, GetCurrentBody, variables,
-                NextRegister, NextStringLabel, GetLLVMType, variableResolver);
-            getsCodeGenerator = new GetsCodeGenerator(GetCurrentBody, NextRegister, variableResolver);
+                NextRegister, NextStringLabel, GetLLVMType, variableResolver, CalculateArrayPosition,
+                (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx), registerTypes, GetAlignment);
+            getsCodeGenerator = new GetsCodeGenerator(GetCurrentBody, NextRegister, variableResolver,
+                (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx), registerTypes);
             putsCodeGenerator = new PutsCodeGenerator(declarations, GetCurrentBody, registerTypes, NextRegister,
-                variableResolver, defineCodeGenerator, CalculateArrayPosition);
+                variableResolver, defineCodeGenerator, CalculateArrayPosition, (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx));
 
 
             //string conversion
@@ -107,16 +117,14 @@ namespace Three_Musketeers.Visitors
             //pointers & dynamic memory
             pointerCodeGenerator = new PointerCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, variableResolver, CalculateArrayPosition);
             dynamicMemoryCodeGenerator = new DynamicMemoryCodeGenerator(GetCurrentBody, registerTypes, NextRegister, Visit, 
-                GetAlignment, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables);
+                GetAlignment, GetSize, GetLLVMType, GetCurrentFunctionNameIncludingMain, variableResolver, variables,
+                (structGetCtx) => structCodeGenerator!.VisitStructGet(structGetCtx));
             //increment/decrement
             incrementDecrementCodeGenerator = new IncrementDecrementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit, CalculateArrayPosition);
             //compound assignment
             compoundAssignmentCodeGenerator = new CompoundAssignmentCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, variableResolver, Visit, CalculateArrayPosition);
-            //struct
-            structCodeGenerator = new StructCodeGenerator(structTypes, structBuilder, GetCurrentBody, registerTypes, NextRegister,
-                variableResolver, Visit, GetLLVMType, GetSize, CalculateArrayPosition);
             //control flow
             ifStatementCodeGenerator = new IfStatementCodeGenerator(
                 GetCurrentBody, registerTypes, NextRegister, Visit, Visit);
@@ -181,15 +189,16 @@ namespace Three_Musketeers.Visitors
 
         public override string VisitTrueLiteral([NotNull] ExprParser.TrueLiteralContext context)
         {
-            registerTypes["true"] = "i1";
+            registerTypes["true"] = "i32";
             return "1";
         }
 
         public override string VisitFalseLiteral([NotNull] ExprParser.FalseLiteralContext context)
         {
-            registerTypes["false"] = "i1";
+            registerTypes["false"] = "i32";
             return "0";
         }
+
         public override string VisitVar([NotNull] ExprParser.VarContext context)
         {
             string varName = context.ID().GetText();
@@ -426,6 +435,11 @@ namespace Three_Musketeers.Visitors
         public override string? VisitMallocAtt([NotNull] ExprParser.MallocAttContext context)
         {
             return dynamicMemoryCodeGenerator.VisitMallocAtt(context);
+        }
+
+        public override string? VisitMallocStructAtt([NotNull] ExprParser.MallocStructAttContext context)
+        {
+            return dynamicMemoryCodeGenerator.VisitMallocStructAtt(context);
         }
 
         public override string? VisitFreeStatement([NotNull] ExprParser.FreeStatementContext context)

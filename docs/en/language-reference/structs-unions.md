@@ -96,6 +96,8 @@ ptr->y = 20;
 ### Structures as Function Parameters
 
 ```c
+#include <stdio.tm>
+
 struct Point {
     int x,
     int y
@@ -190,6 +192,8 @@ void printValue(union Value v, string type) {
 ## Example: Complete Program
 
 ```c
+#include <stdio.tm>
+
 struct Point {
     int x,
     int y

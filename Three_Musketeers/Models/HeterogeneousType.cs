@@ -6,7 +6,7 @@ namespace Three_Musketeers.Models
 
         protected List<HeterogenousMember> members;
 
-        protected int totalSize;
+        public int totalSize { get; set; }
 
         public HeterogenousType(string LLVMName, List<HeterogenousMember> members)
         {
@@ -17,11 +17,6 @@ namespace Three_Musketeers.Models
         public abstract string GetLLVMVar(string name, string ptr);
 
         public string GetLLVMName() { return LLVMName; }
-
-        public int GetTotalSize()
-        {
-            return totalSize;
-        }
 
         public List<HeterogenousMember> GetMembers()
         {

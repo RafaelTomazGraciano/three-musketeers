@@ -7,6 +7,8 @@ A collection of practical examples demonstrating Three Musketeers language featu
 The simplest program:
 
 ```c
+#include <stdio.tm>
+
 int main() {
     puts("Hello, World!");
     return 0;
@@ -16,6 +18,8 @@ int main() {
 ## Variables and Types
 
 ```c
+#include <stdio.tm>
+
 int main() {
     int count = 42;
     double pi = 3.14159;
@@ -36,6 +40,8 @@ int main() {
 ## Arrays
 
 ```c
+#include <stdio.tm>
+
 int main() {
     int numbers[5];
     int i;
@@ -57,6 +63,8 @@ int main() {
 ## Functions
 
 ```c
+#include <stdio.tm>
+
 int add(int x, int y) {
     return x + y;
 }
@@ -81,6 +89,8 @@ int main() {
 ### If-Else
 
 ```c
+#include <stdio.tm>
+
 void checkValue(int value) {
     if (value > 0) {
         printf("Value %d is positive\n", value);
@@ -102,6 +112,8 @@ int main() {
 ### Switch
 
 ```c
+#include <stdio.tm>
+
 void processOption(int option) {
     switch (option) {
         case 1:
@@ -130,6 +142,8 @@ int main() {
 ### Loops
 
 ```c
+#include <stdio.tm>
+
 int main() {
     int i;
     
@@ -162,6 +176,8 @@ int main() {
 ## Pointers
 
 ```c
+#include <stdio.tm>
+
 void swap(int *a, int *b) {
     int temp = *a;
     *a = *b;
@@ -182,6 +198,9 @@ int main() {
 ## Dynamic Memory
 
 ```c
+#include <stdio.tm>
+#include <stdlib.tm>
+
 int main() {
     int *arr = malloc(5);
     int i;
@@ -204,6 +223,8 @@ int main() {
 ## Structures
 
 ```c
+#include <stdio.tm>
+
 struct Point {
     int x,
     int y
@@ -226,6 +247,8 @@ int main() {
 ## Input/Output
 
 ```c
+#include <stdio.tm>
+
 int main() {
     string name;
     int age;
@@ -252,6 +275,8 @@ int main() {
 ## Type Conversion
 
 ```c
+#include <stdio.tm>
+
 int main() {
     // String to number
     string numStr = "42";
@@ -277,6 +302,8 @@ int main() {
 ## Recursion
 
 ```c
+#include <stdio.tm>
+
 int factorial(int n) {
     if (n <= 1) {
         return 1;

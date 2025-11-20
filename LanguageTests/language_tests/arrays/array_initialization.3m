@@ -1,0 +1,68 @@
+#include <stdio.tm>
+
+int main() {
+    int nums[5];
+    double doubles[3];
+    char chars[4];
+    int i;
+    
+    // Initialize with specific values
+    nums[0] = 100;
+    nums[1] = 200;
+    nums[2] = 300;
+    nums[3] = 400;
+    nums[4] = 500;
+    
+    doubles[0] = 1.1;
+    doubles[1] = 2.2;
+    doubles[2] = 3.3;
+    
+    chars[0] = 'T';
+    chars[1] = 'E';
+    chars[2] = 'S';
+    chars[3] = 'T';
+    
+    // Print integer array
+    printf("Integer array:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        printf("nums[%d] = %d\n", i, nums[i]);
+    }
+    
+    // Print double array
+    printf("\nDouble array:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        printf("doubles[%d] = %.2f\n", i, doubles[i]);
+    }
+    
+    // Print char array
+    printf("\nChar array:\n");
+    for (i = 0; i < 4; i = i + 1) {
+        printf("chars[%d] = %c\n", i, chars[i]);
+    }
+    
+    // Initialize array with computed values
+    int fibonacci[10];
+    fibonacci[0] = 0;
+    fibonacci[1] = 1;
+    for (i = 2; i < 10; i = i + 1) {
+        fibonacci[i] = fibonacci[i - 1] + fibonacci[i - 2];
+    }
+    
+    printf("\nFibonacci sequence:\n");
+    for (i = 0; i < 10; i = i + 1) {
+        printf("fibonacci[%d] = %d\n", i, fibonacci[i]);
+    }
+    
+    // Initialize with pattern
+    int pattern[8];
+    for (i = 0; i < 8; i = i + 1) {
+        pattern[i] = i * i;
+    }
+    
+    printf("\nSquare pattern:\n");
+    for (i = 0; i < 8; i = i + 1) {
+        printf("pattern[%d] = %d\n", i, pattern[i]);
+    }
+    
+    return 0;
+}

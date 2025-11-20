@@ -1,0 +1,20 @@
+=== Many Variables Test ===
+
+Initializing 20 integers...
+Initializing 5 doubles...
+Initializing 5 chars...
+
+Sample integer values:
+v1 = 1, v10 = 10, v20 = 20
+
+Sample double values:
+d1 = 1.1, d3 = 3.3, d5 = 5.5
+
+Sample char values:
+c1 = A, c3 = C, c5 = E
+
+Calculating sum of integers...
+Sum of v1 to v20: 210
+
+Calculating sum of doubles...
+Sum of d1 to d5: 16.5

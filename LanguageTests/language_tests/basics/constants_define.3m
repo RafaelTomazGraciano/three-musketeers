@@ -1,0 +1,26 @@
+#include <stdio.tm>
+
+#define PI 3.14
+#define MAX_SIZE 100
+#define GREETING "Hello from define"
+
+int main() {
+    printf("PI = %f\n", PI);
+    printf("MAX_SIZE = %d\n", MAX_SIZE);
+    puts(GREETING);
+    
+    double radius = 5.0;
+    double area = PI * radius * radius;
+    printf("Area with radius %f = %f\n", radius, area);
+    
+    int array_size = MAX_SIZE;
+    printf("Array size: %d\n", array_size);
+    
+    int calculation = MAX_SIZE + 50;
+    printf("MAX_SIZE + 50 = %d\n", calculation);
+    
+    double pi_times_two = PI * 2.0;
+    printf("PI * 2 = %f\n", pi_times_two);
+    
+    return 0;
+}

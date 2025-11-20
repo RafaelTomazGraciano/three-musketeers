@@ -1,0 +1,14 @@
+Accessing via pointer arithmetic:
+p[0] = 10
+p[1] = 20
+p[2] = 30
+
+Traversing array with pointer:
+Element 0: 10
+Element 1: 20
+Element 2: 30
+Element 3: 40
+Element 4: 50
+
+After modifying arr[2] via pointer:
+arr[2] = 300

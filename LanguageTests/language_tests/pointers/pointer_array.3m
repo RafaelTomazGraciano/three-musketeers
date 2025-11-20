@@ -1,0 +1,57 @@
+#include <stdio.tm>
+
+int main() {
+    int arr[5];
+    int *p;
+    int i;
+    
+    // Initialize array
+    for (i = 0; i < 5; i = i + 1) {
+        arr[i] = i * 10;
+    }
+    
+    // Pointer to array
+    p = arr;
+    
+    printf("Array via pointer indexing:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        printf("p[%d] = %d\n", i, p[i]);
+    }
+    
+    // Modify via pointer
+    p[2] = 999;
+    printf("\nAfter p[2] = 999:\n");
+    printf("arr[2] = %d\n", arr[2]);
+    
+    // Pointer arithmetic
+    p = arr;
+    printf("\nUsing pointer arithmetic:\n");
+    printf("(*p) = %d\n", (*p));
+    
+    p = p + 1;
+    printf("(*(p+1)) = %d\n", (*p));
+    
+    p = p + 2;
+    printf("(*(p+3)) = %d\n", (*p));
+    
+    // Array of pointers
+    int a;
+    int b;
+    int c;
+    int *ptrs[3];
+    
+    a = 100;
+    b = 200;
+    c = 300;
+    
+    ptrs[0] = &a;
+    ptrs[1] = &b;
+    ptrs[2] = &c;
+    
+    printf("\nArray of pointers:\n");
+    for (i = 0; i < 3; i = i + 1) {
+        printf("(*ptrs[%d]) = %d\n", i, (*ptrs[i]));
+    }
+    
+    return 0;
+}

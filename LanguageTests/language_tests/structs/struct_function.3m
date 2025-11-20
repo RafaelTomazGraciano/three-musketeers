@@ -1,0 +1,45 @@
+#include <stdio.tm>
+
+struct Point {
+    int x,
+    int y
+};
+
+struct Point createPoint(int x, int y) {
+    struct Point p;
+    p.x = x;
+    p.y = y;
+    return p;
+}
+
+void printPoint(struct Point p) {
+    printf("Point: (%d, %d)\n", p.x, p.y);
+}
+
+int distance(struct Point p1, struct Point p2) {
+    int dx = p2.x - p1.x;
+    int dy = p2.y - p1.y;
+    return dx + dy;
+}
+
+int main() {
+    struct Point p1;
+    struct Point p2;
+    int dist;
+    
+    printf("=== Struct Function Test ===\n");
+    
+    p1 = createPoint(5, 10);
+    p2 = createPoint(15, 25);
+    
+    printf("Point 1:\n  ");
+    printPoint(p1);
+    
+    printf("Point 2:\n  ");
+    printPoint(p2);
+    
+    dist = distance(p1, p2);
+    printf("Manhattan distance: %d\n", dist);
+    
+    return 0;
+}

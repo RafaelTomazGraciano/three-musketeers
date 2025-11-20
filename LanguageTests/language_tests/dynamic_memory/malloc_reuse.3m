@@ -1,0 +1,40 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+int main() {
+    int *p;
+    int i;
+    
+    printf("Testing pointer reuse after free:\n\n");
+    
+    // First allocation
+    p = malloc(1);
+    (*p) = 100;
+    printf("First allocation: %d\n", (*p));
+    free(p);
+    
+    // Reuse same pointer variable
+    p = malloc(1);
+    (*p) = 200;
+    printf("Second allocation: %d\n", (*p));
+    free(p);
+    
+    // Reuse for array
+    p = malloc(5);
+    printf("\nArray allocation:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        p[i] = i * 10;
+        printf("p[%d] = %d\n", i, p[i]);
+    }
+    free(p);
+    
+    // Reuse again
+    p = malloc(1);
+    (*p) = 999;
+    printf("\nFinal allocation: %d\n", (*p));
+    free(p);
+    
+    printf("\nAll reuses successful\n");
+    
+    return 0;
+}

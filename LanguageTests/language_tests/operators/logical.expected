@@ -1,0 +1,13 @@
+true = 1, false = 0
+true && true = 1
+true && false = 0
+false && false = 0
+true || true = 1
+true || false = 1
+false || false = 0
+!true = 0
+!false = 1
+(a > b) && (a > 0) = 1
+(a < b) || (b > 0) = 1
+!(a == b) = 1
+complex expression = 1

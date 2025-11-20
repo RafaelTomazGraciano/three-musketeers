@@ -1,0 +1,77 @@
+#include <stdio.tm>
+
+struct Point {
+    int x,
+    int y
+};
+
+struct Rectangle {
+    int width,
+    int height
+};
+
+struct Person {
+    int age,
+    char initial
+};
+
+Point createPoint(int x, int y) {
+    Point p;
+    p.x = x;
+    p.y = y;
+    return p;
+}
+
+Rectangle createRectangle(int w, int h) {
+    Rectangle r;
+    r.width = w;
+    r.height = h;
+    return r;
+}
+
+Point addPoints(Point p1, Point p2) {
+    Point result;
+    result.x = p1.x + p2.x;
+    result.y = p1.y + p2.y;
+    return result;
+}
+
+int calculateArea(Rectangle rect) {
+    return rect.width * rect.height;
+}
+
+Person createPerson(int age, char initial) {
+    Person p;
+    p.age = age;
+    p.initial = initial;
+    return p;
+}
+
+int main() {
+    printf("Testing struct return functions:\n\n");
+    
+    Point p1;
+    p1 = createPoint(10, 20);
+    printf("Point 1: (%d, %d)\n", p1.x, p1.y);
+    
+    Point p2;
+    p2 = createPoint(5, 15);
+    printf("Point 2: (%d, %d)\n", p2.x, p2.y);
+    
+    Point p3;
+    p3 = addPoints(p1, p2);
+    printf("Sum: (%d, %d)\n", p3.x, p3.y);
+    
+    printf("\n");
+    Rectangle rect;
+    rect = createRectangle(8, 5);
+    printf("Rectangle: %dx%d\n", rect.width, rect.height);
+    printf("Area: %d\n", calculateArea(rect));
+    
+    printf("\n");
+    Person person;
+    person = createPerson(25, 'J');
+    printf("Person: age=%d, initial=%c\n", person.age, person.initial);
+    
+    return 0;
+}

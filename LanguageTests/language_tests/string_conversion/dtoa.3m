@@ -1,0 +1,47 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct myStruct {
+    double d1,
+    double d2
+};
+
+union myUnion {
+    double ud1,
+    double ud2
+};
+
+int main() {
+    double d1 = 123.45;
+    double d2 = -67.89;
+    double d3 = 0.0;
+    
+    myStruct s;
+    s.d1 = 99.99;
+    s.d2 = -3.14;
+    
+    myUnion u;
+    u.ud1 = 1.11;
+    string str7 = dtoa(u.ud1);
+    
+    u.ud2 = -2.22;
+    string str8 = dtoa(u.ud2);
+    
+    string str1 = dtoa(d1);
+    string str2 = dtoa(d2);
+    string str3 = dtoa(d3);
+    string str4 = dtoa(s.d1);
+    string str5 = dtoa(s.d2);
+    string str6 = dtoa(1.5);
+    
+    puts(str1);
+    puts(str2);
+    puts(str3);
+    puts(str4);
+    puts(str5);
+    puts(str6);
+    puts(str7);
+    puts(str8);
+    
+    return 0;
+}

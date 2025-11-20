@@ -1,0 +1,24 @@
+Testing malloc for arrays:
+
+Initializing array:
+arr[0] = 0
+arr[1] = 10
+arr[2] = 20
+arr[3] = 30
+arr[4] = 40
+
+Sum of array: 100
+
+After arr[2] = 999:
+arr[2] = 999
+
+Using pointer arithmetic:
+(*p) = 0
+(*(p+1)) = 10
+
+Array freed successfully
+
+Second array:
+arr2[0] = 100
+arr2[1] = 200
+arr2[2] = 300

@@ -8,6 +8,11 @@ namespace Three_Musketeers.Utils
             type1 = type1.Trim();
             type2 = type2.Trim();
 
+            string normalizedType1 = NormalizeStructType(type1);
+            string normalizedType2 = NormalizeStructType(type2);
+            if (normalizedType1 == normalizedType2)
+                return true;
+
             //  handle pointer types ---
             bool isPointer1 = type1.Contains("*") || type1 == "pointer";
             bool isPointer2 = type2.Contains("*") || type2 == "pointer";
@@ -33,6 +38,16 @@ namespace Three_Musketeers.Utils
             if (anyIsChar && (anyIsBool || !anyIsString)) return true;
 
             return false;
+        }
+
+        private static string NormalizeStructType(string type)
+        {
+            // Remove "struct_" or "union_" prefix for comparison
+            if (type.StartsWith("struct_"))
+                return type.Substring(7);
+            if (type.StartsWith("union_"))
+                return type.Substring(6);
+            return type;
         }
     }
 }

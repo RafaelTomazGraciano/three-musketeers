@@ -13,6 +13,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
         private readonly Func<string> nextRegister;
         private readonly Func<string> nextStringLabel;
         private readonly Func<ExprParser.ExprContext, string> visitExpression;
+        private readonly Dictionary<string, int> stringLiteralSizes;
 
         public PrintfCodeGenerator(
             StringBuilder globalStrings,
@@ -20,7 +21,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             Dictionary<string, string> registerTypes,
             Func<string> nextRegister,
             Func<string> nextStringLabel,
-            Func<ExprParser.ExprContext, string> visitExpression)
+            Func<ExprParser.ExprContext, string> visitExpression,
+            Dictionary<string, int> stringLiteralSizes)  
         {
             this.globalStrings = globalStrings;
             this.getCurrentBody = getCurrentBody;
@@ -28,6 +30,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             this.nextRegister = nextRegister;
             this.nextStringLabel = nextStringLabel;
             this.visitExpression = visitExpression;
+            this.stringLiteralSizes = stringLiteralSizes; 
         }
 
         public string? VisitPrintfStatement([NotNull] ExprParser.PrintfStatementContext context)
@@ -40,7 +43,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
             string stringLabel = nextStringLabel();
             int stringLength = byteCount + 1; // for \00 (null terminator)
 
-            globalStrings.AppendLine($"{stringLabel} = private unnamed_addr constant [{stringLength} x i8] c\"{processedString}\\00\"");
+            globalStrings.AppendLine($"{stringLabel} = private unnamed_addr constant [{stringLength} x i8] c\"{processedString}\\00\", align 1");
 
             string strPtrReg = nextRegister();
             getCurrentBody().AppendLine($"  {strPtrReg} = getelementptr [{stringLength} x i8], [{stringLength} x i8]* {stringLabel}, i32 0, i32 0");
@@ -58,6 +61,16 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                     string actualType = registerTypes.ContainsKey(argReg) ? registerTypes[argReg] : "i32";
 
                     string expectedType = specifiers[i].expectedLLVMType;
+
+                    // If this is a string literal (global constant), generate getelementptr
+                    if (expectedType == "i8*" && argReg.StartsWith("@.str"))
+                    {
+                        string gepReg = nextRegister();
+                        int arraySize = stringLiteralSizes[argReg];
+                        getCurrentBody().AppendLine($"  {gepReg} = getelementptr [{arraySize} x i8], [{arraySize} x i8]* {argReg}, i32 0, i32 0");
+                        argReg = gepReg;
+                        actualType = "i8*";
+                    }
 
                     if (actualType != expectedType)
                     {

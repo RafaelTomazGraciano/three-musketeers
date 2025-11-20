@@ -14,7 +14,7 @@ namespace Three_Musketeers.Models
                 return "void";
                 
             string pointers = new string('*', returnPointerLevel);
-            return returnType ?? "unknown";
+            return (returnType ?? "unknown") + pointers;
         }
 
         public override string ToString()

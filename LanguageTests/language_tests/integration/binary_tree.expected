@@ -1,0 +1,22 @@
+=== AVL Binary Tree Test ===
+
+Inserting nodes: 10, 20, 30, 40, 50, 25
+
+Inorder traversal: 10 20 25 30 40 50 
+Preorder traversal: 30 20 10 25 40 50 
+
+Tree properties:
+Root value: 30
+Root height: 3
+Balance factor: 0
+
+Deleting node 40
+Inorder after deletion: 10 20 25 30 50 
+
+Deleting node 30
+Inorder after deletion: 10 20 25 50 
+
+Inserting more nodes: 5, 15, 35
+
+Final inorder: 5 10 15 20 25 35 50 
+Final preorder: 20 10 5 15 35 25 50

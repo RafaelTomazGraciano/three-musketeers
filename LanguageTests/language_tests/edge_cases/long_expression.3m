@@ -1,0 +1,49 @@
+#include <stdio.tm>
+
+int main() {
+    int a;
+    int b;
+    int c;
+    int d;
+    int e;
+    int result1;
+    int result2;
+    int result3;
+    double x;
+    double y;
+    double z;
+    double dresult;
+    
+    printf("=== Long Expression Test ===\n\n");
+    
+    a = 10;
+    b = 5;
+    c = 3;
+    d = 2;
+    e = 7;
+    
+    printf("Variables: a=%d, b=%d, c=%d, d=%d, e=%d\n\n", a, b, c, d, e);
+    
+    printf("Testing long arithmetic expression:\n");
+    result1 = a + b * c - d / 2 + e * (a - b) + c * d - e + a / d;
+    printf("a + b * c - d / 2 + e * (a - b) + c * d - e + a / d = %d\n", result1);
+    
+    printf("\nTesting nested operations:\n");
+    result2 = ((a + b) * (c - d)) + ((e * a) / (b + 1)) - (c * (d + e));
+    printf("((a + b) * (c - d)) + ((e * a) / (b + 1)) - (c * (d + e)) = %d\n", result2);
+    
+    printf("\nTesting with boolean operations:\n");
+    result3 = (a > b) && (c < d || e > a) && !(b == c) || (d <= e && a != b);
+    printf("(a > b) && (c < d || e > a) && !(b == c) || (d <= e && a != b) = %d\n", result3);
+    
+    x = 10.5;
+    y = 3.2;
+    z = 7.8;
+    
+    printf("\nTesting long double expression:\n");
+    printf("Variables: x=%.1f, y=%.1f, z=%.1f\n", x, y, z);
+    dresult = (x + y) * z / (x - y) + z * x - y / (z + x) + x * y * z / 100.0;
+    printf("(x + y) * z / (x - y) + z * x - y / (z + x) + x * y * z / 100.0 = %.2f\n", dresult);
+    
+    return 0;
+}

@@ -1,0 +1,35 @@
+#include <stdio.tm>
+
+int main() {
+    printf("=== String Special Characters Test ===\n\n");
+    
+    printf("Testing newline:\n");
+    printf("Line 1\nLine 2\nLine 3\n");
+    
+    printf("\nTesting tab:\n");
+    printf("Column1\tColumn2\tColumn3\n");
+    printf("A\tB\tC\n");
+    printf("1\t2\t3\n");
+    
+    printf("\nTesting backslash:\n");
+    printf("This is a backslash: \\\n");
+    printf("Path: C:\\Users\\Documents\\\n");
+    
+    printf("\nTesting quotes:\n");
+    printf("She said: \"Hello, World!\"\n");
+    printf("Single quote in double: '\n");
+    
+    printf("\nTesting null character:\n");
+    printf("Before null\0After null (hidden)\n");
+    
+    printf("\nCombining multiple escapes:\n");
+    printf("Name:\tJohn Doe\nAge:\t25\nPath:\tC:\\Users\\John\n");
+    
+    printf("\nTesting in expressions:\n");
+    printf("Result:\t%d\nStatus:\t%s\n", 42, "OK");
+    
+    printf("\nTesting escape sequences:\n");
+    printf("Newline: \\n Tab: \\t Backslash: \\\\ Quote: \\\"\n");
+    
+    return 0;
+}

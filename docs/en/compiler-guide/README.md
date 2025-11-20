@@ -12,12 +12,12 @@ Complete guide to using the Three Musketeers compiler.
 
 ### Basic Compilation
 ```bash
-Three_Musketeers program.tm -o program
+tm program.tm -o program
 ```
 
 ### With Options
 ```bash
-Three_Musketeers program.tm -o app -O 3 -g --ll
+tm program.tm -o app -O 3 -g --ll
 ```
 
 ## Navigation

@@ -1,0 +1,7 @@
+=== Struct Pointer Test ===
+Linked List:
+  Node 0: 10
+  Node 1: 20
+  Node 2: 30
+Total nodes: 3
+Memory freed successfully

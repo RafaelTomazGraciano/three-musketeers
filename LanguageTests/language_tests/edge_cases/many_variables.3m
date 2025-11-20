@@ -1,0 +1,60 @@
+#include <stdio.tm>
+
+int main() {
+    printf("=== Many Variables Test ===\n\n");
+    
+    printf("Initializing 20 integers...\n");
+    int v1 = 1;
+    int v2 = 2;
+    int v3 = 3;
+    int v4 = 4;
+    int v5 = 5;
+    int v6 = 6;
+    int v7 = 7;
+    int v8 = 8;
+    int v9 = 9;
+    int v10 = 10;
+    int v11 = 11;
+    int v12 = 12;
+    int v13 = 13;
+    int v14 = 14;
+    int v15 = 15;
+    int v16 = 16;
+    int v17 = 17;
+    int v18 = 18;
+    int v19 = 19;
+    int v20 = 20;
+
+    printf("Initializing 5 doubles...\n");
+    double d1 = 1.1;
+    double d2 = 2.2;
+    double d3 = 3.3;
+    double d4 = 4.4;
+    double d5 = 5.5;
+    
+    printf("Initializing 5 chars...\n");
+    char c1 = 'A';
+    char c2 = 'B';
+    char c3 = 'C';
+    char c4 = 'D';
+    char c5 = 'E';
+    
+    printf("\nSample integer values:\n");
+    printf("v1 = %d, v10 = %d, v20 = %d\n", v1, v10, v20);
+    
+    printf("\nSample double values:\n");
+    printf("d1 = %.1f, d3 = %.1f, d5 = %.1f\n", d1, d3, d5);
+    
+    printf("\nSample char values:\n");
+    printf("c1 = %c, c3 = %c, c5 = %c\n", c1, c3, c5);
+    
+    printf("\nCalculating sum of integers...\n");
+    int sum = v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + v14 + v15 + v16 + v17 + v18 + v19 + v20;
+    printf("Sum of v1 to v20: %d\n", sum);
+    
+    printf("\nCalculating sum of doubles...\n");
+    double dsum = d1 + d2 + d3 + d4 + d5;
+    printf("Sum of d1 to d5: %.1f\n", dsum);
+    
+    return 0;
+}

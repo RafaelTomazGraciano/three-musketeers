@@ -107,6 +107,8 @@ int main(int argc, char argv[]) {
 ### Simple Function
 
 ```c
+#include <stdio.tm>
+
 void greet(string name) {
     printf("Hello, %s!\n", name);
 }
@@ -120,6 +122,8 @@ int main() {
 ### Function with Multiple Return Types
 
 ```c
+#include <stdio.tm>
+
 int add(int x, int y) {
     return x + y;
 }
@@ -136,6 +140,8 @@ bool isEven(int n) {
 ### Nested Function Calls
 
 ```c
+#include <stdio.tm>
+
 int square(int n) {
     return n * n;
 }

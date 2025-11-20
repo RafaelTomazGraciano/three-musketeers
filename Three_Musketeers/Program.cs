@@ -11,7 +11,7 @@ namespace Three_Musketeers
 {
     public class Program
     {
-        public static readonly string VERSION = "v0.9.5";
+        public static readonly string VERSION = "v1.0.0 Athos";
         private static readonly CliArgument<string> input = new("input") {
             Description = "Path of the source file to compile",
             Arity = ArgumentArity.ZeroOrOne
@@ -61,7 +61,8 @@ namespace Three_Musketeers
                 compilerOptimazionLevel,
                 dotLLCodePath,
                 addDebugFlagToGcc,
-                includeLibrary
+                includeLibrary,
+                generateBin
             }!;
 
             foreach (var option in rootCommand.Options)
@@ -180,8 +181,24 @@ namespace Three_Musketeers
                 string executablePath = Path.Combine(result, resultPath);
                 File.WriteAllText(outputPath, llvmCode);
 
-                Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyFilePath}")?.WaitForExit();
-                Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyFilePath} -o {executablePath} -no-pie")?.WaitForExit();
+                var llcProcess = Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyFilePath}");
+                llcProcess?.WaitForExit();
+
+                if (llcProcess?.ExitCode != 0)
+                {
+                    WriteError($"LLVM Compilation failed (llc exited with code {llcProcess?.ExitCode})");
+                    return 1;
+                }
+
+                var gccProcess = Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyFilePath} -o {executablePath} -no-pie");
+                gccProcess?.WaitForExit();
+
+                if (gccProcess?.ExitCode != 0)
+                {
+                    WriteError($"GCC Linking failed (gcc exited with code {gccProcess?.ExitCode})");
+                    return 1;
+                }
+
                 File.Delete(assemblyFilePath);
 
                 if (!saveLLVM)

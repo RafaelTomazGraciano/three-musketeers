@@ -1,0 +1,29 @@
+#include <stdio.tm>
+
+union Data {
+    int i,
+    double d,
+    char c
+};
+
+int main() {
+    union Data data;
+    
+    printf("=== Simple Union Test ===\n\n");
+    
+    // Store int
+    data.i = 42;
+    printf("Stored int: %d\n", data.i);
+    
+    // Store double (overwrites int)
+    data.d = 3.14;
+    printf("Stored double: %f\n", data.d);
+    printf("Int after double: %d (corrupted)\n", data.i);
+    
+    // Store char (overwrites double)
+    data.c = 'A';
+    printf("Stored char: %c\n", data.c);
+    printf("Int after char: %d (corrupted)\n", data.i);
+    
+    return 0;
+}

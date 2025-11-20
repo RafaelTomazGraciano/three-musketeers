@@ -1,0 +1,10 @@
+Testing struct return functions:
+
+Point 1: (10, 20)
+Point 2: (5, 15)
+Sum: (15, 35)
+
+Rectangle: 8x5
+Area: 40
+
+Person: age=25, initial=J

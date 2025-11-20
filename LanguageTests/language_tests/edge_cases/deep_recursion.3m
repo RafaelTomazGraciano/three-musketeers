@@ -1,0 +1,52 @@
+#include <stdio.tm>
+
+int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+int fibonacci(int n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+int countdown(int n) {
+    if (n <= 0) {
+        printf("Liftoff!\n");
+        return 0;
+    }
+    printf("%d...\n", n);
+    return countdown(n - 1);
+}
+
+int main() {
+    int fact5;
+    int fact10;
+    int fib10;
+    int fib15;
+    
+    printf("=== Deep Recursion Test ===\n\n");
+    
+    printf("Testing factorial:\n");
+    fact5 = factorial(5);
+    printf("5! = %d\n", fact5);
+    
+    fact10 = factorial(10);
+    printf("10! = %d\n", fact10);
+    
+    printf("\nTesting fibonacci:\n");
+    fib10 = fibonacci(10);
+    printf("fib(10) = %d\n", fib10);
+    
+    fib15 = fibonacci(15);
+    printf("fib(15) = %d\n", fib15);
+    
+    printf("\nTesting countdown (recursive):\n");
+    countdown(5);
+    
+    return 0;
+}

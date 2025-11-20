@@ -129,8 +129,8 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
                 }
             }
 
-            // Generate merge label
             getCurrentBody().AppendLine($"{mergeLabel}:");
+
 
             return null;
         }
@@ -139,41 +139,81 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             var statements = context.stm();
             bool foundControlFlow = false;
-            bool foundReturn = false;
             
             foreach (var stm in statements)
             {
-                if (stm.BREAK() != null || stm.CONTINUE() != null)
+                // Check for explicit control flow statements
+                if (stm.BREAK() != null || stm.CONTINUE() != null || stm.RETURN() != null)
                 {
                     visitStatement(stm);
                     foundControlFlow = true;
-                    break;
+                    break; 
                 }
                 
-                if (stm.RETURN() != null)
-                {
-                    visitStatement(stm);
-                    foundReturn = true;
-                    foundControlFlow = true;
-                    break;
-                }
-                
+                // Visit the statement
                 visitStatement(stm);
+                
+                if (BlockEndsWithTerminator())
+                {
+                    foundControlFlow = true;
+                    break;
+                }
             }
             
             return foundControlFlow;
         }
 
+        private bool BlockEndsWithTerminator()
+        {
+            string currentText = getCurrentBody().ToString();
+            if (string.IsNullOrEmpty(currentText))
+            {
+                return false;
+            }
+            
+            string[] lines = currentText.Split('\n');
+            
+            // Look backwards for the last non-empty, non-label line
+            for (int i = lines.Length - 1; i >= 0; i--)
+            {
+                string line = lines[i].Trim();
+                
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+                
+                // If we hit a label, the block doesn't have a terminator yet
+                if (line.EndsWith(":"))
+                {
+                    return false;
+                }
+                
+                // Check if this line is a terminator
+                if (line.StartsWith("ret ") || 
+                    line.StartsWith("br ") || 
+                    line.StartsWith("switch ") || 
+                    line.StartsWith("unreachable"))
+                {
+                    return true;
+                }
+                
+                // If we hit actual code that's not a terminator, return false
+                return false;
+            }
+            
+            return false;
+        }
+
         private string ConvertToBool(string value)
         {
             string currentType = GetExpressionType(value);
-            
+
             if (currentType == "i1")
             {
                 return value;
             }
 
-            // Need to convert to boolean
             string convReg = nextRegister();
 
             if (currentType == "i32")
@@ -201,18 +241,7 @@ namespace Three_Musketeers.Visitors.CodeGeneration.ControlFlow
         {
             if (!registerTypes.ContainsKey(value))
             {
-                if (value == "1" || value == "true")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else if (value == "0" || value == "false")
-                {
-                    registerTypes[value] = "i1";
-                }
-                else
-                {
-                    registerTypes[value] = "i32";
-                }
+                registerTypes[value] = "i32";
             }
             return registerTypes[value];
         }

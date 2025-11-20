@@ -1,0 +1,42 @@
+#include <stdio.tm>
+
+int main() {
+    int arr[5];
+    int *p;
+    int i;
+    
+    // Initialize array
+    arr[0] = 10;
+    arr[1] = 20;
+    arr[2] = 30;
+    arr[3] = 40;
+    arr[4] = 50;
+    
+    // Point to first element
+    p = &arr[0];
+    
+    printf("Accessing via pointer arithmetic:\n");
+    printf("p[0] = %d\n", (*p));
+    
+    p = p + 1;
+    printf("p[1] = %d\n", (*p));
+    
+    p = p + 1;
+    printf("p[2] = %d\n", (*p));
+    
+    // Reset and traverse entire array
+    p = &arr[0];
+    printf("\nTraversing array with pointer:\n");
+    for (i = 0; i < 5; i = i + 1) {
+        printf("Element %d: %d\n", i, p[i]);
+    }
+    
+    // Modify via pointer arithmetic
+    p = &arr[2];
+    (*p) = 300;
+    
+    printf("\nAfter modifying arr[2] via pointer:\n");
+    printf("arr[2] = %d\n", arr[2]);
+    
+    return 0;
+}

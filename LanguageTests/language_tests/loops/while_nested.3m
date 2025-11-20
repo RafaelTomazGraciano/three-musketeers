@@ -1,0 +1,44 @@
+#include <stdio.tm>
+
+int main() {
+    int i;
+    int j;
+    
+    printf("Nested while - multiplication table:\n");
+    i = 1;
+    while (i <= 3) {
+        j = 1;
+        while (j <= 3) {
+            printf("%d ", i * j);
+            j = j + 1;
+        }
+        printf("\n");
+        i = i + 1;
+    }
+    
+    printf("\nNested while - triangle:\n");
+    i = 1;
+    while (i <= 4) {
+        j = 1;
+        while (j <= i) {
+            printf("* ");
+            j = j + 1;
+        }
+        printf("\n");
+        i = i + 1;
+    }
+    
+    printf("\nNested while - coordinates:\n");
+    i = 0;
+    while (i < 3) {
+        j = 0;
+        while (j < 3) {
+            printf("(%d,%d) ", i, j);
+            j = j + 1;
+        }
+        printf("\n");
+        i = i + 1;
+    }
+    
+    return 0;
+}

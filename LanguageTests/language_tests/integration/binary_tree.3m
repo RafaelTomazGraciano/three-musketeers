@@ -1,0 +1,263 @@
+#include <stdio.tm>
+#include <stdlib.tm>
+
+struct Node {
+    int data,
+    struct Node* left,
+    struct Node* right,
+    int height
+};
+
+int max(int a, int b) {
+    if (a > b) {
+        return a;
+    }
+    return b;
+}
+
+int height(struct Node* node) {
+    if (node == 0) {
+        return 0;
+    }
+    return node->height;
+}
+
+int getBalance(struct Node* node) {
+    if (node == 0) {
+        return 0;
+    }
+    return height(node->left) - height(node->right);
+}
+
+struct Node* createNode(int data) {
+    struct Node* node;
+    node = malloc(1); 
+    node->data = data;
+    node->left = 0;
+    node->right = 0;
+    node->height = 1;
+    return node;
+}
+
+struct Node* rightRotate(struct Node* y) {
+    struct Node* x;
+    struct Node* T2;
+    
+    x = y->left;
+    T2 = x->right;
+    
+    x->right = y;
+    y->left = T2;
+    
+    y->height = max(height(y->left), height(y->right)) + 1;
+    x->height = max(height(x->left), height(x->right)) + 1;
+    
+    return x;
+}
+
+struct Node* leftRotate(struct Node* x) {
+    struct Node* y;
+    struct Node* T2;
+    
+    y = x->right;
+    T2 = y->left;
+    
+    y->left = x;
+    x->right = T2;
+    
+    x->height = max(height(x->left), height(x->right)) + 1;
+    y->height = max(height(y->left), height(y->right)) + 1;
+    
+    return y;
+}
+
+struct Node* insert(struct Node* node, int data) {
+    int balance;
+    
+    if (node == 0) {
+        return createNode(data);
+    }
+    
+    if (data < node->data) {
+        node->left = insert(node->left, data);
+    } else {
+        if (data > node->data) {
+            node->right = insert(node->right, data);
+        } else {
+            return node;
+        }
+    }
+    
+    node->height = 1 + max(height(node->left), height(node->right));
+    
+    balance = getBalance(node);
+    
+    if (balance > 1 && data < node->left->data) {
+        return rightRotate(node);
+    }
+    
+    if (balance < -1 && data > node->right->data) {
+        return leftRotate(node);
+    }
+    
+    if (balance > 1 && data > node->left->data) {
+        node->left = leftRotate(node->left);
+        return rightRotate(node);
+    }
+    
+    if (balance < -1 && data < node->right->data) {
+        node->right = rightRotate(node->right);
+        return leftRotate(node);
+    }
+    
+    return node;
+}
+
+struct Node* minValueNode(struct Node* node) {
+    while (node != 0 && node->left != 0) {
+        node = node->left;
+    }
+    return node;
+}
+
+struct Node* deleteNode(struct Node* root, int data) {
+    struct Node* temp;
+    int balance;
+    
+    if (root == 0) {
+        return root;
+    }
+    
+    if (data < root->data) {
+        root->left = deleteNode(root->left, data);
+    } else {
+        if (data > root->data) {
+            root->right = deleteNode(root->right, data);
+        } else {
+            if (root->left == 0 || root->right == 0) {
+                if (root->left != 0) {
+                    temp = root->left;
+                } else {
+                    temp = root->right;
+                }
+                
+                if (temp == 0) {
+                    free(root);
+                    return 0;
+                } else {
+                    root->data = temp->data;
+                    root->left = temp->left;
+                    root->right = temp->right;
+                    root->height = temp->height;
+                    free(temp);
+                }
+            } else {
+                temp = minValueNode(root->right);
+                root->data = temp->data;
+                root->right = deleteNode(root->right, temp->data);
+            }
+        }
+    }
+    
+    if (root == 0) {
+        return root;
+    }
+    
+    root->height = 1 + max(height(root->left), height(root->right));
+    
+    balance = getBalance(root);
+    
+    if (balance > 1 && getBalance(root->left) >= 0) {
+        return rightRotate(root);
+    }
+    
+    if (balance > 1 && getBalance(root->left) < 0) {
+        root->left = leftRotate(root->left);
+        return rightRotate(root);
+    }
+    
+    if (balance < -1 && getBalance(root->right) <= 0) {
+        return leftRotate(root);
+    }
+    
+    if (balance < -1 && getBalance(root->right) > 0) {
+        root->right = rightRotate(root->right);
+        return leftRotate(root);
+    }
+    
+    return root;
+}
+
+void inorder(struct Node* root) {
+    if (root != 0) {
+        inorder(root->left);
+        printf("%d ", root->data);
+        inorder(root->right);
+    }
+}
+
+void preorder(struct Node* root) {
+    if (root != 0) {
+        printf("%d ", root->data);
+        preorder(root->left);
+        preorder(root->right);
+    }
+}
+
+int main() {
+    struct Node* root;
+    
+    printf("=== AVL Binary Tree Test ===\n\n");
+    
+    root = 0;
+    
+    printf("Inserting nodes: 10, 20, 30, 40, 50, 25\n");
+    root = insert(root, 10);
+    root = insert(root, 20);
+    root = insert(root, 30);
+    root = insert(root, 40);
+    root = insert(root, 50);
+    root = insert(root, 25);
+    
+    printf("\nInorder traversal: ");
+    inorder(root);
+    printf("\n");
+    
+    printf("Preorder traversal: ");
+    preorder(root);
+    printf("\n");
+    
+    printf("\nTree properties:\n");
+    printf("Root value: %d\n", root->data);
+    printf("Root height: %d\n", root->height);
+    printf("Balance factor: %d\n", getBalance(root));
+    
+    printf("\nDeleting node 40\n");
+    root = deleteNode(root, 40);
+    
+    printf("Inorder after deletion: ");
+    inorder(root);
+    printf("\n");
+    
+    printf("\nDeleting node 30\n");
+    root = deleteNode(root, 30);
+    
+    printf("Inorder after deletion: ");
+    inorder(root);
+    printf("\n");
+    
+    printf("\nInserting more nodes: 5, 15, 35\n");
+    root = insert(root, 5);
+    root = insert(root, 15);
+    root = insert(root, 35);
+    
+    printf("\nFinal inorder: ");
+    inorder(root);
+    printf("\n");
+    
+    printf("Final preorder: ");
+    preorder(root);
+    printf("\n");
+    
+    return 0;
+}

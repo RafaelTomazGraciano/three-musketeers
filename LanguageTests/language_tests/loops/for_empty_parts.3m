@@ -1,0 +1,42 @@
+#include <stdio.tm>
+
+int main() {
+    int i;
+    
+    printf("For with pre-initialized variable:\n");
+    i = 0;
+    for (; i < 5; i = i + 1) {
+        printf("%d ", i);
+    }
+    printf("\n");
+    
+    printf("\nFor with manual increment:\n");
+    for (i = 0; i < 5;) {
+        printf("%d ", i);
+        i = i + 1;
+    }
+    printf("\n");
+    
+    printf("\nFor with external condition:\n");
+    i = 0;
+    for (;; i = i + 1) {
+        if (i >= 5) {
+            break;
+        }
+        printf("%d ", i);
+    }
+    printf("\n");
+    
+    printf("\nFor with all parts manual:\n");
+    i = 0;
+    for (;;) {
+        if (i >= 5) {
+            break;
+        }
+        printf("%d ", i);
+        i = i + 1;
+    }
+    printf("\n");
+    
+    return 0;
+}

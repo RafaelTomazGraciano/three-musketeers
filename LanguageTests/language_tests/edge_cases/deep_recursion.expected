@@ -1,0 +1,17 @@
+=== Deep Recursion Test ===
+
+Testing factorial:
+5! = 120
+10! = 3628800
+
+Testing fibonacci:
+fib(10) = 55
+fib(15) = 610
+
+Testing countdown (recursive):
+5...
+4...
+3...
+2...
+1...
+Liftoff!

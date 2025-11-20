@@ -119,6 +119,8 @@ printf("Hello, %s!\n", name);
 ## Complete I/O Example
 
 ```c
+#include <stdio.tm>
+
 int main() {
     string name;
     int age;

@@ -1,0 +1,17 @@
+Testing mixed struct + union with malloc:
+
+Container 1 (int):
+type = 1, value = 42
+
+Container 2 (double):
+type = 2, value = 3.14
+
+Container 1 after change (double):
+type = 2, value = 99.50
+
+Containers freed successfully
+
+Array of containers:
+arr[0]: int = 100
+arr[1]: double = 2.50
+arr[2]: int = 200

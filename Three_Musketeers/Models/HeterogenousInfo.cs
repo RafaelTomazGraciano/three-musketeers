@@ -22,5 +22,10 @@ namespace Three_Musketeers.Models
         {
             return members.ContainsKey(memberName);
         }
+
+        public Dictionary<string, Symbol> GetMembers()
+        {
+            return members;
+        }
     }
 }

@@ -1,0 +1,7 @@
+Testing nested function calls:
+addOne(5) = 6
+double(addOne(5)) = 12
+square(double(3)) = 36
+triple(square(2)) = 12
+addOne(double(triple(2))) = 13
+square(addOne(double(2))) = 25

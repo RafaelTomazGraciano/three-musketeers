@@ -1,0 +1,60 @@
+#include <stdio.tm>
+
+int main() {
+    int x;
+    int y;
+    x = 10;
+    y = 20;
+    
+    printf("Testing nested if statements\n");
+    printf("x = %d, y = %d\n", x, y);
+    
+    if (x > 5) {
+        printf("x is greater than 5\n");
+        if (y > 15) {
+            printf("  and y is greater than 15\n");
+            if (x < y) {
+                printf("    and x is less than y\n");
+            }
+        }
+    }
+    
+    int age;
+    int hasLicense;
+    age = 20;
+    hasLicense = 1;
+    
+    printf("\nDriving eligibility check\n");
+    printf("Age: %d, Has license: %d\n", age, hasLicense);
+    
+    if (age >= 18) {
+        printf("Age requirement met\n");
+        if (hasLicense == 1) {
+            printf("Has valid license\n");
+            printf("Can drive!\n");
+        } else {
+            printf("No valid license\n");
+            printf("Cannot drive\n");
+        }
+    } else {
+        printf("Too young to drive\n");
+    }
+    
+    int num;
+    num = 15;
+    printf("\nNumber analysis: %d\n", num);
+    
+    if (num > 0) {
+        printf("Number is positive\n");
+        if (num > 10) {
+            printf("Number is greater than 10\n");
+            if (num > 20) {
+                printf("Number is greater than 20\n");
+            } else {
+                printf("Number is between 10 and 20\n");
+            }
+        }
+    }
+    
+    return 0;
+}
