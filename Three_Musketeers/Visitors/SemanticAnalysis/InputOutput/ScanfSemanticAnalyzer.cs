@@ -99,10 +99,22 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.InputOutput
                 symbolTable.MarkInitializated(varName);
                 return;
             }
+
+            if (context.ID() == null)
+            {
+                reportError(line, "scanf() requires variable names, not literals");
+                return;
+            }
             
             // simple variable or array element
             string id = context.ID().GetText();
             Symbol? varSymbol = symbolTable.GetSymbol(id);
+
+            if (context.ID() == null)
+            {
+                reportError(line, "scanf() requires variable names, not literals");
+                return;
+            }
 
             if (varSymbol == null)
             {
