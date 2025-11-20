@@ -60,11 +60,13 @@ class TestRunner
     {
         // get absolute path
         string absolutePath = Path.GetFullPath(file);
+        //get filename
+        string outputName = Path.GetFileNameWithoutExtension(file);
         
         // execute compiler
         var compile = new Process();
         compile.StartInfo.FileName = "../Three_Musketeers/bin/Debug/net9.0/tm";
-        compile.StartInfo.Arguments = $"{absolutePath} --bin --ll";
+        compile.StartInfo.Arguments = $"{absolutePath} --bin --ll -o {outputName}";
         compile.StartInfo.RedirectStandardOutput = true;
         compile.StartInfo.RedirectStandardError = true;
         compile.StartInfo.UseShellExecute = false;

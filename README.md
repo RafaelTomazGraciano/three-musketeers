@@ -89,6 +89,26 @@ cd ..
 ./create_release.sh
 ```
 
+## Running Tests
+
+To run the Code Generation tests:
+
+```bash
+cd Three_Musketeers/LanguageTests
+dotnet run
+```
+
+To run the Semantic Analysis tests:
+
+```bash
+cd Three_Musketeers/Three_Musketeers.Tests
+dotnet test
+```
+
+## Use Our Syntax Highlighting
+
+You can use our syntax highlighting for Visual Studio Code by our repository: [Three Musketeers Syntax Highlighting](https://github.com/RafaelTomazGraciano/three-musketeers-vscode)
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

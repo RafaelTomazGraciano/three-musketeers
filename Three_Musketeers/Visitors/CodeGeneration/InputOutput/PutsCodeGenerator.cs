@@ -101,7 +101,12 @@ namespace Three_Musketeers.Visitors.CodeGeneration.InputOutput
                 throw new Exception($"Failed to resolve struct member in puts()");
             }
 
-            string memberType = registerTypes[memberPtrReg];
+            string memberPtrType = registerTypes[memberPtrReg]; // This is the POINTER type (e.g., "[256 x i8]*")
+            
+            // Remove the pointer to get the actual member type
+            string memberType = memberPtrType.EndsWith("*") 
+                ? memberPtrType.Substring(0, memberPtrType.Length - 1) 
+                : memberPtrType;
 
             // Check if it's a string array (char[256])
             if (memberType == "[256 x i8]")

@@ -181,8 +181,24 @@ namespace Three_Musketeers
                 string executablePath = Path.Combine(result, resultPath);
                 File.WriteAllText(outputPath, llvmCode);
 
-                Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyFilePath}")?.WaitForExit();
-                Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyFilePath} -o {executablePath} -no-pie")?.WaitForExit();
+                var llcProcess = Process.Start("llc", $"{outputPath} -O{optimizationLevel} -o {assemblyFilePath}");
+                llcProcess?.WaitForExit();
+
+                if (llcProcess?.ExitCode != 0)
+                {
+                    WriteError($"LLVM Compilation failed (llc exited with code {llcProcess?.ExitCode})");
+                    return 1;
+                }
+
+                var gccProcess = Process.Start("gcc", $"{(addDebugFlag ? "-g" : "")} {assemblyFilePath} -o {executablePath} -no-pie");
+                gccProcess?.WaitForExit();
+
+                if (gccProcess?.ExitCode != 0)
+                {
+                    WriteError($"GCC Linking failed (gcc exited with code {gccProcess?.ExitCode})");
+                    return 1;
+                }
+
                 File.Delete(assemblyFilePath);
 
                 if (!saveLLVM)
