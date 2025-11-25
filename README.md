@@ -36,12 +36,6 @@ The Three Musketeers compiler is written in C# (.NET 9.0) and uses:
 
 ## Quick Start
 
-### Compile a Program
-
-```bash
-tm program.tm -o program
-```
-
 ### Example Program
 
 ```c
@@ -51,6 +45,12 @@ int main() {
     puts("Hello, Three Musketeers!");
     return 0;
 }
+```
+
+### Compile a Program
+
+```bash
+tm program.3m -o program
 ```
 
 ## Documentation
