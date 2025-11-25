@@ -39,7 +39,7 @@ The Three Musketeers compiler is written in C# (.NET 9.0) and uses:
 ### Compile a Program
 
 ```bash
-tm program.tm -o program
+tm program.3m -o program
 ```
 
 ### Example Program
