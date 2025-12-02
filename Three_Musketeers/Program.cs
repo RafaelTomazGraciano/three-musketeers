@@ -11,7 +11,7 @@ namespace Three_Musketeers
 {
     public class Program
     {
-        public static readonly string VERSION = "v1.0.0 Athos";
+        public static readonly string VERSION = "v1.0.1 Athos";
         private static readonly CliArgument<string> input = new("input") {
             Description = "Path of the source file to compile",
             Arity = ArgumentArity.ZeroOrOne
