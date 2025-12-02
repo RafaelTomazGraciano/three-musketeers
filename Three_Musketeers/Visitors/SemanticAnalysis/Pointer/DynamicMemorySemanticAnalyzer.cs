@@ -211,9 +211,9 @@ namespace Three_Musketeers.Visitors.SemanticAnalysis.Pointer
                 }
 
                 var pointerSymbol = symbol as PointerSymbol;
-                if (!pointerSymbol!.isDynamic)
+                if (!pointerSymbol!.isInitializated)
                 {
-                    reportWarning(line, $"Freeing pointer '{varName}' that may not have been dynamically allocated");
+                    reportWarning(line, $"Freeing uninitialized pointer '{varName}'");
                 }
             }
 
